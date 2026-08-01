@@ -71,7 +71,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update booking status:", error);
-    // FIXED: Changed Next0Response to NextResponse
+    // FIXED: Changed NextResponse to NextResponse
     return NextResponse.json({ error: "Failed to update booking" }, { status: 500 }); 
   }
 }
