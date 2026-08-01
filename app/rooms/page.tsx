@@ -19,8 +19,8 @@ export default async function RoomsPage({
         name: r.name,
         config: r.config,
         bathOrShower: r.bathOrShower,
-        // FIX: Explicitly cast Drizzle's string decimal to a clean JavaScript Number
-        baseRate: parseFloat(r.baseRate.toString()), 
+        // FIX: Explicitly cast to String to satisfy the Room type and prevent NaN
+        baseRate: String(r.baseRate), 
         amenities: r.amenities.split(",").map((a) => a.trim()),
         description: r.description,
         flexible: r.config.toLowerCase().includes("configurable"),
