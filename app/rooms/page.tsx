@@ -1,0 +1,35 @@
+import { db } from "@/lib/db";
+import { rooms } from "@/lib/db/schema";
+import { RoomsExplorer } from "./RoomsExplorer";
+
+export const dynamic = "force-dynamic";
+
+export default async function RoomsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkIn?: string; checkOut?: string; guests?: string }>;
+}) {
+  const params = await searchParams;
+  const allRooms = await db.select().from(rooms).orderBy(rooms.id);
+
+  return (
+    <RoomsExplorer
+      rooms={allRooms.map((r) => ({
+        id: r.id,
+        name: r.name,
+        config: r.config,
+        bathOrShower: r.bathOrShower,
+        // FIX: Explicitly cast Drizzle's string decimal to a clean JavaScript Number
+        baseRate: parseFloat(r.baseRate.toString()), 
+        amenities: r.amenities.split(",").map((a) => a.trim()),
+        description: r.description,
+        flexible: r.config.toLowerCase().includes("configurable"),
+      }))}
+      carryParams={{
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        guests: params.guests,
+      }}
+    />
+  );
+}

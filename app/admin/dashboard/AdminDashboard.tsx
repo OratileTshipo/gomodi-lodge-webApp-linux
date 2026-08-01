@@ -1,0 +1,324 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+interface AddOn {
+  type: string;
+  persons: number;
+  date: string;
+}
+
+interface BookingRequest {
+  id: number;
+  category: "leisure" | "corporate" | "event";
+  guestName: string;
+  contactPhone: string;
+  contactEmail?: string | null;
+  checkIn: string;
+  checkOut: string;
+  roomName: string;
+  guestCount: number;
+  specialRequests?: string | null;
+  status: "pending" | "approved" | "declined";
+  conflict?: string | null;
+  pendingWarning?: string | null; // <--- ADDED HERE
+  addOns?: AddOn[];
+}
+
+interface User {
+  userId: number;
+  name: string;
+  role: "owner" | "assistant" | "staff";
+}
+
+export function AdminDashboard() {
+  const [requests, setRequests] = useState<BookingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [clockStatus, setClockStatus] = useState<"clock_in" | "clock_out" | null>(null);
+  const [clockLoading, setClockLoading] = useState(false);
+  const router = useRouter();
+
+  const isManager = user?.role === "owner" || user?.role === "assistant";
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadRequests();
+      loadClockStatus();
+    }
+  }, [user]);
+
+  async function checkSession() {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      } else {
+        router.push("/admin");
+      }
+    } catch {
+      router.push("/admin");
+    }
+  }
+
+  async function loadRequests() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/requests");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      
+      // RBAC Filter: Staff only see Leisure. Managers see all.
+      const filtered = !isManager ? data.filter((r: BookingRequest) => r.category === "leisure") : data;
+      setRequests(filtered);
+    } catch (err) {
+      console.error("Failed to load requests:", err);
+    } finally {
+      setTimeout(() => setLoading(false), 500);
+    }
+  }
+
+  async function loadClockStatus() {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/admin/time-clock?userId=${user.userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setClockStatus(data.lastAction);
+      }
+    } catch (err) {
+      console.error("Failed to load clock status", err);
+    }
+  }
+
+  async function handleClockAction() {
+    if (!user) return;
+    setClockLoading(true);
+    const newAction = clockStatus === "clock_in" ? "clock_out" : "clock_in";
+    
+    try {
+      const res = await fetch("/api/admin/time-clock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.userId, action: newAction }),
+      });
+
+      if (!res.ok) throw new Error("Failed");
+      setClockStatus(newAction);
+    } catch (err) {
+      alert("Failed to log time. Please try again.");
+    } finally {
+      setClockLoading(false);
+    }
+  }
+
+  async function handleBookingAction(id: number, action: "approve" | "decline") {
+    const confirmMsg = action === "approve" 
+      ? "Approve this booking? The guest will be notified." 
+      : "Decline this booking?";
+      
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/admin/requests/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        alert(result.error || `Failed to ${action} booking.`);
+        return;
+      }
+      
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch (err: any) {
+      alert(`Failed to ${action} booking: ${err.message}`);
+    }
+  }
+
+  const handleLogout = () => {
+    document.cookie = "session=; path=/; max-age=0";
+    router.push("/admin");
+  };
+
+  const getCategoryColor = (cat: string) => {
+    if (cat === "leisure") return "bg-orange-100 text-orange-800";
+    if (cat === "corporate") return "bg-amber-900/10 text-amber-900";
+    return "bg-yellow-100 text-yellow-800";
+  };
+
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
+
+  if (!user || loading) {
+    return (
+      <div className="min-h-screen bg-stone-50 p-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-lg shadow-sm border border-stone-200 p-6 h-40 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-stone-900">
+              {isManager ? "Operations Dashboard" : "Staff Dashboard"}
+            </h1>
+            <p className="text-sm text-stone-500">Logged in as {user.name} ({user.role})</p>
+          </div>
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button onClick={() => router.push("/")} className="text-stone-600 hover:text-stone-900 text-sm">← Site</button>
+            <button onClick={handleLogout} className="text-red-600 text-sm font-medium">Logout</button>
+            
+            {/* TIME CLOCK */}
+            <button
+              onClick={handleClockAction}
+              disabled={clockLoading}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 ${clockStatus === "clock_in" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              {clockLoading ? "Logging..." : (clockStatus === "clock_in" ? "Clock Out" : "Clock In")}
+            </button>
+          </div>
+        </div>
+
+        {/* MANAGER ONLY: Operations Report */}
+        {isManager && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white p-4 rounded-lg border border-stone-200">
+              <div className="text-stone-500 text-xs uppercase">Total Pending</div>
+              <div className="text-2xl font-bold text-stone-900">{requests.length}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-stone-200">
+              <div className="text-stone-500 text-xs uppercase">Conflicts</div>
+              <div className="text-2xl font-bold text-red-600">{requests.filter(r => r.conflict).length}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-stone-200">
+              <div className="text-stone-500 text-xs uppercase">Occupancy (Est)</div>
+              <div className="text-2xl font-bold text-green-600">65%</div>
+            </div>
+          </div>
+        )}
+
+        {/* REQUESTS LIST */}
+        <div className="space-y-4">
+           {requests.length === 0 && (
+             <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-12 text-center">
+               <p className="text-stone-600 text-lg">No pending requests — you're all caught up.</p>
+             </div>
+           )}
+           
+           {requests.map(req => (
+             <div key={req.id} className="bg-white p-4 md:p-6 rounded-lg border border-stone-200 shadow-sm">
+                
+                {/* SOFT CONFLICT WARNING (Amber - Phase 2b Style Note) */}
+                {req.pendingWarning && (
+                  <div className="bg-amber-100 border border-amber-300 text-amber-900 font-bold p-3 rounded-md mb-3 text-sm tracking-wide flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {req.pendingWarning}
+                  </div>
+                )}
+
+                {/* HARD CONFLICT BANNER (Red - Phase 2b Style Note) */}
+                {req.conflict && (
+                  <div className="bg-red-600 text-white font-bold p-3 rounded-md mb-4 text-sm tracking-wide flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    {req.conflict}
+                  </div>
+                )}
+                
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${getCategoryColor(req.category)}`}>
+                    {req.category}
+                  </span>
+                  <h3 className="font-semibold text-lg text-stone-900">{req.guestName}</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-stone-100 pt-4 mb-4">
+                  <div>
+                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Dates</span>
+                    <span className="text-stone-900 font-medium">{fmtDate(req.checkIn)} → {fmtDate(req.checkOut)}</span>
+                  </div>
+                  <div>
+                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Room</span>
+                    <span className="text-stone-900 font-medium">{req.roomName}</span>
+                  </div>
+                  <div>
+                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Guests</span>
+                    <span className="text-stone-900 font-medium">{req.guestCount}</span>
+                  </div>
+                  <div>
+                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Contact</span>
+                    <span className="text-stone-900 font-medium">{req.contactPhone}</span>
+                    {req.contactEmail && <span className="block text-stone-600 text-xs">{req.contactEmail}</span>}
+                  </div>
+                  
+                  {/* Add-ons */}
+                  {req.addOns && req.addOns.length > 0 && (
+                    <div className="md:col-span-2">
+                      <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Meals</span>
+                      <div className="flex flex-wrap gap-2">
+                        {req.addOns.map((addon, idx) => (
+                          <span key={idx} className="bg-stone-100 text-stone-700 px-2 py-1 rounded text-xs">
+                            {addon.type} ({addon.persons}p)
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Special Requests */}
+                  {req.specialRequests && (
+                    <div className="md:col-span-2">
+                      <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Special Requests</span>
+                      <p className="text-stone-700 italic bg-stone-50 p-2 rounded border-l-2 border-orange-500">
+                        "{req.specialRequests}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-2 border-t border-stone-100">
+                  <button 
+                    onClick={() => handleBookingAction(req.id, "approve")} 
+                    className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700"
+                  >
+                    Approve
+                  </button>
+                  <button 
+                    onClick={() => handleBookingAction(req.id, "decline")} 
+                    className="flex-1 bg-stone-200 text-stone-700 px-3 py-2 rounded text-sm font-medium hover:bg-stone-300"
+                  >
+                    Decline
+                  </button>
+                </div>
+             </div>
+           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
