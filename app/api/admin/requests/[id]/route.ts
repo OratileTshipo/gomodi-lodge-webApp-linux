@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingRequests } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { bookingRequests, bookingRoomLines, rooms } from "@/lib/db/schema";
+import { eq, and, lt, gt } from "drizzle-orm";
 
 export async function POST(
   request: Request,
@@ -9,16 +9,50 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { action } = await request.json(); // "approve" or "decline"
+    const { action } = await request.json(); 
 
     if (action !== "approve" && action !== "decline") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    // Phase 2b Style Note §5: Server-side double-check for conflicts on approval
+    // Phase 2 Architecture §2.2: Server-side double-check for conflicts on approval
     if (action === "approve") {
-      // (Optional but recommended: re-run the overlap check here before allowing the status change)
-      // For MVP, we trust the UI warning, but the DB constraint is the ultimate source of truth.
+      const reqDetails = await db
+        .select({
+          roomId: bookingRoomLines.roomId,
+          checkIn: bookingRoomLines.checkIn,
+          checkOut: bookingRoomLines.checkOut,
+          roomName: rooms.name,
+        })
+        .from(bookingRequests)
+        .innerJoin(bookingRoomLines, eq(bookingRequests.id, bookingRoomLines.bookingRequestId))
+        .innerJoin(rooms, eq(bookingRoomLines.roomId, rooms.id))
+        .where(eq(bookingRequests.id, parseInt(id)))
+        .limit(1);
+
+      if (reqDetails.length > 0) {
+        const target = reqDetails[0];
+        const overlaps = await db
+          .select({ id: bookingRoomLines.id })
+          .from(bookingRoomLines)
+          .innerJoin(bookingRequests, eq(bookingRoomLines.bookingRequestId, bookingRequests.id))
+          .where(
+            and(
+              eq(bookingRoomLines.roomId, target.roomId),
+              eq(bookingRequests.status, "approved"),
+              lt(bookingRoomLines.checkIn, target.checkOut),
+              gt(bookingRoomLines.checkOut, target.checkIn)
+            )
+          )
+          .limit(1);
+
+        if (overlaps.length > 0) {
+          return NextResponse.json(
+            { error: `Cannot approve: Overlaps with an existing approved booking for ${target.roomName}.` },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     await db
@@ -26,16 +60,18 @@ export async function POST(
       .set({
         status: action === "approve" ? "approved" : "declined",
         approvedAt: new Date(),
-        // approvedById: 1, // TODO: Wire up real user ID from session when RBAC is fully implemented
       })
       .where(eq(bookingRequests.id, parseInt(id)));
 
-    // TODO: Trigger WhatsApp stub/notification to guest here (Phase 3 Changelog)
-    console.log(`\n[NOTIFICATION STUB] Booking #${id} ${action}d. Guest notified.`);
+    console.log(`\n========================================`);
+    console.log(`[NOTIFICATION STUB] Booking #${id} ${action.toUpperCase()}D.`);
+    console.log(`Guest would be notified via WhatsApp Cloud API here.`);
+    console.log(`========================================\n`);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update booking status:", error);
-    return Next0Response.json({ error: "Failed to update booking" }, { status: 500 });
+    // FIXED: Changed Next0Response to NextResponse
+    return NextResponse.json({ error: "Failed to update booking" }, { status: 500 }); 
   }
 }
