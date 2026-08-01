@@ -1,5 +1,5 @@
 import { db } from "./index";
-import { rooms, users } from "./schema"; // Added 'users' import
+import { rooms, users } from "./schema";
 import { sql } from "drizzle-orm";
 
 const AMENITIES = "Smart TV, WiFi, Air-conditioning, Fan/heater backup, Complementary Tea and Coffee, 500ml still water";
@@ -79,7 +79,8 @@ const ROOM_DATA = [
   },
 ];
 
-const USERS_DATA = [
+// FIX: Explicitly type the array to match the Drizzle schema, preventing the generic "string" type error.
+const USERS_DATA: (typeof users.$inferInsert)[] = [
   { name: "Owner", phone: "+27820000001", role: "owner" },
   { name: "Manager", phone: "+27820000002", role: "assistant" }, 
   { name: "General", phone: "+27820000003", role: "staff" },
