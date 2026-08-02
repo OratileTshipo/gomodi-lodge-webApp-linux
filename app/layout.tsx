@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { BranchModalProvider } from "@/components/BranchModalContext";
 import { BranchModal } from "@/components/BranchModal";
 import { FadeInObserver } from "@/components/FadeInObserver";
+import { MotionObserver } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "Gomodi Guest Lodge | Boutique Guest House",
@@ -26,6 +27,7 @@ export default function RootLayout({
           <Footer />
           <BranchModal />
           <FadeInObserver />
+          <MotionObserver />
         </BranchModalProvider>
       </body>
     </html>
