@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { bookingRequests, bookingRoomLines, rooms, addOnSelections } from "@/lib/db/schema";
+import {
+  bookingRequests,
+  bookingRoomLines,
+  rooms,
+  addOnSelections,
+  eventDetails,
+  corporateDetails,
+  proofOfPayments,
+} from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +70,42 @@ export async function GET() {
       addOnsMap[addon.bookingRequestId].push(addon);
     });
 
-    // 4. Enrich with Hard Conflicts, Soft Warnings, and Add-ons
+    // 4. Fetch corporate details for these pending requests
+    let corporateMap: Record<number, any> = {};
+    const corporateData = await db
+      .select()
+      .from(corporateDetails)
+      .where(inArray(corporateDetails.bookingRequestId, requestIds));
+    
+    corporateData.forEach(cd => {
+      corporateMap[cd.bookingRequestId] = cd;
+    });
+
+    // 5. Fetch event details for these pending requests
+    let eventMap: Record<number, any> = {};
+    const eventData = await db
+      .select()
+      .from(eventDetails)
+      .where(inArray(eventDetails.bookingRequestId, requestIds));
+    
+    eventData.forEach(ed => {
+      eventMap[ed.bookingRequestId] = ed;
+    });
+
+    // 6. Fetch proof of payment status for these pending requests
+    let popMap: Record<number, boolean> = {};
+    const popData = await db
+      .select({
+        bookingRequestId: proofOfPayments.bookingRequestId,
+      })
+      .from(proofOfPayments)
+      .where(inArray(proofOfPayments.bookingRequestId, requestIds));
+    
+    popData.forEach(pop => {
+      popMap[pop.bookingRequestId] = true;
+    });
+
+    // 7. Enrich with Hard Conflicts, Soft Warnings, Add-ons, and Category-specific data
     const enrichedRequests = pendingRequests.map((req) => {
       let conflict: string | null = null;
       let pendingWarning: string | null = null;
@@ -99,6 +142,9 @@ export async function GET() {
         conflict,
         pendingWarning,
         addOns: addOnsMap[req.id] || [],
+        corporateDetails: corporateMap[req.id] || null,
+        eventDetails: eventMap[req.id] || null,
+        proofOfPaymentUploaded: popMap[req.id] || false,
       };
     });
 

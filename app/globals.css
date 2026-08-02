@@ -38,14 +38,44 @@
   --spacing-22: 5.5rem;
 }
 
+/* ========== SMOOTH SCROLLING & PERFORMANCE OPTIMIZATION ========== */
+/* Optimized for fluent, fast scrolling on all devices including mobile/3G */
+
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  scroll-padding-top: 80px;
 }
 
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: #faf6f0;
   color: #2a1e18;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  width: 100%;
+  contain: layout style;
+}
+
+/* Hardware acceleration for main scrollable content */
+main {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Sections optimized for smooth scrolling */
+section {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Images lazy-load friendly */
+img {
+  content-visibility: auto;
 }
 
 /* ---------- Shared component classes (merged from every page design) ---------- */
@@ -253,3 +283,317 @@ body {
   transition: opacity 0.7s ease-out, transform 0.7s ease-out;
 }
 .reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+
+/* ========== PERFORMANCE-OPTIMIZED MOTION SYSTEM ========== */
+/* Designed for mobile devices and 3G networks */
+
+/* Motion-ready base state for scroll animations */
+.motion-ready {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.motion-ready.motion-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered delays for lists and grids */
+.motion-ready[data-stagger="1"] { transition-delay: 50ms; }
+.motion-ready[data-stagger="2"] { transition-delay: 100ms; }
+.motion-ready[data-stagger="3"] { transition-delay: 150ms; }
+.motion-ready[data-stagger="4"] { transition-delay: 200ms; }
+.motion-ready[data-stagger="5"] { transition-delay: 250ms; }
+.motion-ready[data-stagger="6"] { transition-delay: 300ms; }
+.motion-ready[data-stagger="7"] { transition-delay: 350ms; }
+.motion-ready[data-stagger="8"] { transition-delay: 400ms; }
+
+/* Fade in from bottom */
+.motion-fade-up {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-fade-up.motion-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Fade in from top */
+.motion-fade-down {
+  opacity: 0;
+  transform: translateY(-32px);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-fade-down.motion-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Fade in from left */
+.motion-fade-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-fade-left.motion-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Fade in from right */
+.motion-fade-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-fade-right.motion-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Scale in effect */
+.motion-scale-in {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-scale-in.motion-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Zoom out effect (for images) */
+.motion-zoom-out {
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-zoom-out.motion-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Blur reveal effect */
+.motion-blur-reveal {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(16px);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.motion-blur-reveal.motion-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+}
+
+/* Kinetic typography word spans */
+.kinetic-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kinetic-word.kinetic-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Page transition wrapper */
+.page-transition {
+  animation: pageEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Parallax container */
+.parallax-container {
+  overflow: hidden;
+}
+
+.parallax-content {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Micro-interaction states */
+.interactive-element {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-element:hover {
+  transform: translateY(-2px);
+}
+
+.interactive-element:active {
+  transform: scale(0.98);
+}
+
+/* Button press effect */
+.btn-press {
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Card hover lift with shadow */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(74, 46, 34, 0.12);
+}
+
+/* Image hover zoom */
+.image-zoom {
+  overflow: hidden;
+}
+.image-zoom img {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.image-zoom:hover img {
+  transform: scale(1.05);
+}
+
+/* Skeleton loading animation */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #e8ddd6 0%,
+    #f5ebdd 50%,
+    #e8ddd6 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Pulse animation for loading states */
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Ripple effect for buttons (CSS-only) */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+.ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Smooth focus ring */
+.focus-ring {
+  outline: none;
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgba(198, 93, 60, 0.3);
+}
+
+/* Reduced motion support - respects user preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .motion-ready,
+  .motion-fade-up,
+  .motion-fade-down,
+  .motion-fade-left,
+  .motion-fade-right,
+  .motion-scale-in,
+  .motion-zoom-out,
+  .motion-blur-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  
+  .kinetic-word {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Mobile-first optimizations */
+@media (max-width: 768px) {
+  /* Reduce animation distances on mobile */
+  .motion-fade-up,
+  .motion-fade-down {
+    transform: translateY(16px);
+  }
+  
+  .motion-fade-left,
+  .motion-fade-right {
+    transform: translateX(16px);
+  }
+  
+  /* Shorter transition durations for snappier feel */
+  .motion-ready,
+  .motion-fade-up,
+  .motion-fade-down,
+  .motion-fade-left,
+  .motion-fade-right {
+    tr

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { submitEventInquiry } from "./actions";
@@ -36,6 +36,13 @@ export default function EventsPage() {
 
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Auto-scroll to top on success
+  useEffect(() => {
+    if (status === "success") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [status]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -195,9 +202,16 @@ export default function EventsPage() {
           </div>
 
           {status === "success" ? (
-            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center">
-              <h3 className="font-semibold text-ink text-xl mb-2">Thank you — we&apos;ve got your inquiry.</h3>
-              <p className="text-stone text-sm">We&apos;ll review your details and come back to you within one business day with availability and a tailored quote.</p>
+            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-scale-in">
+              <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <h3 className="font-semibold text-ink text-xl mb-2">Inquiry received!</h3>
+              <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto">
+                Thank you for considering Gomodi Guest Lodge for your <span className="font-medium text-ink capitalize">{eventType.replace("-", " ")}</span>. 
+                We&apos;ll check venue availability for <span className="font-medium text-ink">{new Date(eventDate).toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" })}</span> and reply within one business day with a tailored package.
+              </p>
+              <Link href="/" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Home</Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10">
