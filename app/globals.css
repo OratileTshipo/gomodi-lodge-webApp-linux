@@ -596,4 +596,4 @@ img {
   .motion-fade-down,
   .motion-fade-left,
   .motion-fade-right {
-    tr
+    transition: all 0.3s ease;
