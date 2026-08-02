@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
@@ -13,20 +12,17 @@ export async function POST(request: Request) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // In production, this would send via WhatsApp Cloud API
-    // For local dev, log to console AND return it for on-screen display
+    // For now, log to console AND return it for on-screen display
     console.log(`\n========================================`);
     console.log(`OTP for ${phone}: ${otp}`);
     console.log(`========================================\n`);
 
-    // Store OTP temporarily (in production, use Redis or database with expiry)
-    // For local dev, we'll just return it (INSECURE - dev only!)
+    // Always return OTP for now (WhatsApp is stubbed)
+    // Once real WhatsApp is integrated, remove devOtp from response
     return NextResponse.json({ 
       success: true, 
-      // RETURN OTP IN DEVELOPMENT MODE ONLY
-      devOtp: process.env.NODE_ENV === "development" ? otp : undefined,
-      message: process.env.NODE_ENV === "development" 
-        ? `OTP: ${otp} (shown for development testing)` 
-        : "OTP sent via WhatsApp"
+      devOtp: otp,
+      message: `OTP: ${otp} (shown for testing - WhatsApp not yet connected)`
     });
   } catch (error) {
     console.error("Request OTP error:", error);

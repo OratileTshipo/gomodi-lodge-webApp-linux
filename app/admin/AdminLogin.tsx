@@ -29,9 +29,15 @@ export function AdminLogin() {
 
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
 
-      // Show OTP on screen in development mode
+           // Always show OTP for now (WhatsApp is stubbed)
       if (data.devOtp) {
         setDevOtp(data.devOtp);
+      } else if (data.message) {
+        // Fallback: extract OTP from message if devOtp not present
+        const otpMatch = data.message.match(/OTP: (\d{6})/);
+        if (otpMatch) {
+          setDevOtp(otpMatch[1]);
+        }
       }
 
       setStep("otp");
