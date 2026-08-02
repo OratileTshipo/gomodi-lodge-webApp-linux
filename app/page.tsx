@@ -27,10 +27,10 @@ export default async function HomePage() {
           <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-leisure self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Now Open · Post-Renovation</span>
             <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-2xl motion-fade-up motion-ready" data-stagger="2">
-              A warm, nine-room lodge — built for the way you actually travel.
+              Welcome to Gomodi Guest Lodge — Mmabatho, Mafikeng.
             </h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
-              Leisure stays, corporate and government bookings, and private events — all in one place, booked directly with us.
+              A warm, nine-room boutique guest house built for the way you actually travel. Leisure stays, corporate and government bookings, and private events — all in one place, booked directly with us.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <BookNowHeroButtonClient />

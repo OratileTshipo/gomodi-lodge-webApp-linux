@@ -32,7 +32,7 @@ export function Nav() {
           </div>
           <div className="leading-tight">
             <div className="font-semibold text-ink text-sm">Gomodi Guest Lodge</div>
-            <div className="text-[11px] text-stone">Boutique Guest House</div>
+            <div className="text-[10px] text-stone tracking-wide">Iphe Lerato</div>
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-ink">

@@ -9,6 +9,26 @@ interface AddOn {
   date: string;
 }
 
+interface CorporateDetails {
+  jobTitle?: string | null;
+  companyName: string;
+  billingEmail?: string | null;
+  poNumber?: string | null;
+  vatNumber?: string | null;
+  clientRef?: string | null;
+  notes?: string | null;
+}
+
+interface EventDetails {
+  eventType: string;
+  expectedGuests: number;
+  eventDate: string;
+  altDate?: string | null;
+  cateringPackage?: string | null;
+  interestedInRooms: boolean;
+  notes?: string | null;
+}
+
 interface BookingRequest {
   id: number;
   category: "leisure" | "corporate" | "event";
@@ -22,8 +42,11 @@ interface BookingRequest {
   specialRequests?: string | null;
   status: "pending" | "approved" | "declined";
   conflict?: string | null;
-  pendingWarning?: string | null; // <--- ADDED HERE
+  pendingWarning?: string | null;
   addOns?: AddOn[];
+  corporateDetails?: CorporateDetails | null;
+  eventDetails?: EventDetails | null;
+  proofOfPaymentUploaded: boolean;
 }
 
 interface User {
@@ -152,7 +175,8 @@ export function AdminDashboard() {
   const getCategoryColor = (cat: string) => {
     if (cat === "leisure") return "bg-orange-100 text-orange-800";
     if (cat === "corporate") return "bg-amber-900/10 text-amber-900";
-    return "bg-yellow-100 text-yellow-800";
+    if (cat === "event") return "bg-yellow-100 text-yellow-800";
+    return "bg-stone-100 text-stone-600";
   };
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
@@ -254,22 +278,99 @@ export function AdminDashboard() {
                   <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${getCategoryColor(req.category)}`}>
                     {req.category}
                   </span>
+                  {/* Proof of Payment Badge */}
+                  {req.category === "leisure" && (
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      req.proofOfPaymentUploaded 
+                        ? "bg-green-100 text-green-800" 
+                        : "bg-stone-100 text-stone-600 border border-stone-200"
+                    }`}>
+                      Proof of Payment: {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
+                    </span>
+                  )}
                   <h3 className="font-semibold text-lg text-stone-900">{req.guestName}</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-stone-100 pt-4 mb-4">
-                  <div>
-                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Dates</span>
-                    <span className="text-stone-900 font-medium">{fmtDate(req.checkIn)} → {fmtDate(req.checkOut)}</span>
-                  </div>
-                  <div>
-                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Room</span>
-                    <span className="text-stone-900 font-medium">{req.roomName}</span>
-                  </div>
-                  <div>
-                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Guests</span>
-                    <span className="text-stone-900 font-medium">{req.guestCount}</span>
-                  </div>
+                  {/* Corporate-specific fields */}
+                  {req.category === "corporate" && req.corporateDetails && (
+                    <>
+                      <div className="md:col-span-2">
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Company</span>
+                        <span className="text-stone-900 font-medium">{req.corporateDetails.companyName}</span>
+                        {req.corporateDetails.jobTitle && (
+                          <span className="block text-stone-600 text-xs">({req.corporateDetails.jobTitle})</span>
+                        )}
+                      </div>
+                      {req.corporateDetails.poNumber && (
+                        <div>
+                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">PO Number</span>
+                          <span className="text-stone-900 font-medium">{req.corporateDetails.poNumber}</span>
+                        </div>
+                      )}
+                      {req.corporateDetails.vatNumber && (
+                        <div>
+                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">VAT Number</span>
+                          <span className="text-stone-900 font-medium">{req.corporateDetails.vatNumber}</span>
+                        </div>
+                      )}
+                      {req.corporateDetails.billingEmail && (
+                        <div>
+                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Billing Email</span>
+                          <span className="text-stone-900 font-medium">{req.corporateDetails.billingEmail}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Event-specific fields */}
+                  {req.category === "event" && req.eventDetails && (
+                    <>
+                      <div>
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Event Type</span>
+                        <span className="text-stone-900 font-medium capitalize">{req.eventDetails.eventType.replace("-", " ")}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Event Date</span>
+                        <span className="text-stone-900 font-medium">{fmtDate(req.eventDetails.eventDate)}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Expected Guests</span>
+                        <span className="text-stone-900 font-medium">{req.eventDetails.expectedGuests}</span>
+                      </div>
+                      {req.eventDetails.cateringPackage && (
+                        <div>
+                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Catering</span>
+                          <span className="text-stone-900 font-medium capitalize">{req.eventDetails.cateringPackage.replace("-", " ")}</span>
+                        </div>
+                      )}
+                      {req.eventDetails.interestedInRooms && (
+                        <div className="md:col-span-2">
+                          <span className="text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-medium">Interested in room bookings for guests</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Standard fields for all categories */}
+                  {req.category === "leisure" && (
+                    <>
+                      <div>
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Dates</span>
+                        <span className="text-stone-900 font-medium">{fmtDate(req.checkIn)} → {fmtDate(req.checkOut)}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Room</span>
+                        <span className="text-stone-900 font-medium">{req.roomName}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Guests</span>
+                        <span className="text-stone-900 font-medium">{req.guestCount}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Contact info for all */}
                   <div>
                     <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Contact</span>
                     <span className="text-stone-900 font-medium">{req.contactPhone}</span>
@@ -301,20 +402,29 @@ export function AdminDashboard() {
                   )}
                 </div>
 
-                <div className="flex gap-3 pt-2 border-t border-stone-100">
-                  <button 
-                    onClick={() => handleBookingAction(req.id, "approve")} 
-                    className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700"
-                  >
-                    Approve
-                  </button>
-                  <button 
-                    onClick={() => handleBookingAction(req.id, "decline")} 
-                    className="flex-1 bg-stone-200 text-stone-700 px-3 py-2 rounded text-sm font-medium hover:bg-stone-300"
-                  >
-                    Decline
-                  </button>
-                </div>
+                {/* RBAC: Staff cannot approve/decline corporate or event requests */}
+                {!isManager && (req.category === "corporate" || req.category === "event") ? (
+                  <div className="pt-2 border-t border-stone-100">
+                    <div className="bg-stone-100 text-stone-600 px-3 py-2 rounded text-sm text-center font-medium opacity-50 pointer-events-none">
+                      Manager Approval Required
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 pt-2 border-t border-stone-100">
+                    <button 
+                      onClick={() => handleBookingAction(req.id, "approve")} 
+                      className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700"
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      onClick={() => handleBookingAction(req.id, "decline")} 
+                      className="flex-1 bg-stone-200 text-stone-700 px-3 py-2 rounded text-sm font-medium hover:bg-stone-300"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
              </div>
            ))}
         </div>

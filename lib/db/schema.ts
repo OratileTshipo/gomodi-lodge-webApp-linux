@@ -126,3 +126,16 @@ export const staffTimeClocks = pgTable("staff_time_clocks", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   notes: text("notes"),
 });
+
+// ---------- Proof of Payments ----------
+export const proofOfPayments = pgTable("proof_of_payments", {
+  id: serial("id").primaryKey(),
+  bookingRequestId: integer("booking_request_id")
+    .notNull()
+    .references(() => bookingRequests.id, { onDelete: "cascade" }),
+  fileUrl: text("file_url").notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});

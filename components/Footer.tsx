@@ -11,13 +11,19 @@ export function Footer() {
             </div>
             <div className="leading-tight">
               <div className="font-semibold text-cream-light text-sm">Gomodi Guest Lodge</div>
-              <div className="text-[11px] text-cream/60">Boutique Guest House</div>
+              <div className="text-[10px] text-cream/60 tracking-wide">Iphe Lerato</div>
             </div>
           </div>
           <p className="text-sm max-w-sm">
             Nine rooms, freshly renovated. Leisure stays, corporate bookings, and
             private events — all booked directly with us.
           </p>
+          <div className="mt-4 text-xs text-cream/70">
+            <p className="font-medium text-cream/80 mb-1">Address</p>
+            <p>Unit 13, Mmabatho</p>
+            <p>Mafikeng, North West Province</p>
+            <p>South Africa</p>
+          </div>
         </div>
         <div>
           <h4 className="text-cream-light font-semibold text-sm mb-3">Explore</h4>

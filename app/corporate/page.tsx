@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
@@ -42,6 +42,13 @@ export default function CorporatePage() {
 
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Auto-scroll to top on success
+  useEffect(() => {
+    if (status === "success") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [status]);
 
   const nights =
     checkIn && checkOut && new Date(checkOut) > new Date(checkIn)
@@ -193,9 +200,16 @@ export default function CorporatePage() {
           </div>
 
           {status === "success" ? (
-            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center">
-              <h3 className="font-semibold text-ink text-xl mb-2">Thank you — your request is with us.</h3>
-              <p className="text-stone text-sm">We&apos;ll review and come back to you within one business day with a formal quotation by email.</p>
+            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-scale-in">
+              <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4 mx-auto">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+              </div>
+              <h3 className="font-semibold text-ink text-xl mb-2">Quote request received.</h3>
+              <p className="text-stone text-sm leading-relaxed max-w-lg mx-auto">
+                Thank you, <span className="font-medium text-ink">{company}</span>. We have received your request for <span className="font-medium text-ink">{totalRooms} room{totalRooms !== 1 ? "s" : ""}</span>. 
+                Our team will review availability and email a formal quotation to <span className="font-medium text-ink">{email || billingEmail}</span> within 24 hours.
+              </p>
+              <Link href="/" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Home</Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10">

@@ -203,15 +203,15 @@ export function BookingForm({
   if (status === "success") {
     return (
       <main className="max-w-2xl mx-auto px-6 py-16 text-center">
-        <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-4 mx-auto">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C65D3C" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+        <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4 mx-auto motion-scale-in">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-orange-100 text-orange-800 mb-3">Request received</span>
         <h1 className="font-semibold text-stone-900 text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
-        <p className="text-stone-600 mt-2 max-w-md mx-auto">
-          We&apos;ll WhatsApp you shortly to confirm availability and lock in your booking — usually within minutes during the day.
+        <p className="text-stone-600 mt-2 max-w-md mx-auto text-base leading-relaxed">
+          Your request for <span className="font-medium text-stone-900">{room?.name}</span> is received. We&apos;ll WhatsApp you shortly to confirm availability and lock in your booking — usually within minutes during the day.
         </p>
-        <Link href="/rooms" className="mt-6 inline-block border border-stone-300 text-stone-700 hover:bg-stone-50 px-5 py-2.5 rounded-lg font-semibold transition-colors">Back to Rooms</Link>
+        <Link href="/rooms" className="mt-6 inline-block border border-stone-300 text-stone-700 hover:bg-stone-50 px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Rooms</Link>
       </main>
     );
   }
