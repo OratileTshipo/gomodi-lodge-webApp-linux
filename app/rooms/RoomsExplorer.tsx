@@ -85,7 +85,7 @@ export function RoomsExplorer({
       </section>
 
       {/* FILTER & SORT BAR */}
-      <section className="max-w-6xl mx-auto px-6 pb-8 sticky top-[73px] z-30 bg-cream-light/95 backdrop-blur py-4 border-y border-walnut/10 fade-in">
+      <section className="max-w-6xl mx-auto px-6 pb-8 sticky top-[73px] z-30 bg-cream-light py-4 border-y border-walnut/10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter rooms">
             <button
