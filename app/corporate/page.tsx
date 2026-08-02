@@ -205,7 +205,7 @@ export default function CorporatePage() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
               </div>
               <h3 className="font-semibold text-ink text-xl mb-2">Quote request received.</h3>
-              <p className="text-stone text-sm leading-relaxed max-w-lg mx-auto">
+              <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto">
                 Thank you, <span className="font-medium text-ink">{company}</span>. We have received your request for <span className="font-medium text-ink">{totalRooms} room{totalRooms !== 1 ? "s" : ""}</span>. 
                 Our team will review availability and email a formal quotation to <span className="font-medium text-ink">{email || billingEmail}</span> within 24 hours.
               </p>

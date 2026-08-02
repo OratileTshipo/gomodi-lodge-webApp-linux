@@ -179,6 +179,13 @@ export function AdminDashboard() {
     return "bg-stone-100 text-stone-600";
   };
 
+  const getCategoryLabel = (cat: string) => {
+    if (cat === "leisure") return "LEISURE";
+    if (cat === "corporate") return "CORPORATE";
+    if (cat === "event") return "EVENT";
+    return cat.toUpperCase();
+  };
+
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
 
   if (!user || loading) {
@@ -276,18 +283,16 @@ export function AdminDashboard() {
                 
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${getCategoryColor(req.category)}`}>
-                    {req.category}
+                    {getCategoryLabel(req.category)}
                   </span>
-                  {/* Proof of Payment Badge */}
-                  {req.category === "leisure" && (
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      req.proofOfPaymentUploaded 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-stone-100 text-stone-600 border border-stone-200"
-                    }`}>
-                      Proof of Payment: {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
-                    </span>
-                  )}
+                  {/* Proof of Payment Badge - Phase 2b Style Note: Always show with text label */}
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    req.proofOfPaymentUploaded 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-stone-100 text-stone-600 border border-stone-200"
+                  }`}>
+                    Proof of Payment: {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
+                  </span>
                   <h3 className="font-semibold text-lg text-stone-900">{req.guestName}</h3>
                 </div>
 

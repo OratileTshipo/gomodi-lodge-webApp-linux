@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { bookingRequests, bookingRoomLines, addOnSelections, rooms } from "@/lib/db/schema";
+import { bookingRequests, bookingRoomLines, addOnSelections, rooms, proofOfPayments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { isRoomAvailable } from "@/lib/db/availability";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
@@ -17,6 +17,7 @@ export type LeisureBookingInput = {
   contactPhone: string;
   contactEmail?: string;
   specialRequests?: string; // <--- ADDED HERE
+  proofOfPaymentUrl?: string | null;
 };
 
 export type LeisureBookingResult =
@@ -119,6 +120,15 @@ export async function submitLeisureBooking(
       checkOut: input.checkOut,
       guestCount: input.guestCount,
     });
+
+    // Store proof of payment if provided
+    if (input.proofOfPaymentUrl) {
+      await db.insert(proofOfPayments).values({
+        bookingRequestId: request.id,
+        fileUrl: input.proofOfPaymentUrl,
+        uploadedAt: new Date(),
+      });
+    }
 
     return { ok: true };
   } catch (err) {
