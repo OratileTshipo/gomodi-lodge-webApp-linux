@@ -68,8 +68,8 @@ export function RoomsExplorer({
         </ol>
       </nav>
 
-      {/* HERO */}
-      <section className="max-w-6xl mx-auto px-6 pb-12 fade-in">
+      {/* HERO - Removed fade-in to ensure instant render */}
+      <section className="max-w-6xl mx-auto px-6 pb-12">
         <span className="pill pill-leisure">Nine Rooms</span>
         <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl">Every room, freshly renovated. One standard of comfort.</h1>
         <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed">
@@ -84,7 +84,7 @@ export function RoomsExplorer({
         </div>
       </section>
 
-      {/* FILTER & SORT BAR */}
+      {/* FILTER & SORT BAR - Removed backdrop-blur and fade-in for instant render */}
       <section className="max-w-6xl mx-auto px-6 pb-8 sticky top-[73px] z-30 bg-cream-light py-4 border-y border-walnut/10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter rooms">
