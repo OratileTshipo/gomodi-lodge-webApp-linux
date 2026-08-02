@@ -79,6 +79,7 @@ const ROOM_DATA = [
   },
 ];
 
+// FIX: Explicitly type the array to match the Drizzle schema, preventing the generic "string" type error.
 const USERS_DATA: (typeof users.$inferInsert)[] = [
   { name: "Owner", phone: "+27820000001", role: "owner" },
   { name: "Manager", phone: "+27820000002", role: "assistant" }, 
@@ -90,6 +91,7 @@ const USERS_DATA: (typeof users.$inferInsert)[] = [
 
 async function main() {
   console.log("Truncating tables...");
+  // Reset tables so re-running this script always reflects the latest data
   await db.execute(sql`TRUNCATE TABLE booking_requests RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE rooms RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
