@@ -5,14 +5,16 @@ export function Footer() {
     <footer className="bg-ink text-cream/70 py-12">
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="md:col-span-2">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-3">
             <div className="w-9 h-9 rounded-full bg-terracotta flex items-center justify-center text-cream-light font-bold text-sm">
               G
             </div>
             <div className="leading-tight">
               <div className="font-semibold text-cream-light text-sm">Gomodi Guest Lodge</div>
-              <div className="text-[10px] text-cream/60 tracking-wide">Iphe Lerato</div>
             </div>
+          </div>
+          <div className="text-xl md:text-2xl italic font-semibold text-gold-light tracking-wide mb-4">
+            Iphe Lerato
           </div>
           <p className="text-sm max-w-sm">
             Nine rooms, freshly renovated. Leisure stays, corporate bookings, and

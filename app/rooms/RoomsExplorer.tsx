@@ -68,14 +68,14 @@ export function RoomsExplorer({
         </ol>
       </nav>
 
-      {/* HERO - lightweight staggered entrance (opacity/transform only, keeps render instant) */}
+      {/* HERO - mount-safe staggered entrance (pure CSS, always visible) */}
       <section className="max-w-6xl mx-auto px-6 pb-12">
-        <span className="pill pill-leisure motion-fade-up motion-ready" data-stagger="1">Nine Rooms</span>
-        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Every room, freshly renovated. One standard of comfort.</h1>
-        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="3">
+        <span className="pill pill-leisure motion-pop" data-stagger="1">Nine Rooms</span>
+        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="2">Every room, freshly renovated. One standard of comfort.</h1>
+        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-pop" data-stagger="3">
           Warm terracotta walls, dark walnut wood, and cream textiles throughout. Every room includes Smart TV, WiFi, air conditioning with fan and heater backup, and your choice of shower or bath. One flexible room can be set as two singles or one double — just tell us what you need.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3 motion-fade-up motion-ready" data-stagger="4">
+        <div className="mt-8 flex flex-wrap gap-3 motion-pop" data-stagger="4">
           <div className="badge">✓ Smart TV in every room</div>
           <div className="badge">✓ Free WiFi</div>
           <div className="badge">✓ A/C + fan/heater backup</div>

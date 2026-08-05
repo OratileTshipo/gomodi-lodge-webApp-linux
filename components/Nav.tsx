@@ -24,7 +24,7 @@ export function Nav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-cream-light/90 backdrop-blur border-b border-walnut/10 will-change-transform">
+    <header className="fixed top-0 inset-x-0 z-40 bg-cream-light/90 backdrop-blur border-b border-walnut/10 will-change-transform">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 interactive-element">
           <div className="w-9 h-9 rounded-full bg-terracotta flex items-center justify-center text-cream-light font-bold text-sm">
@@ -32,7 +32,7 @@ export function Nav() {
           </div>
           <div className="leading-tight">
             <div className="font-semibold text-ink text-sm">Gomodi Guest Lodge</div>
-            <div className="text-[10px] text-stone tracking-wide">Iphe Lerato</div>
+            <div className="text-xs font-medium italic text-terracotta-dark tracking-wide">Iphe Lerato</div>
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-ink">

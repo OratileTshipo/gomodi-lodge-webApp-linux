@@ -61,7 +61,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-cream-light text-ink">
         <BranchModalProvider>
           <Nav />
-          <div className="flex-1 flex flex-col">{children}</div>
+          {/* pt-[73px] keeps all page heroes below the fixed site header on every viewport */}
+          <div className="flex-1 flex flex-col pt-[73px]">{children}</div>
           <Footer />
           <BranchModal />
           <FadeInObserver />
