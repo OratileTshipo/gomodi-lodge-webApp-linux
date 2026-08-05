@@ -10,14 +10,23 @@ export async function POST(request: Request) {
     if (!userId || !action) {
       return NextResponse.json({ error: "Missing userId or action" }, { status: 400 });
     }
+    if (action !== "clock_in" && action !== "clock_out") {
+      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
 
-    await db.insert(staffTimeClocks).values({
-      userId,
-      action,
-      notes: notes || null,
-    });
+    // Log the exact server-side clock-in/out time explicitly (rather than only
+    // relying on the DB default) and return the stored row so the UI can show it.
+    const [record] = await db
+      .insert(staffTimeClocks)
+      .values({
+        userId,
+        action,
+        notes: notes || null,
+        timestamp: new Date(),
+      })
+      .returning();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, record });
   } catch (error) {
     console.error("Time clock error:", error);
     return NextResponse.json({ error: "Failed to log time" }, { status: 500 });
@@ -33,7 +42,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    // Get the most recent clock action to determine current status
+    // Most recent clock entry determines current status AND shows when it happened
     const lastEntry = await db
       .select()
       .from(staffTimeClocks)
@@ -41,7 +50,10 @@ export async function GET(request: Request) {
       .orderBy(desc(staffTimeClocks.timestamp))
       .limit(1);
 
-    return NextResponse.json({ lastAction: lastEntry[0]?.action || null });
+    return NextResponse.json({
+      lastAction: lastEntry[0]?.action || null,
+      lastTimestamp: lastEntry[0]?.timestamp || null,
+    });
   } catch (error) {
     console.error("Time clock fetch error:", error);
     return NextResponse.json({ error: "Failed to fetch status" }, { status: 500 });

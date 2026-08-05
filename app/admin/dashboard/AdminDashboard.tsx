@@ -61,6 +61,7 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [clockStatus, setClockStatus] = useState<"clock_in" | "clock_out" | null>(null);
+  const [clockTimestamp, setClockTimestamp] = useState<string | null>(null);
   const [clockLoading, setClockLoading] = useState(false);
   const router = useRouter();
 
@@ -115,6 +116,7 @@ export function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         setClockStatus(data.lastAction);
+        setClockTimestamp(data.lastTimestamp ?? null);
       }
     } catch (err) {
       console.error("Failed to load clock status", err);
@@ -133,8 +135,11 @@ export function AdminDashboard() {
         body: JSON.stringify({ userId: user.userId, action: newAction }),
       });
 
-      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
       setClockStatus(newAction);
+      // Show the exact logged timestamp returned by the server
+      setClockTimestamp(data.record?.timestamp ?? new Date().toISOString());
     } catch (err) {
       alert("Failed to log time. Please try again.");
     } finally {
@@ -189,6 +194,15 @@ export function AdminDashboard() {
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
 
+  const fmtClockTime = (iso: string) =>
+    new Date(iso).toLocaleString("en-ZA", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
   if (!user || loading) {
     return (
       <div className="min-h-screen bg-stone-50 p-6">
@@ -219,17 +233,24 @@ export function AdminDashboard() {
             <button onClick={handleLogout} className="text-red-600 text-sm font-medium">Logout</button>
             
             {/* TIME CLOCK */}
-            <button
-              onClick={handleClockAction}
-              disabled={clockLoading}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 ${clockStatus === "clock_in" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              {clockLoading ? "Logging..." : (clockStatus === "clock_in" ? "Clock Out" : "Clock In")}
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={handleClockAction}
+                disabled={clockLoading}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 ${clockStatus === "clock_in" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {clockLoading ? "Logging..." : (clockStatus === "clock_in" ? "Clock Out" : "Clock In")}
+              </button>
+              {clockTimestamp && clockStatus && (
+                <span className="text-[11px] text-stone-500">
+                  {clockStatus === "clock_in" ? "Clocked in" : "Clocked out"} · {fmtClockTime(clockTimestamp)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

@@ -123,7 +123,9 @@ export const staffTimeClocks = pgTable("staff_time_clocks", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   action: clockActionEnum("action").notNull(),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  // withTimezone -> timestamptz, so the clock-in/out time is an absolute
+  // instant and displays correctly regardless of server/DB/browser timezone
+  timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
   notes: text("notes"),
 });
 
