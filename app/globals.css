@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #2a1e18;
+
+  /* Fixed site-header height; HeaderSpacer keeps it in sync with the real
+     rendered header. Used for page offset + sticky bars + anchor scrolling. */
+  --header-h: 73px;
 }
 
 @theme inline {
@@ -44,7 +48,7 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
-  scroll-padding-top: 80px;
+  scroll-padding-top: calc(var(--header-h) + 8px);
 }
 
 body {

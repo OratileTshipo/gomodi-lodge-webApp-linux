@@ -18,7 +18,11 @@ const BREAKFAST_PRICE = 175;
 const DINNER_PRICE = 300;
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-ZA", {
+  // Parse "YYYY-MM-DD" into LOCAL date components — new Date(iso) parses as UTC
+  // midnight, which shows the previous day for negative-UTC timezones.
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, (m || 1) - 1, d || 1);
+  return date.toLocaleDateString("en-ZA", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -27,7 +31,13 @@ function fmtDate(iso: string) {
 }
 
 function toISO(d: Date) {
-  return d.toISOString().slice(0, 10);
+  // Local calendar date, NOT UTC. toISOString() converts local midnight to
+  // UTC and shifts a day back for timezones east of UTC (e.g. South Africa
+  // UTC+2) — which silently moved every picked date a day earlier.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function BookingForm({
@@ -74,11 +84,14 @@ export function BookingForm({
   }, [status]);
 
   useEffect(() => {
-    if (checkIn && checkOut) {
-      getUnavailableRoomIds(checkIn, checkOut).then(setUnavailableIds);
-    } else {
-      setUnavailableIds([]);
-    }
+    if (!checkIn || !checkOut) return;
+    let cancelled = false;
+    getUnavailableRoomIds(checkIn, checkOut).then((ids) => {
+      if (!cancelled) setUnavailableIds(ids);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [checkIn, checkOut]);
 
   const nights =
@@ -321,7 +334,9 @@ export function BookingForm({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {rooms.map((r) => {
-                  const unavailable = unavailableIds.includes(r.id);
+                  // Only apply availability when both dates are chosen; otherwise
+                  // a stale fetch result could wrongly grey out rooms.
+                  const unavailable = checkIn && checkOut ? unavailableIds.includes(r.id) : false;
                   const selected = roomId === r.id;
                   return (
                     <div
@@ -515,7 +530,7 @@ export function BookingForm({
       </section>
 
       {/* FIX 3: EXPLORE OTHER ROOMS (Conversion Optimisation & Retention) */}
-      {roomId && rooms.filter(r => r.id !== roomId && !unavailableIds.includes(r.id)).length > 0 && (
+      {roomId && rooms.filter(r => r.id !== roomId && (checkIn && checkOut ? !unavailableIds.includes(r.id) : true)).length > 0 && (
         <section className="max-w-6xl mx-auto px-6 pb-20 border-t border-walnut/10 pt-12 mt-8 motion-pop">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold text-ink">Not quite the right fit?</h2>
@@ -525,7 +540,7 @@ export function BookingForm({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rooms
-              .filter(r => r.id !== roomId && !unavailableIds.includes(r.id))
+              .filter(r => r.id !== roomId && (checkIn && checkOut ? !unavailableIds.includes(r.id) : true))
               .map((r, i) => (
                 <div 
                   key={r.id}

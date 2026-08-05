@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       fileSize: file.size,
       mimeType: file.type,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: "Upload failed. Please try again." },

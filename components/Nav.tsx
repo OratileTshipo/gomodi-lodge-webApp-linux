@@ -25,12 +25,12 @@ export function Nav() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 bg-cream-light/90 backdrop-blur border-b border-walnut/10 will-change-transform">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-2 md:gap-3">
         <Link href="/" className="flex items-center gap-2 interactive-element">
           <div className="w-9 h-9 rounded-full bg-terracotta flex items-center justify-center text-cream-light font-bold text-sm">
             G
           </div>
-          <div className="leading-tight">
+          <div className="leading-tight whitespace-nowrap">
             <div className="font-semibold text-ink text-sm">Gomodi Guest Lodge</div>
             <div className="text-xs font-medium italic text-terracotta-dark tracking-wide">Iphe Lerato</div>
           </div>
@@ -43,7 +43,7 @@ export function Nav() {
         <div className="flex items-center gap-3">
           <button 
             onClick={openBranch} 
-            className="btn-primary px-4 py-2 rounded-lg text-sm font-semibold btn-press ripple"
+            className="btn-primary px-4 py-2 rounded-lg text-sm font-semibold btn-press ripple shrink-0 whitespace-nowrap"
           >
             Book Now
           </button>

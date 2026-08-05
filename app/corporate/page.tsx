@@ -104,7 +104,7 @@ export default function CorporatePage() {
 
       {/* HERO */}
       <section className="relative">
-        <div className="relative h-[55vh] min-h-[400px] max-h-[560px] overflow-hidden parallax-container">
+        <div className="relative h-[55vh] min-h-[520px] max-h-[560px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
             <PhotoPlaceholder label="Corporate guest room" tone="walnut" className="absolute inset-0" />
           </div>

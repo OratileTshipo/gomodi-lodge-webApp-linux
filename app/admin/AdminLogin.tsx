@@ -41,8 +41,8 @@ export function AdminLogin() {
       }
 
       setStep("otp");
-    } catch (err: any) {
-      setError(err.message || "Failed to send OTP. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -63,8 +63,8 @@ export function AdminLogin() {
       if (!res.ok) throw new Error("Invalid OTP");
 
       router.push("/admin/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Invalid OTP. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid OTP. Please try again.");
     } finally {
       setLoading(false);
     }

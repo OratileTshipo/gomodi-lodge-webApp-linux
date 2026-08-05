@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { BranchModalProvider } from "@/components/BranchModalContext";
 import { BranchModal } from "@/components/BranchModal";
 import { FadeInObserver } from "@/components/FadeInObserver";
+import { HeaderSpacer } from "@/components/HeaderSpacer";
 import { MotionObserver } from "@/lib/motion";
 
 export const metadata: Metadata = {
@@ -61,10 +62,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-cream-light text-ink">
         <BranchModalProvider>
           <Nav />
-          {/* pt-[73px] keeps all page heroes below the fixed site header on every viewport */}
-          <div className="flex-1 flex flex-col pt-[73px]">{children}</div>
+          {/* pt-[var(--header-h)] keeps all page heroes exactly below the fixed site header (HeaderSpacer keeps the variable in sync) */}
+          <div className="flex-1 flex flex-col pt-[var(--header-h)]">{children}</div>
           <Footer />
           <BranchModal />
+          <HeaderSpacer />
           <FadeInObserver />
           <MotionObserver />
         </BranchModalProvider>

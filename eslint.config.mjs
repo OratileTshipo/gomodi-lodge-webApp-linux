@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Dev-only tooling (not shipped or part of the app bundle):
+    ".agents/**",
+    "scripts/**",
   ]),
 ]);
 

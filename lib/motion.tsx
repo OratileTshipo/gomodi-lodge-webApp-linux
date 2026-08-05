@@ -177,7 +177,7 @@ export function useMicroInteraction() {
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const handlePointerDown = (e: PointerEvent) => {
+    const handlePointerDown = () => {
       if (prefersReducedMotion) return;
       
       // Trigger subtle scale on touch/click
@@ -223,7 +223,7 @@ export function useMicroInteraction() {
  * Staggered text reveal with GPU-accelerated transforms.
  */
 export function useKineticText(options?: { stagger?: number; duration?: number }) {
-  const { stagger = 0.03, duration = 0.5 } = options || {};
+  const { stagger = 0.03 } = options || {};
   const ref = useRef<HTMLHeadingElement | null>(null);
 
   useEffect(() => {
@@ -262,8 +262,6 @@ export function MotionObserver() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {

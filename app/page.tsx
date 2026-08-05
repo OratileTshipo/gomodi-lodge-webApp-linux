@@ -19,7 +19,7 @@ export default async function HomePage() {
     <main className="page-transition">
       {/* HERO */}
       <section className="relative">
-        <div className="relative h-[70vh] min-h-[480px] max-h-[720px] overflow-hidden parallax-container">
+        <div className="relative h-[70vh] min-h-[520px] max-h-[720px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
             <PhotoPlaceholder label="Gomodi Guest Lodge exterior at golden hour" className="absolute inset-0" />
           </div>

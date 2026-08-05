@@ -19,7 +19,6 @@ export async function notifyOwnerOfNewRequest(details: {
   checkOut: string;
   guestCount: number;
 }): Promise<void> {
-  // eslint-disable-next-line no-console
   console.log("[WhatsApp notification — STUBBED, not yet sent]", {
     to: "OWNER_WHATSAPP_NUMBER",
     template: "new_leisure_request",

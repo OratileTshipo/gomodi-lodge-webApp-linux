@@ -67,61 +67,55 @@ export function AdminDashboard() {
 
   const isManager = user?.role === "owner" || user?.role === "assistant";
 
+  // Mount-time data fetches live directly in the effects as async IIFEs so
+  // setState only ever runs in async continuations (react-hooks lint rule).
+  // `router` is stable so the session check still runs exactly once on mount.
   useEffect(() => {
-    checkSession();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      loadRequests();
-      loadClockStatus();
-    }
-  }, [user]);
-
-  async function checkSession() {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-      } else {
+    void (async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          setUser(await res.json());
+        } else {
+          router.push("/admin");
+        }
+      } catch {
         router.push("/admin");
       }
-    } catch {
-      router.push("/admin");
-    }
-  }
+    })();
+  }, [router]);
 
-  async function loadRequests() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/requests");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      
-      // RBAC Filter: Staff only see Leisure. Managers see all.
-      const filtered = !isManager ? data.filter((r: BookingRequest) => r.category === "leisure") : data;
-      setRequests(filtered);
-    } catch (err) {
-      console.error("Failed to load requests:", err);
-    } finally {
-      setTimeout(() => setLoading(false), 500);
-    }
-  }
-
-  async function loadClockStatus() {
+  useEffect(() => {
     if (!user) return;
-    try {
-      const res = await fetch(`/api/admin/time-clock?userId=${user.userId}`);
-      if (res.ok) {
+    const manager = user.role === "owner" || user.role === "assistant";
+    void (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/admin/requests");
+        if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        setClockStatus(data.lastAction);
-        setClockTimestamp(data.lastTimestamp ?? null);
+        // RBAC Filter: Staff only see Leisure. Managers see all.
+        const filtered = !manager ? data.filter((r: BookingRequest) => r.category === "leisure") : data;
+        setRequests(filtered);
+      } catch (err) {
+        console.error("Failed to load requests:", err);
+      } finally {
+        setTimeout(() => setLoading(false), 500);
       }
-    } catch (err) {
-      console.error("Failed to load clock status", err);
-    }
-  }
+    })();
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/time-clock?userId=${user.userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setClockStatus(data.lastAction);
+          setClockTimestamp(data.lastTimestamp ?? null);
+        }
+      } catch (err) {
+        console.error("Failed to load clock status", err);
+      }
+    })();
+  }, [user]);
 
   async function handleClockAction() {
     if (!user) return;
@@ -140,7 +134,7 @@ export function AdminDashboard() {
       setClockStatus(newAction);
       // Show the exact logged timestamp returned by the server
       setClockTimestamp(data.record?.timestamp ?? new Date().toISOString());
-    } catch (err) {
+    } catch {
       alert("Failed to log time. Please try again.");
     } finally {
       setClockLoading(false);
@@ -168,8 +162,8 @@ export function AdminDashboard() {
       }
       
       setRequests((prev) => prev.filter((r) => r.id !== id));
-    } catch (err: any) {
-      alert(`Failed to ${action} booking: ${err.message}`);
+    } catch (err) {
+      alert(`Failed to ${action} booking: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }
 
@@ -276,7 +270,7 @@ export function AdminDashboard() {
         <div className="space-y-4">
            {requests.length === 0 && (
              <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-12 text-center">
-               <p className="text-stone-600 text-lg">No pending requests — you're all caught up.</p>
+               <p className="text-stone-600 text-lg">No pending requests — you&apos;re all caught up.</p>
              </div>
            )}
            
@@ -423,7 +417,7 @@ export function AdminDashboard() {
                     <div className="md:col-span-2">
                       <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Special Requests</span>
                       <p className="text-stone-700 italic bg-stone-50 p-2 rounded border-l-2 border-orange-500">
-                        "{req.specialRequests}"
+                        &ldquo;{req.specialRequests}&rdquo;
                       </p>
                     </div>
                   )}

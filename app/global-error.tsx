@@ -1,7 +1,9 @@
 "use client";
 
 export default function GlobalError({
-  error,
+  // `error` is part of the required Next.js global-error interface; we don't
+  // surface its message to guests, but the prop must stay in the signature.
+  error: _error, // eslint-disable-line @typescript-eslint/no-unused-vars
   reset,
 }: {
   error: Error & { digest?: string };
