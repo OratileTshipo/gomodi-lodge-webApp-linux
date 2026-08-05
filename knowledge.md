@@ -10,7 +10,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - Lint: `npm run lint` — ~20 pre-existing errors
 - DB schema: `npx drizzle-kit push`
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
-- Test: no automated tests; manual script `npx tsx scripts/test-booking.ts`
+- Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` and `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic)
 
 ## Key code locations
 
@@ -23,8 +23,8 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - `app/api/` — auth (`request-otp`, `verify-otp`, `me`), `admin/requests`, `admin/time-clock`, `upload` (Vercel Blob)
 - `lib/db/schema.ts` — all tables; `lib/db/availability.ts` — overlap check; `lib/db/seed.ts`
 - `lib/notifications.ts` — WhatsApp notifier (**stubbed**: console.log only)
-- `lib/motion.ts` — custom scroll-reveal/parallax hooks (no animation library)
-- `components/` — `Nav`, `Footer`, `BranchModal` ("how are you visiting?" chooser), `PhotoPlaceholder` (colored div, no real photos), `FadeInObserver`
+- `lib/motion.tsx` — custom scroll-reveal/parallax hooks + `MotionObserver` (adds `motion-visible` to `.motion-ready` elements; mounted in layout). No animation library.
+- `components/` — `Nav` (fixed header, ~73px), `Footer` (prominent "Iphe Lerato" motto), `BranchModal` ("how are you visiting?" chooser), `PhotoPlaceholder` (colored div, no real photos), `FadeInObserver`
 
 ## Conventions
 
@@ -32,19 +32,28 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - Public pages use `export const dynamic = "force-dynamic"` (live reads, no caching).
 - Booking requests start `pending`; only **approved** bookings lock a room. Availability blocks overlap with approved bookings only; the admin dashboard flags conflicts (red = approved overlap, amber = pending overlap) and the approve endpoint re-checks server-side (409).
 - Meal prices hardcoded: breakfast R175, dinner R300 pp/night (actions + forms).
-- Brand palette (globals.css `@theme`): terracotta / walnut / cream / gold / ink. Reusable classes: `.pill-*`, `.btn-primary`, `.card-shadow`, `.motion-ready` + `motion-visible` for scroll reveal.
-- Booking form + admin UI use a legacy **orange** palette — inconsistent with the marketing pages; don't treat it as the design source of truth.
+- Brand palette (globals.css `@theme`): terracotta / walnut / cream / gold / ink. Reusable classes: `.pill-*`, `.btn-primary`, `.card-shadow`.
+- **Motion system** (replicated across all public pages): `.page-transition` on `<main>`; hero zoom (`motion-zoom-out motion-ready`) + staggered `motion-fade-up motion-ready` hero text; cards `motion-scale-in motion-ready` with `data-stagger="1..8"`; split sections `motion-fade-left/right`. `MotionObserver` (in layout) reveals `.motion-ready` on scroll. Elements that mount **after** load (success screens, filtered grids) must use **`.motion-pop`** — a mount-safe CSS animation (no observer) — never bare `motion-scale-in`/`motion-ready` (they stay `opacity: 0`).
+- **Header**: `Nav` is a **fixed** top bar (~73px). `app/layout.tsx` wraps page content in `pt-[73px]` so every hero starts below it. Rooms filter bar sticks at `top-[73px]` to match.
+- Admin UI still uses a legacy **orange** palette; booking form was unified to brand colors (Aug 2026).
 
 ## Gotchas
 
-- **Build blockers on main (all 3 verified, must fix before any deploy):**
-  1. `app/globals.css` ends inside `@media (max-width: 768px)` with the `.motion-ready, .motion-fade-*` rule block **never closed** — missing `}` `}`. PostCSS parse error.
-  2. `lib/motion.ts` contains JSX (`PageTransition` returns `<div>`) but has a `.ts` extension → must be renamed to `.tsx`.
-  3. `app/book/actions.ts` — `proofOfPayments` insert omits the required `fileName` column → TypeScript error.
-- This machine (Node v20.20.2) also fails `next build` on **any** Next 16.2.12 app while prerendering `/_global-error` (`Cannot read properties of null (reading 'useContext')`) — framework/environment issue (vercel/next.js #84994). Not necessarily reproduced on Vercel. Custom `app/global-error.tsx` + `app/not-found.tsx` mitigate locally.
+- The 3 original build blockers (unclosed `globals.css` media block, `lib/motion.ts` → `.tsx` rename, missing `fileName` in POP insert) are **fixed on main** (commits `8690d0b`+).
+- This machine (Node v20.20.2) still fails `next build` on **any** Next 16.2.12 app while prerendering `/_global-error` (`Cannot read properties of null (reading 'useContext')`) — framework/environment issue (vercel/next.js #84994). Not reproduced on Vercel (deploys go green). Custom `app/global-error.tsx` + `app/not-found.tsx` mitigate locally.
 - Auth is dev-grade: `request-otp` returns the OTP in the response; `verify-otp` accepts any 6 digits; session cookie is unsigned JSON (8h, httpOnly).
 - **Admin API routes have no server-side session checks** — only the dashboard UI calls `/api/auth/me`. Don't rely on the API being private.
 - Booking form's POP file-drop only records a filename; it never calls `/api/upload`, so no proof of payment is actually stored yet.
 - `tsconfig.tsbuildinfo` is committed to git — avoid committing incidental changes to it.
 - Backup tag `backup/main-2026-08-05` (local + origin) marks the pre-fix state of main at commit `30ae2b9`. Restore: `git reset --hard backup/main-2026-08-05`.
 - Branch `high-performance-motion-design-b72b3` is **behind** main (missing main's globals.css fix; package-lock.json deleted). Its feature work is already merged into main.
+
+## Browser testing (this machine)
+
+No system-level browsers (no sudo), but all three are installed user-space and on PATH via symlinks in `~/.nvm/versions/node/v20.20.2/bin`:
+
+- `google-chrome` / `chromium` → Playwright Chromium 149 (`~/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome`) — works with the browser-use agent (CDP).
+- `firefox` → Playwright Firefox 151 (`~/.cache/ms-playwright/firefox-1532/firefox/firefox`) — headless renders; **`--dump-dom` unsupported**, use `--screenshot` to verify rendering.
+- `msedge` / `microsoft-edge` → Edge 151 extracted from `.deb` (`~/edge-pkg/opt/microsoft/msedge/msedge`) — CDP, works headless.
+- Headless invocation: Chrome/Edge need `--headless --no-sandbox --disable-gpu`; this is a container without a display, so `--headless` (or `MOZ_HEADLESS=1` for Firefox) is required.
+- The symlinks are tied to the current nvm Node version dir — re-create them if Node is upgraded. Raw binaries live in `~/.cache/ms-playwright/` and `~/edge-pkg/` (survive node changes).
