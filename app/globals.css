@@ -370,6 +370,36 @@ img {
   transform: scale(1);
 }
 
+/* Mount-safe entrance — plays on mount via CSS animation, no observer needed.
+   Use for elements that appear AFTER page load (success screens, dynamic grids)
+   where the scroll observer never gets a chance to watch them.
+   Uses `backwards` fill (not forwards): the from-state applies during stagger
+   delays, but once finished the element returns to normal styles, so hover
+   transforms (e.g. card lifts) keep working. */
+.motion-pop {
+  animation: motionPop 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes motionPop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.motion-pop[data-stagger="1"] { animation-delay: 50ms; }
+.motion-pop[data-stagger="2"] { animation-delay: 100ms; }
+.motion-pop[data-stagger="3"] { animation-delay: 150ms; }
+.motion-pop[data-stagger="4"] { animation-delay: 200ms; }
+.motion-pop[data-stagger="5"] { animation-delay: 250ms; }
+.motion-pop[data-stagger="6"] { animation-delay: 300ms; }
+.motion-pop[data-stagger="7"] { animation-delay: 350ms; }
+.motion-pop[data-stagger="8"] { animation-delay: 400ms; }
+
 /* Zoom out effect (for images) */
 .motion-zoom-out {
   opacity: 0;

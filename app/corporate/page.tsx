@@ -93,7 +93,7 @@ export default function CorporatePage() {
   const fmt = (n: number) => "R" + n.toLocaleString("en-ZA");
 
   return (
-    <main>
+    <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
           <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
@@ -104,18 +104,20 @@ export default function CorporatePage() {
 
       {/* HERO */}
       <section className="relative">
-        <div className="relative h-[55vh] min-h-[400px] max-h-[560px] overflow-hidden">
-          <PhotoPlaceholder label="Corporate guest room" tone="walnut" className="absolute inset-0" />
+        <div className="relative h-[55vh] min-h-[400px] max-h-[560px] overflow-hidden parallax-container">
+          <div className="absolute inset-0 motion-zoom-out motion-ready">
+            <PhotoPlaceholder label="Corporate guest room" tone="walnut" className="absolute inset-0" />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/50 to-ink/80" />
           <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
-            <span className="pill pill-corporate self-start mb-4">Corporate &amp; Government</span>
-            <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl">
+            <span className="pill pill-corporate self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Corporate &amp; Government</span>
+            <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">
               Accommodation that respects your procurement process.
             </h1>
-            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg">
+            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               Contractor deployments, government rotations, and multi-room group stays — one form captures everything, and we issue the formal quotations, invoices, and consolidated statements your finance team needs.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <a href="#quote-form" className="btn-primary px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white">
                 Request a Quote
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
@@ -128,7 +130,7 @@ export default function CorporatePage() {
       {/* WHO WE SERVE */}
       <section className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto fade-in">
+          <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-corporate">Who We Serve</span>
             <h2 className="text-ink font-semibold text-2xl md:text-3xl mt-4">Built for the clients we already host.</h2>
           </div>
@@ -137,8 +139,8 @@ export default function CorporatePage() {
               { title: "Contractor Deployments", text: "Week-long or month-long stays for project teams. Multi-room bookings, consolidated invoicing, and reliable WiFi.", items: ["Multi-room, multi-night in one quote", "Weekly/monthly rates on request", "Secure on-site parking"] },
               { title: "Government Officials", text: "Rotations, inspections, and official visits — with formal quotations, PO references, and VAT-compliant invoices.", items: ["PO numbers captured upfront", "Formal quotation before commitment", "VAT-compliant invoicing"] },
               { title: "Group & Team Stays", text: "Training groups, audit teams, or project kick-offs — book multiple rooms in a single submission.", items: ["Up to 9 rooms in one booking", "Flexible twin/double configuration", "Group rates on request"] },
-            ].map((s) => (
-              <article key={s.title} className="segment-card bg-white rounded-2xl p-6 border border-walnut/10 card-shadow">
+            ].map((s, i) => (
+              <article key={s.title} className="segment-card bg-white rounded-2xl p-6 border border-walnut/10 card-shadow motion-scale-in motion-ready interactive-element card-lift" data-stagger={i + 1}>
                 <div className="doc-icon bg-walnut-tint text-walnut">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM9 5h6v2H9z"/></svg>
                 </div>
@@ -158,7 +160,7 @@ export default function CorporatePage() {
       {/* DOCUMENTATION TRAIL */}
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="fade-in">
+          <div className="motion-fade-left motion-ready">
             <span className="pill pill-corporate">The Documentation Trail</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Everything your finance team needs, in order.</h2>
             <p className="text-stone mt-4 leading-relaxed">
@@ -170,8 +172,8 @@ export default function CorporatePage() {
                 ["2. Written Confirmation", "Once you approve the quote, a formal confirmation is issued by email."],
                 ["3. VAT-Compliant Invoice", "Issued after stay, suitable for EFT payment against your PO."],
                 ["4. Consolidated Statement", "For repeat clients — multiple invoices grouped into a single statement."],
-              ].map(([title, text]) => (
-                <div key={title} className="flex items-start gap-3">
+              ].map(([title, text], i) => (
+                <div key={title} className="flex items-start gap-3 motion-fade-up motion-ready" data-stagger={i + 1}>
                   <div className="w-8 h-8 rounded-lg bg-walnut-tint text-walnut flex items-center justify-center flex-shrink-0">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 6L9 17l-5-5"/></svg>
                   </div>
@@ -183,7 +185,7 @@ export default function CorporatePage() {
               ))}
             </div>
           </div>
-          <div className="fade-in">
+          <div className="motion-fade-right motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
               <PhotoPlaceholder label="Deluxe room" tone="walnut" />
             </div>
@@ -194,15 +196,15 @@ export default function CorporatePage() {
       {/* QUOTE FORM */}
       <section id="quote-form" className="py-16 md:py-24 bg-cream">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center fade-in">
+          <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-corporate">Request a Quote</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us what you need. We&apos;ll come back with a formal quote.</h2>
           </div>
 
           {status === "success" ? (
-            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-scale-in">
-              <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4 mx-auto">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-pop">
+              <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
               </div>
               <h3 className="font-semibold text-ink text-xl mb-2">Quote request received.</h3>
               <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto">
@@ -212,7 +214,7 @@ export default function CorporatePage() {
               <Link href="/" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Home</Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10">
+            <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10 motion-fade-up motion-ready">
               {status === "error" && errorMessage && (
                 <div className="mb-6 rounded-xl border border-terracotta bg-terracotta-tint p-4 text-sm text-terracotta-dark">{errorMessage}</div>
               )}
@@ -347,11 +349,11 @@ export default function CorporatePage() {
       {/* FAQ */}
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center fade-in">
+          <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-corporate">Common Questions</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Before you request.</h2>
           </div>
-          <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden">
+          <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
               <div key={f.q} className={`faq-item px-6 py-5 ${openFaq === i ? "open" : ""}`}>
                 <button className="flex items-center justify-between w-full text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
@@ -368,7 +370,7 @@ export default function CorporatePage() {
       {/* CONTACT CTA */}
       <section className="py-16 md:py-20 bg-walnut text-cream-light">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center motion-fade-up motion-ready">
             <div>
               <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to talk it through?</span>
               <h2 className="font-semibold text-2xl md:text-3xl mt-4">We&apos;re a message or call away.</h2>

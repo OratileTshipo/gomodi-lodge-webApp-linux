@@ -136,21 +136,21 @@ export function BookingForm({
       let cls = "h-9 flex items-center justify-center text-sm rounded-full cursor-pointer transition-all ";
       
       if (isPast) {
-        cls += "text-stone-300 cursor-not-allowed ";
+        cls += "text-stone/50 cursor-not-allowed ";
       } else {
-        cls += "hover:bg-orange-50 text-stone-700 ";
+        cls += "hover:bg-terracotta-tint text-ink ";
       }
 
-      if (dateStr === todayISO && !isPast) cls += "font-bold text-orange-600 ";
+      if (dateStr === todayISO && !isPast) cls += "font-bold text-terracotta ";
 
       if (checkIn && checkOut) {
         if (dateStr === checkIn || dateStr === checkOut) {
-          cls += "bg-orange-600 text-white font-semibold shadow-sm ";
+          cls += "bg-terracotta text-white font-semibold shadow-sm ";
         } else if (date > new Date(checkIn) && date < new Date(checkOut)) {
-          cls += "bg-orange-100 text-orange-900 font-medium ";
+          cls += "bg-terracotta-tint text-terracotta-dark font-medium ";
         }
       } else if (checkIn && dateStr === checkIn) {
-        cls += "bg-orange-600 text-white font-semibold shadow-sm ";
+        cls += "bg-terracotta text-white font-semibold shadow-sm ";
       }
 
       cells.push(
@@ -202,36 +202,36 @@ export function BookingForm({
 
   if (status === "success") {
     return (
-      <main className="max-w-2xl mx-auto px-6 py-16 text-center">
-        <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-4 mx-auto motion-scale-in">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+      <main className="max-w-2xl mx-auto px-6 py-16 text-center motion-pop">
+        <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto motion-pop">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
         </div>
-        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-orange-100 text-orange-800 mb-3">Request received</span>
-        <h1 className="font-semibold text-stone-900 text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
-        <p className="text-stone-600 mt-2 max-w-md mx-auto text-base leading-relaxed">
-          Your request for <span className="font-medium text-stone-900">{room?.name}</span> is received. We&apos;ll WhatsApp you shortly to confirm availability and lock in your booking — usually within minutes during the day.
+        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3">Request received</span>
+        <h1 className="font-semibold text-ink text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
+        <p className="text-stone mt-2 max-w-md mx-auto text-base leading-relaxed">
+          Your request for <span className="font-medium text-ink">{room?.name}</span> is received. We&apos;ll WhatsApp you shortly to confirm availability and lock in your booking — usually within minutes during the day.
         </p>
-        <Link href="/rooms" className="mt-6 inline-block border border-stone-300 text-stone-700 hover:bg-stone-50 px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Rooms</Link>
+        <Link href="/rooms" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Rooms</Link>
       </main>
     );
   }
 
   return (
-    <main>
-      <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone-500" aria-label="Breadcrumb">
+    <main className="page-transition">
+      <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-orange-600">Home</Link></li>
-          <li className="text-stone-300">/</li>
-          <li><Link href="/rooms" className="hover:text-orange-600">Rooms</Link></li>
-          <li className="text-stone-300">/</li>
-          <li className="text-stone-900 font-medium">Book Your Stay</li>
+          <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
+          <li className="text-stone/50">/</li>
+          <li><Link href="/rooms" className="hover:text-terracotta">Rooms</Link></li>
+          <li className="text-stone/50">/</li>
+          <li className="text-ink font-medium">Book Your Stay</li>
         </ol>
       </nav>
 
       <section className="max-w-6xl mx-auto px-6 pb-8">
-        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-orange-100 text-orange-800 mb-3">Leisure Booking</span>
-        <h1 className="font-semibold text-stone-900 text-3xl md:text-4xl mt-2 max-w-3xl">Let&apos;s get you booked in.</h1>
-        <p className="text-stone-600 mt-3 max-w-2xl text-base leading-relaxed">
+        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3 motion-fade-up motion-ready" data-stagger="1">Leisure Booking</span>
+        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-2 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Let&apos;s get you booked in.</h1>
+        <p className="text-stone mt-3 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="3">
           Tell us when you&apos;d like to come, which room you fancy, and whether you&apos;d like us to sort meals. We&apos;ll check availability and come back to you on WhatsApp.
         </p>
       </section>
@@ -239,15 +239,15 @@ export function BookingForm({
       {/* PROGRESS */}
       <section className="max-w-6xl mx-auto px-6 pb-6">
         <div className="flex items-center gap-2 md:gap-3 text-xs">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${nights > 0 ? "bg-orange-600 text-white" : "bg-orange-100 text-orange-800"}`}>1</div>
-          <div className={`h-0.5 flex-1 ${nights > 0 ? "bg-orange-600" : "bg-stone-200"}`} />
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-orange-600 text-white" : nights > 0 ? "bg-orange-100 text-orange-800" : "bg-stone-100 text-stone-400"}`}>2</div>
-          <div className={`h-0.5 flex-1 ${roomId ? "bg-orange-600" : "bg-stone-200"}`} />
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-orange-100 text-orange-800" : "bg-stone-100 text-stone-400"}`}>3</div>
-          <div className="h-0.5 flex-1 bg-stone-200" />
-          <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-stone-100 text-stone-400">4</div>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${nights > 0 ? "bg-terracotta text-white" : "bg-terracotta-tint text-terracotta-dark"}`}>1</div>
+          <div className={`h-0.5 flex-1 ${nights > 0 ? "bg-terracotta" : "bg-walnut/10"}`} />
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta text-white" : nights > 0 ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>2</div>
+          <div className={`h-0.5 flex-1 ${roomId ? "bg-terracotta" : "bg-walnut/10"}`} />
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>3</div>
+          <div className="h-0.5 flex-1 bg-walnut/10" />
+          <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-cream-light text-stone/60">4</div>
         </div>
-        <div className="flex items-center justify-between mt-2 text-[11px] text-stone-500 font-medium uppercase tracking-wide">
+        <div className="flex items-center justify-between mt-2 text-[11px] text-stone font-medium uppercase tracking-wide">
           <span>Dates</span><span>Room</span><span>Meals</span><span>Details</span>
         </div>
       </section>
@@ -256,45 +256,45 @@ export function BookingForm({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             {status === "error" && errorMessage && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{errorMessage}</div>
+              <div className="rounded-xl border border-terracotta bg-terracotta-tint p-4 text-sm text-terracotta-dark">{errorMessage}</div>
             )}
 
             {/* STEP 1: DATES (Compact) */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 md:p-6">
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-orange-600 font-semibold text-xs uppercase tracking-wide">Step 1</span>
-                <h2 className="font-semibold text-stone-900 text-lg mt-1">Pick your dates</h2>
+                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 1</span>
+                <h2 className="font-semibold text-ink text-lg mt-1">Pick your dates</h2>
               </div>
               
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
-                  <div className="text-[10px] uppercase tracking-wide text-stone-500 font-semibold mb-1">Check-in</div>
-                  <div className="text-sm font-semibold text-stone-900">
+                <div className="bg-cream-light p-3 rounded-lg border border-walnut/10">
+                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold mb-1">Check-in</div>
+                  <div className="text-sm font-semibold text-ink">
                     {checkIn ? fmtDate(checkIn) : "Select date"}
                   </div>
                 </div>
-                <div className="bg-stone-50 p-3 rounded-lg border border-stone-200">
-                  <div className="text-[10px] uppercase tracking-wide text-stone-500 font-semibold mb-1">Check-out</div>
-                  <div className="text-sm font-semibold text-stone-900">
+                <div className="bg-cream-light p-3 rounded-lg border border-walnut/10">
+                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold mb-1">Check-out</div>
+                  <div className="text-sm font-semibold text-ink">
                     {checkOut ? fmtDate(checkOut) : "Select date"}
                   </div>
                 </div>
               </div>
 
-              <div className="bg-stone-50 rounded-xl border border-stone-200 p-3">
+              <div className="bg-cream-light rounded-xl border border-walnut/10 p-3">
                 <div className="flex items-center justify-between mb-2 px-1">
-                  <button type="button" onClick={() => changeMonth(-1)} className="p-1.5 rounded hover:bg-white text-stone-600" aria-label="Previous month">
+                  <button type="button" onClick={() => changeMonth(-1)} className="p-1.5 rounded hover:bg-white text-stone" aria-label="Previous month">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
                   </button>
-                  <div className="font-semibold text-stone-900 text-sm">
+                  <div className="font-semibold text-ink text-sm">
                     {currentMonth.toLocaleDateString("en-ZA", { month: "long", year: "numeric" })}
                   </div>
-                  <button type="button" onClick={() => changeMonth(1)} className="p-1.5 rounded hover:bg-white text-stone-600" aria-label="Next month">
+                  <button type="button" onClick={() => changeMonth(1)} className="p-1.5 rounded hover:bg-white text-stone" aria-label="Next month">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M9 18l6-6-6-6"/></svg>
                   </button>
                 </div>
                 
-                <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[10px] uppercase tracking-wide text-stone-500 font-semibold">
+                <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[10px] uppercase tracking-wide text-stone font-semibold">
                   {["S","M","T","W","T","F","S"].map((d, i) => <div key={i}>{d}</div>)}
                 </div>
                 
@@ -302,22 +302,22 @@ export function BookingForm({
               </div>
 
               {checkIn && (
-                <div className="mt-3 text-xs text-stone-600 text-center">
+                <div className="mt-3 text-xs text-stone text-center">
                   {checkOut ? (
-                    <><span className="font-medium text-stone-900">{nights} night{nights > 1 ? "s" : ""}</span> · {fmtDate(checkIn)} → {fmtDate(checkOut)}</>
+                    <><span className="font-medium text-ink">{nights} night{nights > 1 ? "s" : ""}</span> · {fmtDate(checkIn)} → {fmtDate(checkOut)}</>
                   ) : (
-                    <>Now select your <span className="font-medium text-stone-900">check-out</span> date</>
+                    <>Now select your <span className="font-medium text-ink">check-out</span> date</>
                   )}
                 </div>
               )}
             </div>
 
             {/* STEP 2: ROOM */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 md:p-6">
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-orange-600 font-semibold text-xs uppercase tracking-wide">Step 2</span>
-                <h2 className="font-semibold text-stone-900 text-lg mt-1">Choose your room</h2>
-                <p className="text-stone-500 text-sm mt-1">Rooms greyed out are already booked for your dates.</p>
+                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 2</span>
+                <h2 className="font-semibold text-ink text-lg mt-1">Choose your room</h2>
+                <p className="text-stone text-sm mt-1">Rooms greyed out are already booked for your dates.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {rooms.map((r) => {
@@ -328,29 +328,29 @@ export function BookingForm({
                       key={r.id}
                       className={`rounded-xl border overflow-hidden transition-all ${
                         selected 
-                          ? "border-orange-500 ring-2 ring-orange-200 bg-orange-50/30" 
+                          ? "border-terracotta ring-2 ring-terracotta/30 bg-terracotta-tint/50" 
                           : unavailable 
-                            ? "border-stone-200 bg-stone-50 opacity-60 cursor-not-allowed" 
-                            : "border-stone-200 bg-white hover:border-stone-300 cursor-pointer"
+                            ? "border-walnut/10 bg-cream-light opacity-60 cursor-not-allowed" 
+                            : "border-walnut/10 bg-white hover:border-walnut/20 cursor-pointer"
                       }`}
                       onClick={unavailable ? undefined : () => setRoomId(selected ? null : r.id)}
                     >
-                      <div className="aspect-[16/9] overflow-hidden bg-stone-100 relative">
+                      <div className="aspect-[16/9] overflow-hidden bg-cream relative">
                         <PhotoPlaceholder label={r.name} />
                         {unavailable && (
-                          <div className="absolute inset-0 bg-stone-900/40 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-ink/40 flex items-center justify-center">
                             <span className="bg-black/60 text-white text-xs px-2 py-1 rounded">Booked</span>
                           </div>
                         )}
-                        {r.flexible && !unavailable && <span className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 text-[10px] font-bold uppercase px-2 py-0.5 rounded">Flexible</span>}
+                        {r.flexible && !unavailable && <span className="absolute top-2 left-2 bg-gold-tint text-gold-dark text-[10px] font-bold uppercase px-2 py-0.5 rounded">Flexible</span>}
                       </div>
                       <div className="p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <div className="font-semibold text-stone-900 text-sm">{r.name}</div>
-                            <div className="text-stone-500 text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
+                            <div className="font-semibold text-ink text-sm">{r.name}</div>
+                            <div className="text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
                           </div>
-                          <div className="text-orange-600 font-semibold text-sm whitespace-nowrap">R{Number(r.baseRate)}<span className="text-stone-400 font-normal text-[10px]">/nt</span></div>
+                          <div className="text-terracotta font-semibold text-sm whitespace-nowrap">R{Number(r.baseRate)}<span className="text-stone/60 font-normal text-[10px]">/nt</span></div>
                         </div>
                       </div>
                     </div>
@@ -358,43 +358,43 @@ export function BookingForm({
                 })}
               </div>
               
-              <div className="mt-5 pt-5 border-t border-stone-100">
-                <label className="block text-sm font-medium text-stone-900 mb-2">How many guests? <span className="text-stone-500 font-normal">(max 2 per room)</span></label>
+              <div className="mt-5 pt-5 border-t border-walnut/10">
+                <label className="block text-sm font-medium text-ink mb-2">How many guests? <span className="text-stone font-normal">(max 2 per room)</span></label>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setGuestCount((g) => Math.max(1, g - 1))} className="w-9 h-9 rounded-lg border border-stone-300 hover:bg-stone-50 flex items-center justify-center text-stone-600">−</button>
-                  <input type="number" min={1} max={2} value={guestCount} onChange={(e) => setGuestCount(Math.min(2, Math.max(1, Number(e.target.value))))} className="w-16 text-center border border-stone-300 rounded-lg px-2 py-1.5 text-sm bg-white" />
-                  <button type="button" onClick={() => setGuestCount((g) => Math.min(2, g + 1))} className="w-9 h-9 rounded-lg border border-stone-300 hover:bg-stone-50 flex items-center justify-center text-stone-600">+</button>
+                  <button type="button" onClick={() => setGuestCount((g) => Math.max(1, g - 1))} className="w-9 h-9 rounded-lg border border-walnut/20 hover:bg-cream-light flex items-center justify-center text-stone">−</button>
+                  <input type="number" min={1} max={2} value={guestCount} onChange={(e) => setGuestCount(Math.min(2, Math.max(1, Number(e.target.value))))} className="w-16 text-center border border-walnut/20 rounded-lg px-2 py-1.5 text-sm bg-white" />
+                  <button type="button" onClick={() => setGuestCount((g) => Math.min(2, g + 1))} className="w-9 h-9 rounded-lg border border-walnut/20 hover:bg-cream-light flex items-center justify-center text-stone">+</button>
                 </div>
               </div>
             </div>
 
             {/* STEP 3: MEALS */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 md:p-6">
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-orange-600 font-semibold text-xs uppercase tracking-wide">Step 3</span>
-                <h2 className="font-semibold text-stone-900 text-lg mt-1">Add breakfast or dinner <span className="text-stone-500 text-sm font-normal">(optional)</span></h2>
+                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 3</span>
+                <h2 className="font-semibold text-ink text-lg mt-1">Add breakfast or dinner <span className="text-stone text-sm font-normal">(optional)</span></h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className={`rounded-xl p-4 border flex items-start gap-3 cursor-pointer transition-all ${breakfast ? "border-orange-500 bg-orange-50/30" : "border-stone-200 bg-white hover:border-stone-300"}`}>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${breakfast ? "bg-orange-600 border-orange-600" : "border-stone-300"}`}>
+                <label className={`rounded-xl p-4 border flex items-start gap-3 cursor-pointer transition-all ${breakfast ? "border-terracotta bg-terracotta-tint/50" : "border-walnut/10 bg-white hover:border-walnut/20"}`}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${breakfast ? "bg-terracotta border-terracotta" : "border-walnut/20"}`}>
                     {breakfast && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}><path d="M20 6L9 17l-5-5"/></svg>}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <div><div className="font-semibold text-stone-900 text-sm">Breakfast</div><div className="text-stone-500 text-xs mt-0.5">Full cooked or continental</div></div>
-                      <div className="text-orange-600 font-semibold text-sm whitespace-nowrap">R{BREAKFAST_PRICE}</div>
+                      <div><div className="font-semibold text-ink text-sm">Breakfast</div><div className="text-stone text-xs mt-0.5">Full cooked or continental</div></div>
+                      <div className="text-terracotta font-semibold text-sm whitespace-nowrap">R{BREAKFAST_PRICE}</div>
                     </div>
                   </div>
                   <input type="checkbox" checked={breakfast} onChange={(e) => setBreakfast(e.target.checked)} className="sr-only" />
                 </label>
-                <label className={`rounded-xl p-4 border flex items-start gap-3 cursor-pointer transition-all ${dinner ? "border-orange-500 bg-orange-50/30" : "border-stone-200 bg-white hover:border-stone-300"}`}>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${dinner ? "bg-orange-600 border-orange-600" : "border-stone-300"}`}>
+                <label className={`rounded-xl p-4 border flex items-start gap-3 cursor-pointer transition-all ${dinner ? "border-terracotta bg-terracotta-tint/50" : "border-walnut/10 bg-white hover:border-walnut/20"}`}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${dinner ? "bg-terracotta border-terracotta" : "border-walnut/20"}`}>
                     {dinner && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}><path d="M20 6L9 17l-5-5"/></svg>}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <div><div className="font-semibold text-stone-900 text-sm">Dinner</div><div className="text-stone-500 text-xs mt-0.5">Three-course set menu</div></div>
-                      <div className="text-orange-600 font-semibold text-sm whitespace-nowrap">R{DINNER_PRICE}</div>
+                      <div><div className="font-semibold text-ink text-sm">Dinner</div><div className="text-stone text-xs mt-0.5">Three-course set menu</div></div>
+                      <div className="text-terracotta font-semibold text-sm whitespace-nowrap">R{DINNER_PRICE}</div>
                     </div>
                   </div>
                   <input type="checkbox" checked={dinner} onChange={(e) => setDinner(e.target.checked)} className="sr-only" />
@@ -403,69 +403,69 @@ export function BookingForm({
             </div>
 
             {/* STEP 4: DETAILS */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 md:p-6">
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-orange-600 font-semibold text-xs uppercase tracking-wide">Step 4</span>
-                <h2 className="font-semibold text-stone-900 text-lg mt-1">Your details</h2>
+                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 4</span>
+                <h2 className="font-semibold text-ink text-lg mt-1">Your details</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-stone-900 mb-1.5">Full name *</label>
-                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none" />
+                  <label className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
+                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-900 mb-1.5">WhatsApp number *</label>
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none" />
+                  <label className="block text-sm font-medium text-ink mb-1.5">WhatsApp number *</label>
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-900 mb-1.5">Email (optional)</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none" />
+                  <label className="block text-sm font-medium text-ink mb-1.5">Email (optional)</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-stone-900 mb-1.5">Anything we should know? (optional)</label>
-                  <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={3} className="w-full border border-stone-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none" placeholder="e.g. Late arrival, extra pillows, dietary requirements..." />
+                  <label className="block text-sm font-medium text-ink mb-1.5">Anything we should know? (optional)</label>
+                  <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={3} className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none resize-none" placeholder="e.g. Late arrival, extra pillows, dietary requirements..." />
                 </div>
               </div>
             </div>
 
             {/* PAYMENT */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 md:p-6">
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-orange-600 font-semibold text-xs uppercase tracking-wide">Payment</span>
-                <h2 className="font-semibold text-stone-900 text-lg mt-1">Payment options</h2>
+                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Payment</span>
+                <h2 className="font-semibold text-ink text-lg mt-1">Payment options</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className={`flex items-start gap-3 rounded-xl p-4 border cursor-pointer transition-all ${paymentMethod === "eft" ? "border-orange-500 bg-orange-50/30" : "border-stone-200 bg-white hover:border-stone-300"}`}>
-                  <input type="radio" checked={paymentMethod === "eft"} onChange={() => setPaymentMethod("eft")} className="mt-1 accent-orange-600" />
-                  <div><div className="font-semibold text-stone-900 text-sm">EFT / Bank Transfer</div><div className="text-stone-500 text-xs mt-0.5">Pay to our business account. Upload proof below.</div></div>
+                <label className={`flex items-start gap-3 rounded-xl p-4 border cursor-pointer transition-all ${paymentMethod === "eft" ? "border-terracotta bg-terracotta-tint/50" : "border-walnut/10 bg-white hover:border-walnut/20"}`}>
+                  <input type="radio" checked={paymentMethod === "eft"} onChange={() => setPaymentMethod("eft")} className="mt-1 accent-terracotta" />
+                  <div><div className="font-semibold text-ink text-sm">EFT / Bank Transfer</div><div className="text-stone text-xs mt-0.5">Pay to our business account. Upload proof below.</div></div>
                 </label>
-                <label className={`flex items-start gap-3 rounded-xl p-4 border cursor-pointer transition-all ${paymentMethod === "cash" ? "border-orange-500 bg-orange-50/30" : "border-stone-200 bg-white hover:border-stone-300"}`}>
-                  <input type="radio" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} className="mt-1 accent-orange-600" />
-                  <div><div className="font-semibold text-stone-900 text-sm">Cash on Arrival</div><div className="text-stone-500 text-xs mt-0.5">Settle in person at check-in.</div></div>
+                <label className={`flex items-start gap-3 rounded-xl p-4 border cursor-pointer transition-all ${paymentMethod === "cash" ? "border-terracotta bg-terracotta-tint/50" : "border-walnut/10 bg-white hover:border-walnut/20"}`}>
+                  <input type="radio" checked={paymentMethod === "cash"} onChange={() => setPaymentMethod("cash")} className="mt-1 accent-terracotta" />
+                  <div><div className="font-semibold text-ink text-sm">Cash on Arrival</div><div className="text-stone text-xs mt-0.5">Settle in person at check-in.</div></div>
                 </label>
               </div>
               {paymentMethod === "eft" && (
                 <>
-                  <div className="mt-4 bg-stone-50 rounded-xl border border-stone-200 p-4">
-                    <div className="font-semibold text-stone-900 text-sm mb-2">Banking details</div>
+                  <div className="mt-4 bg-cream-light rounded-xl border border-walnut/10 p-4">
+                    <div className="font-semibold text-ink text-sm mb-2">Banking details</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                      <div className="flex justify-between py-1 border-b border-stone-200"><span className="text-stone-500">Bank</span><span className="text-stone-900 font-medium">FNB</span></div>
-                      <div className="flex justify-between py-1 border-b border-stone-200"><span className="text-stone-500">Account name</span><span className="text-stone-900 font-medium">Gomodi Guest Lodge</span></div>
-                      <div className="flex justify-between py-1 border-b border-stone-200"><span className="text-stone-500">Account number</span><span className="text-stone-900 font-medium">62874592011</span></div>
-                      <div className="flex justify-between py-1 border-b border-stone-200"><span className="text-stone-500">Branch code</span><span className="text-stone-900 font-medium">250655</span></div>
+                      <div className="flex justify-between py-1 border-b border-walnut/10"><span className="text-stone">Bank</span><span className="text-ink font-medium">FNB</span></div>
+                      <div className="flex justify-between py-1 border-b border-walnut/10"><span className="text-stone">Account name</span><span className="text-ink font-medium">Gomodi Guest Lodge</span></div>
+                      <div className="flex justify-between py-1 border-b border-walnut/10"><span className="text-stone">Account number</span><span className="text-ink font-medium">62874592011</span></div>
+                      <div className="flex justify-between py-1 border-b border-walnut/10"><span className="text-stone">Branch code</span><span className="text-ink font-medium">250655</span></div>
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-stone-900 mb-1.5">Upload proof of payment (optional)</label>
+                    <label className="block text-sm font-medium text-ink mb-1.5">Upload proof of payment (optional)</label>
                     <div
-                      className="file-drop border-2 border-dashed border-stone-300 rounded-xl p-5 text-center cursor-pointer bg-stone-50 hover:bg-stone-100 transition-colors"
+                      className="file-drop border-2 border-dashed border-walnut/20 rounded-xl p-5 text-center cursor-pointer bg-cream-light hover:bg-cream transition-colors"
                       onClick={() => document.getElementById("popFileInput")?.click()}
                     >
                       <input id="popFileInput" type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setPopFileName(e.target.files?.[0]?.name ?? null)} />
-                      <div className="text-sm text-stone-900 font-medium">
+                      <div className="text-sm text-ink font-medium">
                         {popFileName ? `✓ ${popFileName}` : "Tap to upload, or drag & drop"}
                       </div>
-                      <div className="text-xs text-stone-500 mt-1">PDF, JPG, or PNG · max 5MB</div>
+                      <div className="text-xs text-stone mt-1">PDF, JPG, or PNG · max 5MB</div>
                     </div>
                   </div>
                 </>
@@ -473,41 +473,41 @@ export function BookingForm({
             </div>
 
             {/* CONSENT */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 md:p-6">
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="flex items-start gap-3">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-orange-600 w-4 h-4" />
-                <label className="text-sm text-stone-600">I&apos;m happy for Gomodi Guest Lodge to keep my details to manage this booking, in line with POPIA. *</label>
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-terracotta w-4 h-4" />
+                <label className="text-sm text-stone">I&apos;m happy for Gomodi Guest Lodge to keep my details to manage this booking, in line with POPIA. *</label>
               </div>
               <div className="mt-6">
-                <button type="submit" disabled={status === "submitting"} className="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-colors shadow-sm">
+                <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta hover:bg-terracotta-dark text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-colors shadow-sm">
                   {status === "submitting" ? "Sending…" : "Send booking request"}
                 </button>
-                <p className="text-stone-500 text-xs mt-3 text-center">Submitting doesn&apos;t confirm your booking — we&apos;ll check availability and come back to you on WhatsApp.</p>
+                <p className="text-stone text-xs mt-3 text-center">Submitting doesn&apos;t confirm your booking — we&apos;ll check availability and come back to you on WhatsApp.</p>
               </div>
             </div>
           </form>
 
           {/* SUMMARY SIDEBAR */}
           <aside className="lg:col-span-1">
-            <div className="lg:sticky lg:top-6 bg-white rounded-2xl border border-stone-200 shadow-sm p-5">
+            <div className="lg:sticky lg:top-6 bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 motion-fade-up motion-ready">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-900 text-lg">Your stay</h3>
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-orange-100 text-orange-800">Leisure</span>
+                <h3 className="font-semibold text-ink text-lg">Your stay</h3>
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark">Leisure</span>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-start"><span className="text-stone-500">Dates</span><span className="text-stone-900 text-right font-medium">{checkIn ? (checkOut ? `${fmtDate(checkIn)} → ${fmtDate(checkOut)}` : `${fmtDate(checkIn)} → ?`) : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-stone-500">Nights</span><span className="text-stone-900 font-medium">{nights || "—"}</span></div>
-                <div className="flex justify-between items-start"><span className="text-stone-500">Room</span><span className="text-stone-900 text-right font-medium">{room?.name ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-stone-500">Guests</span><span className="text-stone-900 font-medium">{guestCount}</span></div>
-                <div className="flex justify-between"><span className="text-stone-500">Meals</span><span className="text-stone-900 font-medium">{[breakfast && "Breakfast", dinner && "Dinner"].filter(Boolean).join(" + ") || "None"}</span></div>
-                <div className="border-t border-stone-100 pt-3 mt-3 space-y-1.5">
-                  <div className="flex justify-between text-stone-500"><span>Accommodation</span><span>{accomTotal ? fmt(accomTotal) : "—"}</span></div>
-                  <div className="flex justify-between text-stone-500"><span>Meals</span><span>{mealTotal ? fmt(mealTotal) : "—"}</span></div>
-                  <div className="flex justify-between text-stone-900 font-semibold text-base pt-2 border-t border-stone-100 mt-2"><span>Indicative total</span><span className="text-orange-600">{accomTotal || mealTotal ? fmt(accomTotal + mealTotal) : "—"}</span></div>
+                <div className="flex justify-between items-start"><span className="text-stone">Dates</span><span className="text-ink text-right font-medium">{checkIn ? (checkOut ? `${fmtDate(checkIn)} → ${fmtDate(checkOut)}` : `${fmtDate(checkIn)} → ?`) : "—"}</span></div>
+                <div className="flex justify-between"><span className="text-stone">Nights</span><span className="text-ink font-medium">{nights || "—"}</span></div>
+                <div className="flex justify-between items-start"><span className="text-stone">Room</span><span className="text-ink text-right font-medium">{room?.name ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-stone">Guests</span><span className="text-ink font-medium">{guestCount}</span></div>
+                <div className="flex justify-between"><span className="text-stone">Meals</span><span className="text-ink font-medium">{[breakfast && "Breakfast", dinner && "Dinner"].filter(Boolean).join(" + ") || "None"}</span></div>
+                <div className="border-t border-walnut/10 pt-3 mt-3 space-y-1.5">
+                  <div className="flex justify-between text-stone"><span>Accommodation</span><span>{accomTotal ? fmt(accomTotal) : "—"}</span></div>
+                  <div className="flex justify-between text-stone"><span>Meals</span><span>{mealTotal ? fmt(mealTotal) : "—"}</span></div>
+                  <div className="flex justify-between text-ink font-semibold text-base pt-2 border-t border-walnut/10 mt-2"><span>Indicative total</span><span className="text-terracotta">{accomTotal || mealTotal ? fmt(accomTotal + mealTotal) : "—"}</span></div>
                 </div>
               </div>
               <div className="mt-4 text-center">
-                <Link href="/rooms" className="text-sm text-stone-500 hover:text-orange-600">Not sure which room?</Link>
+                <Link href="/rooms" className="text-sm text-stone hover:text-terracotta">Not sure which room?</Link>
               </div>
             </div>
           </aside>
@@ -516,38 +516,39 @@ export function BookingForm({
 
       {/* FIX 3: EXPLORE OTHER ROOMS (Conversion Optimisation & Retention) */}
       {roomId && rooms.filter(r => r.id !== roomId && !unavailableIds.includes(r.id)).length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 pb-20 border-t border-stone-200 pt-12 mt-8">
+        <section className="max-w-6xl mx-auto px-6 pb-20 border-t border-walnut/10 pt-12 mt-8 motion-pop">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-stone-900">Not quite the right fit?</h2>
-            <p className="text-stone-600 mt-2 max-w-xl mx-auto">
+            <h2 className="text-2xl font-semibold text-ink">Not quite the right fit?</h2>
+            <p className="text-stone mt-2 max-w-xl mx-auto">
               Here are our other available rooms for your selected dates. Tap any room to switch your booking instantly.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rooms
               .filter(r => r.id !== roomId && !unavailableIds.includes(r.id))
-              .map((r) => (
+              .map((r, i) => (
                 <div 
                   key={r.id}
                   onClick={() => {
                     setRoomId(r.id);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-orange-300 transition-all group"
+                  className="bg-white rounded-2xl border border-walnut/10 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-terracotta/40 transition-all group motion-pop"
+                  data-stagger={(i % 6) + 1}
                 >
-                  <div className="aspect-[16/10] overflow-hidden bg-stone-100 relative">
+                  <div className="aspect-[16/10] overflow-hidden bg-cream relative">
                     <PhotoPlaceholder label={r.name} />
-                    {r.flexible && <span className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 text-[10px] font-bold uppercase px-2 py-0.5 rounded">Flexible</span>}
+                    {r.flexible && <span className="absolute top-2 left-2 bg-gold-tint text-gold-dark text-[10px] font-bold uppercase px-2 py-0.5 rounded">Flexible</span>}
                   </div>
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <div className="font-semibold text-stone-900 text-base group-hover:text-orange-600 transition-colors">{r.name}</div>
-                        <div className="text-stone-500 text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
+                        <div className="font-semibold text-ink text-base group-hover:text-terracotta transition-colors">{r.name}</div>
+                        <div className="text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
                       </div>
-                      <div className="text-orange-600 font-semibold text-base whitespace-nowrap">R{Number(r.baseRate)}</div>
+                      <div className="text-terracotta font-semibold text-base whitespace-nowrap">R{Number(r.baseRate)}</div>
                     </div>
-                    <button className="w-full mt-3 py-2 text-sm font-semibold text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors">
+                    <button className="w-full mt-3 py-2 text-sm font-semibold text-terracotta border border-terracotta/30 rounded-lg hover:bg-terracotta-tint transition-colors">
                       Switch to this room
                     </button>
                   </div>

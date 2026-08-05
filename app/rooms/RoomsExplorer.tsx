@@ -58,7 +58,7 @@ export function RoomsExplorer({
   });
 
   return (
-    <main>
+    <main className="page-transition">
       {/* BREADCRUMB */}
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
@@ -68,14 +68,14 @@ export function RoomsExplorer({
         </ol>
       </nav>
 
-      {/* HERO - Removed fade-in to ensure instant render */}
+      {/* HERO - lightweight staggered entrance (opacity/transform only, keeps render instant) */}
       <section className="max-w-6xl mx-auto px-6 pb-12">
-        <span className="pill pill-leisure">Nine Rooms</span>
-        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl">Every room, freshly renovated. One standard of comfort.</h1>
-        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed">
+        <span className="pill pill-leisure motion-fade-up motion-ready" data-stagger="1">Nine Rooms</span>
+        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Every room, freshly renovated. One standard of comfort.</h1>
+        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="3">
           Warm terracotta walls, dark walnut wood, and cream textiles throughout. Every room includes Smart TV, WiFi, air conditioning with fan and heater backup, and your choice of shower or bath. One flexible room can be set as two singles or one double — just tell us what you need.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap gap-3 motion-fade-up motion-ready" data-stagger="4">
           <div className="badge">✓ Smart TV in every room</div>
           <div className="badge">✓ Free WiFi</div>
           <div className="badge">✓ A/C + fan/heater backup</div>
@@ -130,9 +130,10 @@ export function RoomsExplorer({
       {/* ROOMS GRID */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         {sorted.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sorted.map((room) => (
-              <article key={room.id} className="room-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col">
+          // Key the grid by filter+sort so card entrances replay on every change (mount-safe, no observer dependency)
+          <div key={`${filter}-${sort}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sorted.map((room, i) => (
+              <article key={room.id} className="room-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
                 <div className="aspect-[4/3] bg-cream overflow-hidden relative">
                   <PhotoPlaceholder label={room.name} />
                   {room.flexible && (
@@ -181,7 +182,7 @@ export function RoomsExplorer({
       {activeRoom && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm" onClick={() => setActiveRoom(null)} />
-          <div className="relative bg-cream-light rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto card-shadow">
+          <div className="relative bg-cream-light rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto card-shadow motion-pop">
             <button onClick={() => setActiveRoom(null)} className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-cream-light/90 hover:bg-walnut/10" aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>

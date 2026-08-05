@@ -63,7 +63,7 @@ export default function EventsPage() {
   }
 
   return (
-    <main>
+    <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
           <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
@@ -74,16 +74,18 @@ export default function EventsPage() {
 
       {/* HERO */}
       <section className="relative">
-        <div className="relative h-[55vh] min-h-[400px] max-h-[560px] overflow-hidden">
-          <PhotoPlaceholder label="Event space set for a wedding" tone="gold" className="absolute inset-0" />
+        <div className="relative h-[55vh] min-h-[400px] max-h-[560px] overflow-hidden parallax-container">
+          <div className="absolute inset-0 motion-zoom-out motion-ready">
+            <PhotoPlaceholder label="Event space set for a wedding" tone="gold" className="absolute inset-0" />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/75" />
           <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
-            <span className="pill pill-event self-start mb-4">Events &amp; Functions</span>
-            <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl">Host your moment here.</h1>
-            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg">
+            <span className="pill pill-event self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Events &amp; Functions</span>
+            <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">Host your moment here.</h1>
+            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               Weddings, baby showers, birthday parties and private functions — for up to 50 guests, with confirmed catering and on-site accommodation.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <a href="#inquiry-form" className="btn-gold px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2">Inquire About Your Event</a>
               <a href="#catering" className="px-6 py-3 rounded-lg font-semibold text-base border border-cream-light/40 text-cream-light hover:bg-cream-light/10 inline-flex items-center justify-center">View Catering Packages</a>
             </div>
@@ -94,7 +96,7 @@ export default function EventsPage() {
       {/* WHAT WE HOST */}
       <section className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto fade-in">
+          <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-event">What We Host</span>
             <h2 className="text-ink font-semibold text-2xl md:text-3xl mt-4">Your event, your way.</h2>
           </div>
@@ -104,8 +106,8 @@ export default function EventsPage() {
               ["Baby Showers", "Warm, beautifully set spaces for your celebration — catering and décor coordination available."],
               ["Birthday Parties", "Milestones deserve a proper setting. Flexible layouts for seated dinners or cocktail-style celebrations."],
               ["Private Functions", "Anniversaries, family gatherings, reunions — any occasion worth celebrating."],
-            ].map(([title, text]) => (
-              <article key={title} className="event-type-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10">
+            ].map(([title, text], i) => (
+              <article key={title} className="event-type-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready interactive-element card-lift" data-stagger={i + 1}>
                 <div className="aspect-[4/3] overflow-hidden"><PhotoPlaceholder label={title} tone="gold" /></div>
                 <div className="p-5">
                   <h3 className="font-semibold text-ink">{title}</h3>
@@ -120,20 +122,20 @@ export default function EventsPage() {
       {/* VENUE DETAILS */}
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className="fade-in">
+          <div className="motion-fade-left motion-ready">
             <span className="pill pill-event">The Venue</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">A space that works for your guests.</h2>
             <p className="text-stone mt-4 leading-relaxed">Our multipurpose function space flexes with your event — seated dinners, cocktail setups, buffet layouts, or open floor for dancing.</p>
             <div className="mt-6 grid grid-cols-2 gap-4">
-              {[["50", "Max Guests"], ["Flexible", "Layout Options"], ["9", "Rooms for Guests"], ["On-site", "Secure Parking"]].map(([n, l]) => (
-                <div key={l} className="bg-white rounded-xl p-4 border border-walnut/10">
+              {[["50", "Max Guests"], ["Flexible", "Layout Options"], ["9", "Rooms for Guests"], ["On-site", "Secure Parking"]].map(([n, l], i) => (
+                <div key={l} className="bg-white rounded-xl p-4 border border-walnut/10 motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
                   <div className="text-gold-dark font-semibold text-2xl">{n}</div>
                   <div className="text-stone text-xs uppercase tracking-wide mt-1">{l}</div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="fade-in">
+          <div className="motion-fade-right motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]"><PhotoPlaceholder label="Function space interior" tone="gold" /></div>
           </div>
         </div>
@@ -142,12 +144,12 @@ export default function EventsPage() {
       {/* CATERING PACKAGES */}
       <section id="catering" className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto fade-in">
+          <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-event">Catering Packages</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Confirmed pricing. No surprises.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow">
+            <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="1">
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Light</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Tea &amp; Snacks</h3>
               <div className="text-terracotta font-semibold text-2xl mt-3">R150 <span className="text-stone text-sm font-normal">pp</span></div>
@@ -157,7 +159,7 @@ export default function EventsPage() {
                 <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Ideal for showers &amp; daytime events</li>
               </ul>
             </div>
-            <div className="bg-white rounded-2xl p-8 border-2 border-gold card-shadow relative">
+            <div className="bg-white rounded-2xl p-8 border-2 border-gold card-shadow relative motion-scale-in motion-ready card-lift" data-stagger="2">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill pill-event">Most Popular</span>
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Full</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Three-Course Meal</h3>
@@ -168,7 +170,7 @@ export default function EventsPage() {
                 <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Ideal for dinners &amp; receptions</li>
               </ul>
             </div>
-            <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow">
+            <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="3">
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Premium</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Full-Day Package</h3>
               <div className="text-terracotta font-semibold text-2xl mt-3">R350 <span className="text-stone text-sm font-normal">pp</span></div>
@@ -179,7 +181,7 @@ export default function EventsPage() {
               </ul>
             </div>
           </div>
-          <div className="mt-10 bg-gold-tint border border-gold/30 rounded-2xl p-6 md:p-8 fade-in">
+          <div className="mt-10 bg-gold-tint border border-gold/30 rounded-2xl p-6 md:p-8 motion-fade-up motion-ready">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-lg bg-gold flex items-center justify-center text-white flex-shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
@@ -196,13 +198,13 @@ export default function EventsPage() {
       {/* INQUIRY FORM */}
       <section id="inquiry-form" className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center fade-in">
+          <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-event">Inquire</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us about your event.</h2>
           </div>
 
           {status === "success" ? (
-            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-scale-in">
+            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-pop">
               <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
               </div>
@@ -214,7 +216,7 @@ export default function EventsPage() {
               <Link href="/" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Home</Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10">
+            <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10 motion-fade-up motion-ready">
               {status === "error" && errorMessage && (
                 <div className="mb-6 rounded-xl border border-terracotta bg-terracotta-tint p-4 text-sm text-terracotta-dark">{errorMessage}</div>
               )}
@@ -312,11 +314,11 @@ export default function EventsPage() {
       {/* FAQ */}
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center fade-in">
+          <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-event">Common Questions</span>
             <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Before you ask.</h2>
           </div>
-          <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden">
+          <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
               <div key={f.q} className={`faq-item px-6 py-5 ${openFaq === i ? "open" : ""}`}>
                 <button className="flex items-center justify-between w-full text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
@@ -332,7 +334,7 @@ export default function EventsPage() {
 
       {/* WHATSAPP CTA */}
       <section className="py-16 md:py-20 bg-walnut text-cream-light">
-        <div className="max-w-4xl mx-auto px-6 text-center fade-in">
+        <div className="max-w-4xl mx-auto px-6 text-center motion-fade-up motion-ready">
           <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to chat?</span>
           <h2 className="font-semibold text-2xl md:text-3xl mt-4">Message us on WhatsApp.</h2>
           <a href="#" className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-colors">Chat on WhatsApp</a>
