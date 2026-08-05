@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bookingRequests, bookingRoomLines, rooms } from "@/lib/db/schema";
-import { eq, and, lt, gt } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export async function POST(
   request: Request,
@@ -15,42 +15,52 @@ export async function POST(
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    // Phase 2 Architecture §2.2: Server-side double-check for conflicts on approval
+    // Phase 2 Architecture §2.2: Server-side double-check for conflicts on approval.
+    // Checks EVERY room line of the request (corporate bookings can span several
+    // rooms — a limit(1) check would silently approve an overlapping second room).
+    // Events have no room lines and skip this check, which is correct for them.
     if (action === "approve") {
-      const reqDetails = await db
+      const requestLines = await db
         .select({
           roomId: bookingRoomLines.roomId,
           checkIn: bookingRoomLines.checkIn,
           checkOut: bookingRoomLines.checkOut,
           roomName: rooms.name,
         })
-        .from(bookingRequests)
-        .innerJoin(bookingRoomLines, eq(bookingRequests.id, bookingRoomLines.bookingRequestId))
+        .from(bookingRoomLines)
         .innerJoin(rooms, eq(bookingRoomLines.roomId, rooms.id))
-        .where(eq(bookingRequests.id, parseInt(id)))
-        .limit(1);
+        .where(eq(bookingRoomLines.bookingRequestId, parseInt(id)));
 
-      if (reqDetails.length > 0) {
-        const target = reqDetails[0];
-        const overlaps = await db
-          .select({ id: bookingRoomLines.id })
-          .from(bookingRoomLines)
-          .innerJoin(bookingRequests, eq(bookingRoomLines.bookingRequestId, bookingRequests.id))
+      if (requestLines.length > 0) {
+        const roomIds = requestLines.map((l) => l.roomId);
+        const approvedBookings = await db
+          .select({
+            roomId: bookingRoomLines.roomId,
+            checkIn: bookingRoomLines.checkIn,
+            checkOut: bookingRoomLines.checkOut,
+          })
+          .from(bookingRequests)
+          .innerJoin(bookingRoomLines, eq(bookingRequests.id, bookingRoomLines.bookingRequestId))
           .where(
             and(
-              eq(bookingRoomLines.roomId, target.roomId),
               eq(bookingRequests.status, "approved"),
-              lt(bookingRoomLines.checkIn, target.checkOut),
-              gt(bookingRoomLines.checkOut, target.checkIn)
+              inArray(bookingRoomLines.roomId, roomIds)
             )
-          )
-          .limit(1);
-
-        if (overlaps.length > 0) {
-          return NextResponse.json(
-            { error: `Cannot approve: Overlaps with an existing approved booking for ${target.roomName}.` },
-            { status: 409 }
           );
+
+        for (const line of requestLines) {
+          const hit = approvedBookings.some(
+            (approved) =>
+              approved.roomId === line.roomId &&
+              new Date(line.checkIn) < new Date(approved.checkOut) &&
+              new Date(line.checkOut) > new Date(approved.checkIn)
+          );
+          if (hit) {
+            return NextResponse.json(
+              { error: `Cannot approve: Overlaps with an existing approved booking for ${line.roomName}.` },
+              { status: 409 }
+            );
+          }
         }
       }
     }

@@ -13,10 +13,126 @@ import { eq, inArray } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+type PendingRequest = {
+  id: number;
+  category: string;
+  guestName: string;
+  contactPhone: string;
+  contactEmail: string | null;
+  specialRequests: string | null;
+  status: string;
+};
+
+type RoomLine = {
+  roomId: number;
+  checkIn: string;
+  checkOut: string;
+  guestCount: number;
+  roomName: string;
+};
+
+type ApprovedBooking = {
+  roomId: number;
+  checkIn: string;
+  checkOut: string;
+};
+
+type AddOn = {
+  type: string;
+  persons: number;
+  date: string;
+};
+
+function overlaps(
+  a: { checkIn: string; checkOut: string },
+  b: { checkIn: string; checkOut: string }
+): boolean {
+  return new Date(a.checkIn) < new Date(b.checkOut) && new Date(a.checkOut) > new Date(b.checkIn);
+}
+
+/**
+ * Pure enrichment logic for the pending-request queue. Extracted so it can be
+ * unit-tested without a database.
+ *
+ * - leisure requests have exactly one room line
+ * - corporate requests can have several (one card per request, not per line)
+ * - event requests have NO room lines — they must still appear in the queue
+ */
+export function enrichRequests(
+  pending: PendingRequest[],
+  linesByRequest: Record<number, RoomLine[]>,
+  approvedBookings: ApprovedBooking[],
+  addOnsMap: Record<number, AddOn[]>,
+  corporateMap: Record<number, unknown>,
+  eventMap: Record<number, unknown>,
+  popMap: Record<number, boolean>
+) {
+  return pending.map((req) => {
+    const lines = linesByRequest[req.id] || [];
+
+    // HARD CONFLICT: any line overlaps an APPROVED booking (red banner)
+    let conflict: string | null = null;
+    for (const line of lines) {
+      const hit = approvedBookings.some(
+        (approved) => approved.roomId === line.roomId && overlaps(line, approved)
+      );
+      if (hit) {
+        const inDate = new Date(line.checkIn)
+          .toLocaleDateString("en-ZA", { day: "numeric", month: "short" })
+          .toUpperCase();
+        const outDate = new Date(line.checkOut)
+          .toLocaleDateString("en-ZA", { day: "numeric", month: "short" })
+          .toUpperCase();
+        conflict = `OVERLAPS APPROVED BOOKING: ${line.roomName.toUpperCase()}, ${inDate}–${outDate}`;
+        break;
+      }
+    }
+
+    // SOFT CONFLICT: any line overlaps ANOTHER pending request's lines (amber banner)
+    let pendingWarning: string | null = null;
+    if (lines.length > 0) {
+      const overlappingIds = new Set<number>();
+      for (const line of lines) {
+        for (const other of pending) {
+          if (other.id === req.id) continue;
+          for (const otherLine of linesByRequest[other.id] || []) {
+            if (line.roomId === otherLine.roomId && overlaps(line, otherLine)) {
+              overlappingIds.add(other.id);
+            }
+          }
+        }
+      }
+      if (overlappingIds.size > 0) {
+        pendingWarning = `ATTENTION: ${overlappingIds.size} OTHER PENDING REQUEST(S) FOR THIS ROOM ON THESE DATES`;
+      }
+    }
+
+    // Primary line drives the date/room fields (null for events, which have none)
+    const primary = lines[0] || null;
+
+    return {
+      ...req,
+      roomId: primary?.roomId ?? null,
+      checkIn: primary?.checkIn ?? null,
+      checkOut: primary?.checkOut ?? null,
+      guestCount: primary?.guestCount ?? null,
+      roomName: primary?.roomName ?? null,
+      conflict,
+      pendingWarning,
+      addOns: addOnsMap[req.id] || [],
+      corporateDetails: corporateMap[req.id] || null,
+      eventDetails: eventMap[req.id] || null,
+      proofOfPaymentUploaded: popMap[req.id] || false,
+    };
+  });
+}
+
 export async function GET() {
   try {
-    // 1. Fetch pending requests with room details
-    const pendingRequests = await db
+    // 1. All pending requests across every category. Events are NOT joined
+    //    against booking_room_lines (they have none) — inner-joining that
+    //    table used to silently drop event requests from the queue.
+    const pending: PendingRequest[] = await db
       .select({
         id: bookingRequests.id,
         category: bookingRequests.category,
@@ -25,23 +141,41 @@ export async function GET() {
         contactEmail: bookingRequests.contactEmail,
         specialRequests: bookingRequests.specialRequests,
         status: bookingRequests.status,
+      })
+      .from(bookingRequests)
+      .where(eq(bookingRequests.status, "pending"));
+
+    if (pending.length === 0) return NextResponse.json([]);
+
+    const requestIds = pending.map((r) => r.id);
+
+    // 2. Room lines grouped by request (leisure: 1, corporate: several, event: none)
+    const lineRows = await db
+      .select({
+        bookingRequestId: bookingRoomLines.bookingRequestId,
         roomId: bookingRoomLines.roomId,
         checkIn: bookingRoomLines.checkIn,
         checkOut: bookingRoomLines.checkOut,
         guestCount: bookingRoomLines.guestCount,
         roomName: rooms.name,
       })
-      .from(bookingRequests)
-      .innerJoin(bookingRoomLines, eq(bookingRequests.id, bookingRoomLines.bookingRequestId))
+      .from(bookingRoomLines)
       .innerJoin(rooms, eq(bookingRoomLines.roomId, rooms.id))
-      .where(eq(bookingRequests.status, "pending"));
+      .where(inArray(bookingRoomLines.bookingRequestId, requestIds));
 
-    if (pendingRequests.length === 0) {
-      return NextResponse.json([]);
+    const linesByRequest: Record<number, RoomLine[]> = {};
+    for (const row of lineRows) {
+      (linesByRequest[row.bookingRequestId] ||= []).push({
+        roomId: row.roomId,
+        checkIn: row.checkIn,
+        checkOut: row.checkOut,
+        guestCount: row.guestCount,
+        roomName: row.roomName,
+      });
     }
 
-    // 2. Fetch approved bookings for HARD conflict detection (Red Banner)
-    const approvedBookings = await db
+    // 3. Approved bookings for HARD conflict detection
+    const approvedBookings: ApprovedBooking[] = await db
       .select({
         roomId: bookingRoomLines.roomId,
         checkIn: bookingRoomLines.checkIn,
@@ -51,10 +185,8 @@ export async function GET() {
       .innerJoin(bookingRoomLines, eq(bookingRequests.id, bookingRoomLines.bookingRequestId))
       .where(eq(bookingRequests.status, "approved"));
 
-    // 3. Fetch add-ons for these pending requests
-    const requestIds = pendingRequests.map(r => r.id);
-    let addOnsMap: Record<number, any[]> = {};
-    
+    // 4. Add-ons for these pending requests
+    const addOnsMap: Record<number, AddOn[]> = {};
     const addOns = await db
       .select({
         bookingRequestId: addOnSelections.bookingRequestId,
@@ -64,95 +196,47 @@ export async function GET() {
       })
       .from(addOnSelections)
       .where(inArray(addOnSelections.bookingRequestId, requestIds));
+    for (const a of addOns) {
+      (addOnsMap[a.bookingRequestId] ||= []).push(a);
+    }
 
-    addOns.forEach(addon => {
-      if (!addOnsMap[addon.bookingRequestId]) addOnsMap[addon.bookingRequestId] = [];
-      addOnsMap[addon.bookingRequestId].push(addon);
-    });
-
-    // 4. Fetch corporate details for these pending requests
-    let corporateMap: Record<number, any> = {};
+    // 5. Corporate + event details + proof-of-payment status
+    const corporateMap: Record<number, unknown> = {};
     const corporateData = await db
       .select()
       .from(corporateDetails)
       .where(inArray(corporateDetails.bookingRequestId, requestIds));
-    
-    corporateData.forEach(cd => {
-      corporateMap[cd.bookingRequestId] = cd;
-    });
+    for (const cd of corporateData) corporateMap[cd.bookingRequestId] = cd;
 
-    // 5. Fetch event details for these pending requests
-    let eventMap: Record<number, any> = {};
+    const eventMap: Record<number, unknown> = {};
     const eventData = await db
       .select()
       .from(eventDetails)
       .where(inArray(eventDetails.bookingRequestId, requestIds));
-    
-    eventData.forEach(ed => {
-      eventMap[ed.bookingRequestId] = ed;
-    });
+    for (const ed of eventData) eventMap[ed.bookingRequestId] = ed;
 
-    // 6. Fetch proof of payment status for these pending requests
-    let popMap: Record<number, boolean> = {};
+    const popMap: Record<number, boolean> = {};
     const popData = await db
-      .select({
-        bookingRequestId: proofOfPayments.bookingRequestId,
-      })
+      .select({ bookingRequestId: proofOfPayments.bookingRequestId })
       .from(proofOfPayments)
       .where(inArray(proofOfPayments.bookingRequestId, requestIds));
-    
-    popData.forEach(pop => {
-      popMap[pop.bookingRequestId] = true;
-    });
+    for (const p of popData) popMap[p.bookingRequestId] = true;
 
-    // 7. Enrich with Hard Conflicts, Soft Warnings, Add-ons, and Category-specific data
-    const enrichedRequests = pendingRequests.map((req) => {
-      let conflict: string | null = null;
-      let pendingWarning: string | null = null;
+    const enriched = enrichRequests(
+      pending,
+      linesByRequest,
+      approvedBookings,
+      addOnsMap,
+      corporateMap,
+      eventMap,
+      popMap
+    );
 
-      // HARD CONFLICT: Overlaps with an APPROVED booking (Red Banner)
-      const hasApprovedOverlap = approvedBookings.some(
-        (approved) =>
-          approved.roomId === req.roomId &&
-          new Date(approved.checkIn) < new Date(req.checkOut) &&
-          new Date(approved.checkOut) > new Date(req.checkIn)
-      );
-
-      if (hasApprovedOverlap) {
-        const inDate = new Date(req.checkIn).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }).toUpperCase();
-        const outDate = new Date(req.checkOut).toLocaleDateString("en-ZA", { day: "numeric", month: "short" }).toUpperCase();
-        conflict = `OVERLAPS APPROVED BOOKING: ${req.roomName.toUpperCase()}, ${inDate}–${outDate}`;
-      }
-
-      // SOFT CONFLICT: Overlaps with ANOTHER PENDING booking (Amber Warning)
-      const pendingOverlaps = pendingRequests.filter(
-        (other) =>
-          other.id !== req.id && // Don't compare against itself
-          other.roomId === req.roomId &&
-          new Date(other.checkIn) < new Date(req.checkOut) &&
-          new Date(other.checkOut) > new Date(req.checkIn)
-      );
-
-      if (pendingOverlaps.length > 0) {
-        pendingWarning = `ATTENTION: ${pendingOverlaps.length} OTHER PENDING REQUEST(S) FOR THIS ROOM ON THESE DATES`;
-      }
-
-      return {
-        ...req,
-        conflict,
-        pendingWarning,
-        addOns: addOnsMap[req.id] || [],
-        corporateDetails: corporateMap[req.id] || null,
-        eventDetails: eventMap[req.id] || null,
-        proofOfPaymentUploaded: popMap[req.id] || false,
-      };
-    });
-
-    return NextResponse.json(enrichedRequests);
-  } catch (error: any) {
+    return NextResponse.json(enriched);
+  } catch (error) {
     console.error("❌ [API ERROR] Failed to fetch admin requests:", error);
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" }, 
+      { error: error instanceof Error ? error.message : "Internal Server Error" },
       { status: 500 }
     );
   }

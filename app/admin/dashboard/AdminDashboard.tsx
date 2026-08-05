@@ -35,10 +35,11 @@ interface BookingRequest {
   guestName: string;
   contactPhone: string;
   contactEmail?: string | null;
-  checkIn: string;
-  checkOut: string;
-  roomName: string;
-  guestCount: number;
+  // null for event requests, which have no room line
+  checkIn?: string | null;
+  checkOut?: string | null;
+  roomName?: string | null;
+  guestCount?: number | null;
   specialRequests?: string | null;
   status: "pending" | "approved" | "declined";
   conflict?: string | null;
@@ -362,15 +363,15 @@ export function AdminDashboard() {
                     <>
                       <div>
                         <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Dates</span>
-                        <span className="text-stone-900 font-medium">{fmtDate(req.checkIn)} → {fmtDate(req.checkOut)}</span>
+                        <span className="text-stone-900 font-medium">{req.checkIn && req.checkOut ? `${fmtDate(req.checkIn)} → ${fmtDate(req.checkOut)}` : "—"}</span>
                       </div>
                       <div>
                         <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Room</span>
-                        <span className="text-stone-900 font-medium">{req.roomName}</span>
+                        <span className="text-stone-900 font-medium">{req.roomName ?? "—"}</span>
                       </div>
                       <div>
                         <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Guests</span>
-                        <span className="text-stone-900 font-medium">{req.guestCount}</span>
+                        <span className="text-stone-900 font-medium">{req.guestCount ?? "—"}</span>
                       </div>
                     </>
                   )}
