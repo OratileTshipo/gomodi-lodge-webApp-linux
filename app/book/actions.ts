@@ -126,6 +126,7 @@ export async function submitLeisureBooking(
       await db.insert(proofOfPayments).values({
         bookingRequestId: request.id,
         fileUrl: input.proofOfPaymentUrl,
+        fileName: "proof-of-payment",
         uploadedAt: new Date(),
       });
     }
