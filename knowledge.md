@@ -40,7 +40,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## Gotchas
 
 - The 3 original build blockers (unclosed `globals.css` media block, `lib/motion.ts` → `.tsx` rename, missing `fileName` in POP insert) are **fixed on main** (commits `8690d0b`+).
-- This machine (Node v20.20.2) still fails `next build` on **any** Next 16.2.12 app while prerendering `/_global-error` (`Cannot read properties of null (reading 'useContext')`) — framework/environment issue (vercel/next.js #84994). Not reproduced on Vercel (deploys go green). Custom `app/global-error.tsx` + `app/not-found.tsx` mitigate locally.
+- **Local build FIXED (Aug 6):** `npm run build` previously hung/crashed on this machine while prerendering `/_global-error` (`Cannot read properties of null (reading 'useContext')` — tracked upstream as vercel/next.js #84994). Root cause on this machine: `NODE_ENV="development"` was set in `.env`/`.env.local` (and exported by the tool runtime), which Next.js forbids. Fix: removed `NODE_ENV` lines from the env files and changed the npm script to `"build": "NODE_ENV=production next build"`. Build now passes locally (~30s). Vercel deploys unaffected.
 - Auth is dev-grade: `request-otp` returns the OTP in the response; `verify-otp` accepts any 6 digits; session cookie is unsigned JSON (8h, httpOnly).
 - **Admin API routes have no server-side session checks** — only the dashboard UI calls `/api/auth/me`. Don't rely on the API being private.
 - Booking form's POP file-drop only records a filename; it never calls `/api/upload`, so no proof of payment is actually stored yet.
