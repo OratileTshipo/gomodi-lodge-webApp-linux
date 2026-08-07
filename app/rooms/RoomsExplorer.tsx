@@ -62,7 +62,7 @@ export function RoomsExplorer({
       {/* BREADCRUMB */}
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
           <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Our Rooms</li>
         </ol>
@@ -71,7 +71,7 @@ export function RoomsExplorer({
       {/* HERO - mount-safe staggered entrance (pure CSS, always visible) */}
       <section className="max-w-6xl mx-auto px-6 pb-12">
         <span className="pill pill-leisure motion-pop" data-stagger="1">Nine Rooms</span>
-        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="2">Every room, freshly renovated. One standard of comfort.</h1>
+        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="2">Every room, freshly renovated. One standard of comfort.</h1>
         <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-pop" data-stagger="3">
           Warm terracotta walls, dark walnut wood, and cream textiles throughout. Every room includes Smart TV, WiFi, air conditioning with fan and heater backup, and your choice of shower or bath. One flexible room can be set as two singles or one double — just tell us what you need.
         </p>
@@ -146,7 +146,7 @@ export function RoomsExplorer({
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="font-semibold text-ink text-base leading-tight">{room.name}</h3>
-                    <div className="text-terracotta font-semibold text-base whitespace-nowrap">
+                    <div className="text-terracotta-dark font-semibold text-base whitespace-nowrap">
                       R{Number(room.baseRate).toLocaleString("en-ZA")}<span className="text-stone text-xs font-normal"> / night</span>
                     </div>
                   </div>
@@ -198,7 +198,7 @@ export function RoomsExplorer({
                   <h2 className="font-semibold text-ink text-xl md:text-2xl mt-3">{activeRoom.name}</h2>
                 </div>
                 <div className="text-right">
-                  <div className="text-terracotta font-semibold text-2xl">R{Number(activeRoom.baseRate).toLocaleString("en-ZA")}</div>
+                  <div className="text-terracotta-dark font-semibold text-2xl">R{Number(activeRoom.baseRate).toLocaleString("en-ZA")}</div>
                   <div className="text-stone text-xs">per night</div>
                 </div>
               </div>
@@ -226,7 +226,7 @@ export function RoomsExplorer({
                 <div className="grid grid-cols-2 gap-2">
                   {activeRoom.amenities.map((a) => (
                     <div key={a} className="flex items-center gap-2 text-sm text-ink">
-                      <span className="text-terracotta">✓</span>{a}
+                      <span className="text-terracotta-dark">✓</span>{a}
                     </div>
                   ))}
                 </div>
@@ -234,7 +234,7 @@ export function RoomsExplorer({
               {activeRoom.flexible && (
                 <div className="mt-6 bg-gold-tint border border-gold/30 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <svg className="flex-shrink-0 mt-0.5 text-gold" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <svg className="flex-shrink-0 mt-0.5 text-gold-dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                     <div>
                       <div className="font-semibold text-ink text-sm">Flexible configuration</div>
                       <p className="text-stone text-sm mt-1">Tell us when you book whether you&apos;d like this room set up as two single beds or one double — we&apos;ll have it ready for your arrival.</p>

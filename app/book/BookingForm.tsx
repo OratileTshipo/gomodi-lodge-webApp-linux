@@ -154,11 +154,11 @@ export function BookingForm({
         cls += "hover:bg-terracotta-tint text-ink ";
       }
 
-      if (dateStr === todayISO && !isPast) cls += "font-bold text-terracotta ";
+      if (dateStr === todayISO && !isPast) cls += "font-bold text-terracotta-dark ";
 
       if (checkIn && checkOut) {
         if (dateStr === checkIn || dateStr === checkOut) {
-          cls += "bg-terracotta text-white font-semibold shadow-sm ";
+          cls += "bg-terracotta-dark text-white font-semibold shadow-sm ";
         } else if (date > new Date(checkIn) && date < new Date(checkOut)) {
           cls += "bg-terracotta-tint text-terracotta-dark font-medium ";
         }
@@ -217,7 +217,7 @@ export function BookingForm({
     return (
       <main className="max-w-2xl mx-auto px-6 py-16 text-center motion-pop">
         <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto motion-pop">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3">Request received</span>
         <h1 className="font-semibold text-ink text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
@@ -233,9 +233,9 @@ export function BookingForm({
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
           <li className="text-stone/50">/</li>
-          <li><Link href="/rooms" className="hover:text-terracotta">Rooms</Link></li>
+          <li><Link href="/rooms" className="hover:text-terracotta-dark">Rooms</Link></li>
           <li className="text-stone/50">/</li>
           <li className="text-ink font-medium">Book Your Stay</li>
         </ol>
@@ -243,7 +243,7 @@ export function BookingForm({
 
       <section className="max-w-6xl mx-auto px-6 pb-8">
         <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3 motion-fade-up motion-ready" data-stagger="1">Leisure Booking</span>
-        <h1 className="font-semibold text-ink text-3xl md:text-4xl mt-2 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Let&apos;s get you booked in.</h1>
+        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-2 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Let&apos;s get you booked in.</h1>
         <p className="text-stone mt-3 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="3">
           Tell us when you&apos;d like to come, which room you fancy, and whether you&apos;d like us to sort meals. We&apos;ll check availability and come back to you on WhatsApp.
         </p>
@@ -252,9 +252,9 @@ export function BookingForm({
       {/* PROGRESS */}
       <section className="max-w-6xl mx-auto px-6 pb-6">
         <div className="flex items-center gap-2 md:gap-3 text-xs">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${nights > 0 ? "bg-terracotta text-white" : "bg-terracotta-tint text-terracotta-dark"}`}>1</div>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${nights > 0 ? "bg-terracotta-dark text-white" : "bg-terracotta-tint text-terracotta-dark"}`}>1</div>
           <div className={`h-0.5 flex-1 ${nights > 0 ? "bg-terracotta" : "bg-walnut/10"}`} />
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta text-white" : nights > 0 ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>2</div>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta-dark text-white" : nights > 0 ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>2</div>
           <div className={`h-0.5 flex-1 ${roomId ? "bg-terracotta" : "bg-walnut/10"}`} />
           <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>3</div>
           <div className="h-0.5 flex-1 bg-walnut/10" />
@@ -275,7 +275,7 @@ export function BookingForm({
             {/* STEP 1: DATES (Compact) */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 1</span>
+                <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Step 1</span>
                 <h2 className="font-semibold text-ink text-lg mt-1">Pick your dates</h2>
               </div>
               
@@ -328,7 +328,7 @@ export function BookingForm({
             {/* STEP 2: ROOM */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 2</span>
+                <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Step 2</span>
                 <h2 className="font-semibold text-ink text-lg mt-1">Choose your room</h2>
                 <p className="text-stone text-sm mt-1">Rooms greyed out are already booked for your dates.</p>
               </div>
@@ -365,7 +365,7 @@ export function BookingForm({
                             <div className="font-semibold text-ink text-sm">{r.name}</div>
                             <div className="text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
                           </div>
-                          <div className="text-terracotta font-semibold text-sm whitespace-nowrap">R{Number(r.baseRate)}<span className="text-stone/60 font-normal text-[10px]">/nt</span></div>
+                          <div className="text-terracotta-dark font-semibold text-sm whitespace-nowrap">R{Number(r.baseRate)}<span className="text-stone/60 font-normal text-[10px]">/nt</span></div>
                         </div>
                       </div>
                     </div>
@@ -386,30 +386,30 @@ export function BookingForm({
             {/* STEP 3: MEALS */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 3</span>
+                <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Step 3</span>
                 <h2 className="font-semibold text-ink text-lg mt-1">Add breakfast or dinner <span className="text-stone text-sm font-normal">(optional)</span></h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className={`rounded-xl p-4 border flex items-start gap-3 cursor-pointer transition-all ${breakfast ? "border-terracotta bg-terracotta-tint/50" : "border-walnut/10 bg-white hover:border-walnut/20"}`}>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${breakfast ? "bg-terracotta border-terracotta" : "border-walnut/20"}`}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${breakfast ? "bg-terracotta-dark border-terracotta-dark" : "border-walnut/20"}`}>
                     {breakfast && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}><path d="M20 6L9 17l-5-5"/></svg>}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div><div className="font-semibold text-ink text-sm">Breakfast</div><div className="text-stone text-xs mt-0.5">Full cooked or continental</div></div>
-                      <div className="text-terracotta font-semibold text-sm whitespace-nowrap">R{BREAKFAST_PRICE}</div>
+                      <div className="text-terracotta-dark font-semibold text-sm whitespace-nowrap">R{BREAKFAST_PRICE}</div>
                     </div>
                   </div>
                   <input type="checkbox" checked={breakfast} onChange={(e) => setBreakfast(e.target.checked)} className="sr-only" />
                 </label>
                 <label className={`rounded-xl p-4 border flex items-start gap-3 cursor-pointer transition-all ${dinner ? "border-terracotta bg-terracotta-tint/50" : "border-walnut/10 bg-white hover:border-walnut/20"}`}>
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${dinner ? "bg-terracotta border-terracotta" : "border-walnut/20"}`}>
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 ${dinner ? "bg-terracotta-dark border-terracotta-dark" : "border-walnut/20"}`}>
                     {dinner && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}><path d="M20 6L9 17l-5-5"/></svg>}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div><div className="font-semibold text-ink text-sm">Dinner</div><div className="text-stone text-xs mt-0.5">Three-course set menu</div></div>
-                      <div className="text-terracotta font-semibold text-sm whitespace-nowrap">R{DINNER_PRICE}</div>
+                      <div className="text-terracotta-dark font-semibold text-sm whitespace-nowrap">R{DINNER_PRICE}</div>
                     </div>
                   </div>
                   <input type="checkbox" checked={dinner} onChange={(e) => setDinner(e.target.checked)} className="sr-only" />
@@ -420,7 +420,7 @@ export function BookingForm({
             {/* STEP 4: DETAILS */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Step 4</span>
+                <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Step 4</span>
                 <h2 className="font-semibold text-ink text-lg mt-1">Your details</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -446,7 +446,7 @@ export function BookingForm({
             {/* PAYMENT */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
-                <span className="text-terracotta font-semibold text-xs uppercase tracking-wide">Payment</span>
+                <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Payment</span>
                 <h2 className="font-semibold text-ink text-lg mt-1">Payment options</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -494,7 +494,7 @@ export function BookingForm({
                 <label className="text-sm text-stone">I&apos;m happy for Gomodi Guest Lodge to keep my details to manage this booking, in line with POPIA. *</label>
               </div>
               <div className="mt-6">
-                <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta hover:bg-terracotta-dark text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-colors shadow-sm">
+                <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta-dark hover:bg-[#74301f] text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-colors shadow-sm">
                   {status === "submitting" ? "Sending…" : "Send booking request"}
                 </button>
                 <p className="text-stone text-xs mt-3 text-center">Submitting doesn&apos;t confirm your booking — we&apos;ll check availability and come back to you on WhatsApp.</p>
@@ -518,11 +518,11 @@ export function BookingForm({
                 <div className="border-t border-walnut/10 pt-3 mt-3 space-y-1.5">
                   <div className="flex justify-between text-stone"><span>Accommodation</span><span>{accomTotal ? fmt(accomTotal) : "—"}</span></div>
                   <div className="flex justify-between text-stone"><span>Meals</span><span>{mealTotal ? fmt(mealTotal) : "—"}</span></div>
-                  <div className="flex justify-between text-ink font-semibold text-base pt-2 border-t border-walnut/10 mt-2"><span>Indicative total</span><span className="text-terracotta">{accomTotal || mealTotal ? fmt(accomTotal + mealTotal) : "—"}</span></div>
+                  <div className="flex justify-between text-ink font-semibold text-base pt-2 border-t border-walnut/10 mt-2"><span>Indicative total</span><span className="text-terracotta-dark">{accomTotal || mealTotal ? fmt(accomTotal + mealTotal) : "—"}</span></div>
                 </div>
               </div>
               <div className="mt-4 text-center">
-                <Link href="/rooms" className="text-sm text-stone hover:text-terracotta">Not sure which room?</Link>
+                <Link href="/rooms" className="text-sm text-stone hover:text-terracotta-dark">Not sure which room?</Link>
               </div>
             </div>
           </aside>
@@ -533,7 +533,7 @@ export function BookingForm({
       {roomId && rooms.filter(r => r.id !== roomId && (checkIn && checkOut ? !unavailableIds.includes(r.id) : true)).length > 0 && (
         <section className="max-w-6xl mx-auto px-6 pb-20 border-t border-walnut/10 pt-12 mt-8 motion-pop">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-ink">Not quite the right fit?</h2>
+            <h2 className="font-display text-2xl font-semibold text-ink">Not quite the right fit?</h2>
             <p className="text-stone mt-2 max-w-xl mx-auto">
               Here are our other available rooms for your selected dates. Tap any room to switch your booking instantly.
             </p>
@@ -558,12 +558,12 @@ export function BookingForm({
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <div className="font-semibold text-ink text-base group-hover:text-terracotta transition-colors">{r.name}</div>
+                        <div className="font-semibold text-ink text-base group-hover:text-terracotta-dark transition-colors">{r.name}</div>
                         <div className="text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
                       </div>
-                      <div className="text-terracotta font-semibold text-base whitespace-nowrap">R{Number(r.baseRate)}</div>
+                      <div className="text-terracotta-dark font-semibold text-base whitespace-nowrap">R{Number(r.baseRate)}</div>
                     </div>
-                    <button className="w-full mt-3 py-2 text-sm font-semibold text-terracotta border border-terracotta/30 rounded-lg hover:bg-terracotta-tint transition-colors">
+                    <button className="w-full mt-3 py-2 text-sm font-semibold text-terracotta-dark border border-terracotta-dark/30 rounded-lg hover:bg-terracotta-tint transition-colors">
                       Switch to this room
                     </button>
                   </div>

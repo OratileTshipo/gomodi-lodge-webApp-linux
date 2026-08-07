@@ -96,7 +96,7 @@ export default function CorporatePage() {
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
           <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Corporate &amp; Government</li>
         </ol>
@@ -111,14 +111,14 @@ export default function CorporatePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/50 to-ink/80" />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-corporate self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Corporate &amp; Government</span>
-            <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">
+            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">
               Accommodation that respects your procurement process.
             </h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               Contractor deployments, government rotations, and multi-room group stays — one form captures everything, and we issue the formal quotations, invoices, and consolidated statements your finance team needs.
             </p>
             <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
-              <a href="#quote-form" className="btn-primary px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white">
+              <a href="#quote-form" className="px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white transition-colors">
                 Request a Quote
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
               </a>
@@ -132,7 +132,7 @@ export default function CorporatePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-corporate">Who We Serve</span>
-            <h2 className="text-ink font-semibold text-2xl md:text-3xl mt-4">Built for the clients we already host.</h2>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Built for the clients we already host.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -162,7 +162,7 @@ export default function CorporatePage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
             <span className="pill pill-corporate">The Documentation Trail</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Everything your finance team needs, in order.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Everything your finance team needs, in order.</h2>
             <p className="text-stone mt-4 leading-relaxed">
               From the first quote to the final consolidated statement, every document is issued formally, by email, and ready for your internal approval and payment processes.
             </p>
@@ -198,13 +198,13 @@ export default function CorporatePage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-corporate">Request a Quote</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us what you need. We&apos;ll come back with a formal quote.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us what you need. We&apos;ll come back with a formal quote.</h2>
           </div>
 
           {status === "success" ? (
             <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-pop">
               <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
               </div>
               <h3 className="font-semibold text-ink text-xl mb-2">Quote request received.</h3>
               <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto">
@@ -268,7 +268,7 @@ export default function CorporatePage() {
                       <div key={i} className="room-line bg-cream-light rounded-xl border border-walnut/10 p-4">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-semibold text-ink">Room {i + 1}</span>
-                          <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1} className="text-stone hover:text-terracotta p-1 rounded transition-colors disabled:opacity-30">
+                          <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1} className="text-stone hover:text-terracotta-dark p-1 rounded transition-colors disabled:opacity-30">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                           </button>
                         </div>
@@ -351,7 +351,7 @@ export default function CorporatePage() {
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-corporate">Common Questions</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Before you request.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Before you request.</h2>
           </div>
           <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
@@ -373,7 +373,7 @@ export default function CorporatePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center motion-fade-up motion-ready">
             <div>
               <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to talk it through?</span>
-              <h2 className="font-semibold text-2xl md:text-3xl mt-4">We&apos;re a message or call away.</h2>
+              <h2 className="font-display font-semibold text-2xl md:text-3xl mt-4">We&apos;re a message or call away.</h2>
               <p className="text-cream/80 mt-4">Reach us by WhatsApp, phone, or email — whichever suits your process.</p>
             </div>
             <div className="flex flex-col gap-3">

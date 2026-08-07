@@ -29,7 +29,7 @@ export default function GlobalError({
             borderRadius: 8,
             border: "none",
             cursor: "pointer",
-            background: "#c65d3c",
+            background: "#8f3e25",
             color: "#faf6f0",
             fontWeight: 600,
           }}

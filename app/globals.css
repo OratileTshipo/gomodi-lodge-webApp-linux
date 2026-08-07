@@ -5,15 +5,20 @@
   --foreground: #2a1e18;
 
   /* Fixed site-header height; HeaderSpacer keeps it in sync with the real
-     rendered header. Used for page offset + sticky bars + anchor scrolling. */
-  --header-h: 73px;
+     rendered header. Used for page offset + sticky bars + anchor scrolling.
+     Default matches the 44px-hit-area header (77px) to avoid an offset flash
+     before HeaderSpacer hydrates; it re-syncs on mount regardless. */
+  --header-h: 77px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  /* Real fonts loaded via next/font in layout.tsx (were previously never
+     defined — the site silently fell back to system-ui). */
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-playfair);
 
   /* ---------- Brand palette — matches the site design exactly ---------- */
   --color-terracotta: #c65d3c;
@@ -65,7 +70,7 @@ html {
 }
 
 body {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: #faf6f0;
   color: #2a1e18;
   text-rendering: optimizeLegibility;
@@ -136,16 +141,18 @@ img {
 }
 .pill-leisure { background: #f5e3db; color: #8f3e25; }
 .pill-corporate { background: #e8ddd6; color: #4a2e22; }
-.pill-event { background: #f5e8d8; color: #8f6a3e; }
+.pill-event { background: #f5e8d8; color: #7a5a30; }
 .pill-neutral { background: #e8ddd6; color: #4a2e22; }
 .pill-active { background: #4a2e22; color: #faf6f0; }
 
 .btn-primary {
-  background: #c65d3c;
+  /* Contrast fix (audit): terracotta #c65d3c gave cream text only 3.88:1 on
+     buttons. terracotta-dark #8f3e25 reaches 6.76:1 on cream-light. */
+  background: #8f3e25;
   color: #faf6f0;
   transition: background 0.2s ease, transform 0.1s ease;
 }
-.btn-primary:hover { background: #8f3e25; }
+.btn-primary:hover { background: #74301f; }
 .btn-primary:active { transform: translateY(1px); }
 .btn-primary:disabled { background: #e8a893; cursor: not-allowed; }
 
@@ -164,11 +171,14 @@ img {
 .btn-gold:hover { background: #8f6a3e; color: #faf6f0; }
 
 .nav-link { position: relative; }
+/* Desktop nav links carry py-3 (0.75rem) hit-area padding for 44px touch
+   targets; the underline is pinned just below the TEXT (0.75rem padding -
+   4px gap), not the box edge, so it keeps the original close-to-text look. */
 .nav-link::after {
   content: "";
   position: absolute;
   left: 0;
-  bottom: -4px;
+  bottom: calc(0.75rem - 4px);
   width: 0;
   height: 2px;
   background: #c65d3c;
@@ -211,10 +221,10 @@ img {
 .form-input:focus {
   border-color: #4a2e22; box-shadow: 0 0 0 3px rgba(74, 46, 34, 0.15); outline: none;
 }
-.form-input.error { border-color: #c65d3c; }
-.error-msg { color: #c65d3c; font-size: 12px; margin-top: 4px; }
+.form-input.error { border-color: #8f3e25; }
+.error-msg { color: #8f3e25; font-size: 12px; margin-top: 4px; }
 .form-group.has-error .error-msg { display: block; }
-.form-group.has-error .form-input { border-color: #c65d3c; }
+.form-group.has-error .form-input { border-color: #8f3e25; }
 
 .catering-card { transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease; cursor: pointer; }
 .catering-card:hover { border-color: #d4a574; }
@@ -251,7 +261,7 @@ img {
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s ease; flex-shrink: 0;
 }
-.addon-card.selected .addon-check { background: #c65d3c; border-color: #c65d3c; }
+.addon-card.selected .addon-check { background: #8f3e25; border-color: #8f3e25; }
 
 .cal-day {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
@@ -261,8 +271,8 @@ img {
 .cal-day:hover:not(.disabled):not(.empty) { background: #f5e3db; }
 .cal-day.disabled { color: #c4b8ad; cursor: not-allowed; text-decoration: line-through; }
 .cal-day.in-range { background: #f5e3db; color: #8f3e25; border-radius: 0; }
-.cal-day.range-start { background: #c65d3c; color: #faf6f0; font-weight: 600; border-radius: 8px 0 0 8px; }
-.cal-day.range-end { background: #c65d3c; color: #faf6f0; font-weight: 600; border-radius: 0 8px 8px 0; }
+.cal-day.range-start { background: #8f3e25; color: #faf6f0; font-weight: 600; border-radius: 8px 0 0 8px; }
+.cal-day.range-end { background: #8f3e25; color: #faf6f0; font-weight: 600; border-radius: 0 8px 8px 0; }
 .cal-day.range-start.range-end { border-radius: 8px; }
 .cal-day.today { font-weight: 700; }
 .cal-day.today::after {
@@ -281,7 +291,7 @@ img {
   font-size: 12px; font-weight: 600; flex-shrink: 0; transition: all 0.3s ease;
 }
 .step-dot.pending { background: #e8ddd6; color: #4a2e22; }
-.step-dot.active { background: #c65d3c; color: #faf6f0; }
+.step-dot.active { background: #8f3e25; color: #faf6f0; }
 .step-dot.done { background: #4a2e22; color: #faf6f0; }
 .step-line { height: 2px; flex: 1; background: #e8ddd6; transition: background 0.3s ease; }
 .step-line.done { background: #4a2e22; }

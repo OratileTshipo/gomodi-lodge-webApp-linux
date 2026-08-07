@@ -66,7 +66,7 @@ export default function EventsPage() {
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
           <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Events &amp; Functions</li>
         </ol>
@@ -81,7 +81,7 @@ export default function EventsPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/75" />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-event self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Events &amp; Functions</span>
-            <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">Host your moment here.</h1>
+            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">Host your moment here.</h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               Weddings, baby showers, birthday parties and private functions — for up to 50 guests, with confirmed catering and on-site accommodation.
             </p>
@@ -98,7 +98,7 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-event">What We Host</span>
-            <h2 className="text-ink font-semibold text-2xl md:text-3xl mt-4">Your event, your way.</h2>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Your event, your way.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -124,7 +124,7 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
             <span className="pill pill-event">The Venue</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">A space that works for your guests.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">A space that works for your guests.</h2>
             <p className="text-stone mt-4 leading-relaxed">Our multipurpose function space flexes with your event — seated dinners, cocktail setups, buffet layouts, or open floor for dancing.</p>
             <div className="mt-6 grid grid-cols-2 gap-4">
               {[["50", "Max Guests"], ["Flexible", "Layout Options"], ["9", "Rooms for Guests"], ["On-site", "Secure Parking"]].map(([n, l], i) => (
@@ -146,44 +146,44 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-event">Catering Packages</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Confirmed pricing. No surprises.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Confirmed pricing. No surprises.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="1">
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Light</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Tea &amp; Snacks</h3>
-              <div className="text-terracotta font-semibold text-2xl mt-3">R150 <span className="text-stone text-sm font-normal">pp</span></div>
+              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R150 <span className="text-stone text-sm font-normal">pp</span></div>
               <ul className="mt-5 space-y-2 text-sm text-ink">
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Tea, coffee, and soft drinks</li>
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Assorted savouries and pastries</li>
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Ideal for showers &amp; daytime events</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Tea, coffee, and soft drinks</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Assorted savouries and pastries</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Ideal for showers &amp; daytime events</li>
               </ul>
             </div>
-            <div className="bg-white rounded-2xl p-8 border-2 border-gold card-shadow relative motion-scale-in motion-ready card-lift" data-stagger="2">
+            <div className="bg-white rounded-2xl p-8 border-2 border-gold-dark card-shadow relative motion-scale-in motion-ready card-lift" data-stagger="2">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill pill-event">Most Popular</span>
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Full</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Three-Course Meal</h3>
-              <div className="text-terracotta font-semibold text-2xl mt-3">R250 <span className="text-stone text-sm font-normal">pp</span></div>
+              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R250 <span className="text-stone text-sm font-normal">pp</span></div>
               <ul className="mt-5 space-y-2 text-sm text-ink">
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Starter, main, and dessert</li>
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Soft drinks, water, tea &amp; coffee</li>
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Ideal for dinners &amp; receptions</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Starter, main, and dessert</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Soft drinks, water, tea &amp; coffee</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Ideal for dinners &amp; receptions</li>
               </ul>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="3">
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Premium</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Full-Day Package</h3>
-              <div className="text-terracotta font-semibold text-2xl mt-3">R350 <span className="text-stone text-sm font-normal">pp</span></div>
+              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R350 <span className="text-stone text-sm font-normal">pp</span></div>
               <ul className="mt-5 space-y-2 text-sm text-ink">
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Morning tea, lunch, and dinner</li>
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Full beverage service</li>
-                <li className="flex items-start gap-2"><span className="text-gold mt-0.5">✓</span> Ideal for weddings &amp; full-day events</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Morning tea, lunch, and dinner</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Full beverage service</li>
+                <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Ideal for weddings &amp; full-day events</li>
               </ul>
             </div>
           </div>
           <div className="mt-10 bg-gold-tint border border-gold/30 rounded-2xl p-6 md:p-8 motion-fade-up motion-ready">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-gold flex items-center justify-center text-white flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-gold-dark flex items-center justify-center text-white flex-shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
               </div>
               <div>
@@ -200,13 +200,13 @@ export default function EventsPage() {
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-event">Inquire</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us about your event.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us about your event.</h2>
           </div>
 
           {status === "success" ? (
             <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center motion-pop">
               <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
               </div>
               <h3 className="font-semibold text-ink text-xl mb-2">Inquiry received!</h3>
               <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto">
@@ -267,7 +267,7 @@ export default function EventsPage() {
                       <div className="flex items-start justify-between">
                         <div><div className="font-semibold text-ink text-sm">{c.label}</div><div className="text-stone text-xs mt-0.5">{c.price}</div></div>
                         <div className="w-4 h-4 rounded-full border-2 border-walnut/30 flex items-center justify-center">
-                          {catering === c.id && <div className="w-2 h-2 rounded-full bg-gold" />}
+                          {catering === c.id && <div className="w-2 h-2 rounded-full bg-gold-dark" />}
                         </div>
                       </div>
                     </label>
@@ -316,7 +316,7 @@ export default function EventsPage() {
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-event">Common Questions</span>
-            <h2 className="font-semibold text-ink text-2xl md:text-3xl mt-4">Before you ask.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Before you ask.</h2>
           </div>
           <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
@@ -336,7 +336,7 @@ export default function EventsPage() {
       <section className="py-16 md:py-20 bg-walnut text-cream-light">
         <div className="max-w-4xl mx-auto px-6 text-center motion-fade-up motion-ready">
           <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to chat?</span>
-          <h2 className="font-semibold text-2xl md:text-3xl mt-4">Message us on WhatsApp.</h2>
+          <h2 className="font-display font-semibold text-2xl md:text-3xl mt-4">Message us on WhatsApp.</h2>
           <a href="#" className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-colors">Chat on WhatsApp</a>
         </div>
       </section>

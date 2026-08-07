@@ -1,5 +1,22 @@
 import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+// Self-hosted fonts via next/font — zero layout shift, no external requests.
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+  // Real italics for the "Iphe Lerato" motto — Playfair's italic is a
+  // genuine cut, not a browser-synthesised slant.
+  style: ["normal", "italic"],
+});
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { BranchModalProvider } from "@/components/BranchModalContext";
@@ -52,7 +69,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
       <head>
         <script
           type="application/ld+json"

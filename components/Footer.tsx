@@ -13,7 +13,7 @@ export function Footer() {
               <div className="font-semibold text-cream-light text-sm">Gomodi Guest Lodge</div>
             </div>
           </div>
-          <div className="text-xl md:text-2xl italic font-semibold text-gold-light tracking-wide mb-4">
+          <div className="font-display text-xl md:text-2xl italic font-semibold text-gold-light tracking-wide mb-4">
             Iphe Lerato
           </div>
           <p className="text-sm max-w-sm">
@@ -29,11 +29,11 @@ export function Footer() {
         </div>
         <div>
           <h4 className="text-cream-light font-semibold text-sm mb-3">Explore</h4>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/rooms" className="hover:text-cream-light">Rooms</Link></li>
-            <li><Link href="/book" className="hover:text-cream-light">Book a Stay</Link></li>
-            <li><Link href="/events" className="hover:text-cream-light">Events</Link></li>
-            <li><Link href="/corporate" className="hover:text-cream-light">Corporate</Link></li>
+          <ul className="space-y-1 text-sm">
+            <li><Link href="/rooms" className="inline-block py-3 hover:text-cream-light">Rooms</Link></li>
+            <li><Link href="/book" className="inline-block py-3 hover:text-cream-light">Book a Stay</Link></li>
+            <li><Link href="/events" className="inline-block py-3 hover:text-cream-light">Events</Link></li>
+            <li><Link href="/corporate" className="inline-block py-3 hover:text-cream-light">Corporate</Link></li>
           </ul>
         </div>
         <div>
@@ -47,10 +47,10 @@ export function Footer() {
       </div>
       <div className="max-w-6xl mx-auto px-6 mt-10 pt-6 border-t border-cream/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
         <div>© 2026 Gomodi Guest Lodge. All rights reserved.</div>
-        <div className="flex gap-6">
-          <span className="hover:text-cream-light cursor-pointer">Privacy (POPIA)</span>
-          <span className="hover:text-cream-light cursor-pointer">Terms</span>
-          <span className="hover:text-cream-light cursor-pointer">Cancellation Policy</span>
+        <div className="flex flex-wrap gap-x-6 gap-y-1">
+          <span className="inline-flex items-center min-h-11 px-2 py-2 hover:text-cream-light cursor-pointer">Privacy (POPIA)</span>
+          <span className="inline-flex items-center min-h-11 px-2 py-2 hover:text-cream-light cursor-pointer">Terms</span>
+          <span className="inline-flex items-center min-h-11 px-2 py-2 hover:text-cream-light cursor-pointer">Cancellation Policy</span>
         </div>
       </div>
     </footer>
