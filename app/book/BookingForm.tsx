@@ -504,7 +504,7 @@ export function BookingForm({
 
           {/* SUMMARY SIDEBAR */}
           <aside className="lg:col-span-1">
-            <div className="lg:sticky lg:top-6 bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 motion-fade-up motion-ready">
+            <div className="lg:sticky lg:top-[calc(var(--header-h)+1rem)] bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 motion-fade-up motion-ready">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-ink text-lg">Your stay</h3>
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark">Leisure</span>

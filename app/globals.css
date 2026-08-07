@@ -47,8 +47,21 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  /* overflow-x: clip (not hidden): `hidden` makes html/body a scroll
+     container, which silently disables position:sticky (filter bars, booking
+     sidebar). `clip` clips horizontal overflow without creating a scroll
+     container, so sticky/fixed keep working. */
+  overflow-x: clip;
   scroll-padding-top: calc(var(--header-h) + 8px);
+}
+
+/* Older browsers without `overflow: clip` (Safari < 16) get `hidden` — the
+   sticky/fixed trade-off only matters on modern browsers that support clip. */
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 
 body {
@@ -59,9 +72,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  overflow-x: clip;
   width: 100%;
-  contain: layout style;
+  /* NOTE: no `contain: layout` here — per the CSS Containment spec, layout
+     containment makes this element a containing block for `position: fixed`
+     descendants, which silently breaks the fixed site header (it scrolls away
+     with the page). Performance containment lives on `main` instead. */
 }
 
 /* Hardware acceleration for main scrollable content */
@@ -272,6 +288,64 @@ img {
 
 @media (min-width: 1024px) {
   .summary-sticky { position: sticky; top: 96px; }
+}
+
+/* ---------- Short viewports: heroes become fully responsive ---------- */
+/* Below 650px of height (landscape phones, short laptop windows) the
+   full-bleed heroes flow with their content like the rooms hero does — the
+   container shrinks to fit the viewport and the text/CTA compact, so the
+   headline and buttons stay fully visible without scrolling. (The 650px
+   cutoff keeps the 520px tall hero from landing past the fold on the
+   641–650px band where header + breadcrumb already eat ~125px.) */
+@media (max-height: 650px) {
+  .hero-outer {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100svh - var(--header-h));
+  }
+  .hero-content {
+    justify-content: flex-start;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  .hero-content .pill {
+    margin-bottom: 0.5rem;
+  }
+  .hero-content h1 {
+    font-size: 1.4rem;
+    line-height: 1.2;
+  }
+  .hero-content p {
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+  }
+  .hero-cta {
+    margin-top: 0.75rem;
+  }
+  .hero-cta > a,
+  .hero-cta > button {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Medium-short windows (651–800px tall): keep the tall hero but compact its
+   content so the headline + CTA never overflow the container or the fold. */
+@media (min-height: 651px) and (max-height: 800px) {
+  .hero-content {
+    padding-bottom: 2rem;
+  }
+  .hero-content h1 {
+    font-size: 2rem;
+    line-height: 1.25;
+  }
+  .hero-content p {
+    margin-top: 0.5rem;
+  }
+  .hero-cta {
+    margin-top: 1.25rem;
+  }
 }
 
 /* ---------- Scroll-reveal + micro-interactions (additive polish) ---------- */

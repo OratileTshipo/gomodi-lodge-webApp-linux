@@ -19,12 +19,12 @@ export default async function HomePage() {
     <main className="page-transition">
       {/* HERO */}
       <section className="relative">
-        <div className="relative h-[70vh] min-h-[520px] max-h-[720px] overflow-hidden parallax-container">
+        <div className="hero-outer relative h-[70vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[720px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
             <PhotoPlaceholder label="Gomodi Guest Lodge exterior at golden hour" className="absolute inset-0" />
           </div>
           <div className="absolute inset-0 hero-gradient" />
-          <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
+          <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-leisure self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Now Open · Post-Renovation</span>
             <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-2xl motion-fade-up motion-ready" data-stagger="2">
               Welcome to Gomodi Guest Lodge — Mmabatho, Mafikeng.
@@ -32,7 +32,7 @@ export default async function HomePage() {
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               A warm, nine-room boutique guest house built for the way you actually travel. Leisure stays, corporate and government bookings, and private events — all in one place, booked directly with us.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
+            <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <BookNowHeroButtonClient />
               <Link href="/rooms" className="px-6 py-3 rounded-lg font-semibold text-base border border-cream-light/40 text-cream-light hover:bg-cream-light/10 inline-flex items-center justify-center interactive-element">
                 View Rooms

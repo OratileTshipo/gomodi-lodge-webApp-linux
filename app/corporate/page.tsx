@@ -104,12 +104,12 @@ export default function CorporatePage() {
 
       {/* HERO */}
       <section className="relative">
-        <div className="relative h-[55vh] min-h-[520px] max-h-[560px] overflow-hidden parallax-container">
+        <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
             <PhotoPlaceholder label="Corporate guest room" tone="walnut" className="absolute inset-0" />
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/50 to-ink/80" />
-          <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
+          <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-corporate self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Corporate &amp; Government</span>
             <h1 className="text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">
               Accommodation that respects your procurement process.
@@ -117,7 +117,7 @@ export default function CorporatePage() {
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               Contractor deployments, government rotations, and multi-room group stays — one form captures everything, and we issue the formal quotations, invoices, and consolidated statements your finance team needs.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
+            <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <a href="#quote-form" className="btn-primary px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white">
                 Request a Quote
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
