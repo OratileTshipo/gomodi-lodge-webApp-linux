@@ -43,6 +43,10 @@
   --color-ink: #2a1e18;
   --color-stone: #6b5b50;
 
+  /* Loading-skeleton fills (were hard-coded hex in every loading.tsx) */
+  --color-skeleton: #e7ded6;
+  --color-skeleton-light: #eee6da;
+
   --spacing-18: 4.5rem;
   --spacing-22: 5.5rem;
 }
@@ -223,11 +227,6 @@ img {
 .room-card:hover { transform: translateY(-4px); }
 
 .filter-btn { transition: all 0.2s ease; }
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; padding: 3px 8px; border-radius: 6px;
-  background: #e8dcc6; color: #4a2e22;
-}
 
 .addon-card { transition: border-color 0.2s ease, background 0.2s ease; cursor: pointer; }
 .addon-card:hover { border-color: #c65d3c; }
@@ -298,12 +297,24 @@ img {
 /* ========== PERFORMANCE-OPTIMIZED MOTION SYSTEM ========== */
 /* Designed for mobile devices and 3G networks */
 
-/* Motion-ready base state for scroll animations */
+/* Motion-ready base state for scroll animations.
+
+   IMPORTANT: the hidden (opacity 0) state is gated behind `html.motion-armed`
+   instead of applying unconditionally. The armed flag is added before first
+   paint by an inline <head> script in layout.tsx (JS only), so:
+   - SSR HTML and the client render carry IDENTICAL className (no
+     hydration-mismatch warnings), and
+   - no-JS visitors still see content (no invisible page).
+   Without the gate, the scroll observer could add `motion-visible` to an
+   element React had not hydrated yet, which React flags as a mismatch. */
 .motion-ready {
-  opacity: 0;
-  transform: translateY(24px);
   transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.motion-armed .motion-ready:not(.motion-visible) {
+  opacity: 0;
+  transform: translateY(24px);
 }
 
 .motion-ready.motion-visible {
@@ -323,10 +334,12 @@ img {
 
 /* Fade in from bottom */
 .motion-fade-up {
-  opacity: 0;
-  transform: translateY(32px);
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-fade-up:not(.motion-visible) {
+  opacity: 0;
+  transform: translateY(32px);
 }
 .motion-fade-up.motion-visible {
   opacity: 1;
@@ -335,10 +348,12 @@ img {
 
 /* Fade in from top */
 .motion-fade-down {
-  opacity: 0;
-  transform: translateY(-32px);
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-fade-down:not(.motion-visible) {
+  opacity: 0;
+  transform: translateY(-32px);
 }
 .motion-fade-down.motion-visible {
   opacity: 1;
@@ -347,10 +362,12 @@ img {
 
 /* Fade in from left */
 .motion-fade-left {
-  opacity: 0;
-  transform: translateX(-32px);
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-fade-left:not(.motion-visible) {
+  opacity: 0;
+  transform: translateX(-32px);
 }
 .motion-fade-left.motion-visible {
   opacity: 1;
@@ -359,10 +376,12 @@ img {
 
 /* Fade in from right */
 .motion-fade-right {
-  opacity: 0;
-  transform: translateX(32px);
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-fade-right:not(.motion-visible) {
+  opacity: 0;
+  transform: translateX(32px);
 }
 .motion-fade-right.motion-visible {
   opacity: 1;
@@ -371,10 +390,12 @@ img {
 
 /* Scale in effect */
 .motion-scale-in {
-  opacity: 0;
-  transform: scale(0.95);
   transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-scale-in:not(.motion-visible) {
+  opacity: 0;
+  transform: scale(0.95);
 }
 .motion-scale-in.motion-visible {
   opacity: 1;
@@ -413,10 +434,12 @@ img {
 
 /* Zoom out effect (for images) */
 .motion-zoom-out {
-  opacity: 0;
-  transform: scale(1.05);
   transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-zoom-out:not(.motion-visible) {
+  opacity: 0;
+  transform: scale(1.05);
 }
 .motion-zoom-out.motion-visible {
   opacity: 1;
@@ -425,12 +448,14 @@ img {
 
 /* Blur reveal effect */
 .motion-blur-reveal {
-  opacity: 0;
-  filter: blur(8px);
-  transform: translateY(16px);
   transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               filter 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.motion-armed .motion-blur-reveal:not(.motion-visible) {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(16px);
 }
 .motion-blur-reveal.motion-visible {
   opacity: 1;
@@ -573,17 +598,21 @@ select.form-input {
     scroll-behavior: auto !important;
   }
   
-  .motion-ready,
-  .motion-fade-up,
-  .motion-fade-down,
-  .motion-fade-left,
-  .motion-fade-right,
-  .motion-scale-in,
-  .motion-zoom-out,
-  .motion-blur-reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  /* Also beat the html.motion-armed hidden states (same specificity, later
+     in the file — and armed selectors carry an extra class + :not, so use
+     !important to win regardless of order). */
+  html.motion-armed .motion-ready:not(.motion-visible),
+  html.motion-armed .motion-fade-up:not(.motion-visible),
+  html.motion-armed .motion-fade-down:not(.motion-visible),
+  html.motion-armed .motion-fade-left:not(.motion-visible),
+  html.motion-armed .motion-fade-right:not(.motion-visible),
+  html.motion-armed .motion-scale-in:not(.motion-visible),
+  html.motion-armed .motion-zoom-out:not(.motion-visible),
+  html.motion-armed .motion-blur-reveal:not(.motion-visible) {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
   }
   
   .kinetic-word {
@@ -595,14 +624,15 @@ select.form-input {
 
 /* Mobile-first optimizations */
 @media (max-width: 768px) {
-  /* Reduce animation distances on mobile */
-  .motion-fade-up,
-  .motion-fade-down {
+  /* Reduce animation distances on mobile (hidden states only — the visible
+     state keeps transform: translate(0) via .motion-visible) */
+  html.motion-armed .motion-fade-up:not(.motion-visible),
+  html.motion-armed .motion-fade-down:not(.motion-visible) {
     transform: translateY(16px);
   }
   
-  .motion-fade-left,
-  .motion-fade-right {
+  html.motion-armed .motion-fade-left:not(.motion-visible),
+  html.motion-armed .motion-fade-right:not(.motion-visible) {
     transform: translateX(16px);
   }
   

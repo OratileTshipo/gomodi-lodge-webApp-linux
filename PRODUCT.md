@@ -33,7 +33,7 @@ A family-run, personally managed lodge that books guests directly — no platfor
 - 9 rooms, each sleeping up to 2 guests (18 total); one flexible twin/double room.
 - Availability: only **approved** bookings lock a room; pending requests flag conflicts (red = approved overlap, amber = pending) and the approve action re-checks server-side.
 - Meal pricing is hardcoded: breakfast R175 pp/day and dinner R300 pp/day in the booking wizard (corporate page quotes R150–200 / R250–350 ranges).
-- Admin auth is dev-grade: OTP returned in response, any 6 digits accepted, unsigned session cookie (8h), and API routes have no server-side session checks.
+- Admin auth (Aug 2026 hardening): OTP is stored as a SHA-256 hash with 10-min expiry + 5-attempt lockout; request-otp is rate-limited (3/10 min per phone); session cookie is HMAC-signed with an 8h expiry; `/api/admin/*` routes enforce server-side role guards (owner/assistant for the booking queue, any staff for time-clock). In dev the OTP is still returned for the on-screen test box; in production it goes only to WhatsApp/logs.
 - No real photography exists yet — all imagery is colored placeholder divs (`PhotoPlaceholder`).
 - Undecided: actual phone/WhatsApp number, owner name(s) to feature, and whether real photos are ready to be added.
 

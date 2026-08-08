@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireManager } from "@/lib/auth";
 import { bookingRequests, bookingRoomLines, rooms } from "@/lib/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -8,6 +9,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Server-side auth: only owner/assistant may approve/decline bookings.
+    const manager = await requireManager();
+    if (!manager) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const { action } = await request.json(); 
 
@@ -70,6 +77,7 @@ export async function POST(
       .set({
         status: action === "approve" ? "approved" : "declined",
         approvedAt: new Date(),
+        approvedById: manager.userId,
       })
       .where(eq(bookingRequests.id, parseInt(id)));
 

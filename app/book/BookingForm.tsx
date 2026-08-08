@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { submitLeisureBooking, getUnavailableRoomIds } from "./actions";
+import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 
 type Room = {
   id: number;
@@ -13,9 +14,6 @@ type Room = {
   baseRate: string | number;
   flexible: boolean;
 };
-
-const BREAKFAST_PRICE = 175;
-const DINNER_PRICE = 300;
 
 function fmtDate(iso: string) {
   // Parse "YYYY-MM-DD" into LOCAL date components — new Date(iso) parses as UTC
@@ -70,6 +68,9 @@ export function BookingForm({
   const [specialRequests, setSpecialRequests] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"eft" | "cash">("eft");
   const [popFileName, setPopFileName] = useState<string | null>(null);
+  const [popFileUrl, setPopFileUrl] = useState<string | null>(null);
+  const [popUploading, setPopUploading] = useState(false);
+  const [popUploadError, setPopUploadError] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [unavailableIds, setUnavailableIds] = useState<number[]>([]);
 
@@ -145,38 +146,66 @@ export function BookingForm({
       const date = new Date(year, month, d);
       const dateStr = toISO(date);
       const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const isSelected = dateStr === checkIn || dateStr === checkOut;
+      const inRange = !!(checkIn && checkOut && date > new Date(checkIn) && date < new Date(checkOut));
       
-      let cls = "h-9 flex items-center justify-center text-sm rounded-full cursor-pointer transition-all ";
+      let cls = "h-9 min-w-9 flex items-center justify-center text-sm rounded-full transition-all ";
       
       if (isPast) {
-        cls += "text-stone/50 cursor-not-allowed ";
+        cls += "text-stone/50 disabled:cursor-not-allowed ";
       } else {
         cls += "hover:bg-terracotta-tint text-ink ";
       }
 
       if (dateStr === todayISO && !isPast) cls += "font-bold text-terracotta-dark ";
 
-      if (checkIn && checkOut) {
-        if (dateStr === checkIn || dateStr === checkOut) {
-          cls += "bg-terracotta-dark text-white font-semibold shadow-sm ";
-        } else if (date > new Date(checkIn) && date < new Date(checkOut)) {
-          cls += "bg-terracotta-tint text-terracotta-dark font-medium ";
-        }
-      } else if (checkIn && dateStr === checkIn) {
-        cls += "bg-terracotta text-white font-semibold shadow-sm ";
+      if (isSelected) {
+        cls += "bg-terracotta-dark text-white font-semibold shadow-sm ";
+      } else if (inRange) {
+        cls += "bg-terracotta-tint text-terracotta-dark font-medium ";
       }
 
       cells.push(
-        <div 
-          key={d} 
-          className={cls} 
-          onClick={isPast ? undefined : () => pickDate(dateStr)}
+        <button
+          key={d}
+          type="button"
+          disabled={isPast}
+          aria-pressed={isSelected}
+          aria-label={date.toLocaleDateString("en-ZA", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          className={cls}
+          onClick={() => pickDate(dateStr)}
         >
           {d}
-        </div>
+        </button>
       );
     }
     return cells;
+  }
+
+  async function handlePopFile(file: File | undefined) {
+    if (!file) return;
+    setPopUploading(true);
+    setPopUploadError(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok || !json.url) {
+        setPopUploadError(json.error || "Upload failed — try again.");
+        setPopFileName(null);
+        setPopFileUrl(null);
+        return;
+      }
+      setPopFileName(file.name);
+      setPopFileUrl(json.url);
+    } catch {
+      setPopUploadError("Upload failed — check your connection and try again.");
+      setPopFileName(null);
+      setPopFileUrl(null);
+    } finally {
+      setPopUploading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -189,6 +218,11 @@ export function BookingForm({
     if (!consent) {
       setStatus("error");
       setErrorMessage("Please confirm to continue.");
+      return;
+    }
+    if (popFileName && !popFileUrl) {
+      setStatus("error");
+      setErrorMessage("Your proof of payment is still uploading — wait a moment and try again.");
       return;
     }
     setStatus("submitting");
@@ -205,6 +239,7 @@ export function BookingForm({
       contactPhone: phone, 
       contactEmail: email,
       specialRequests, 
+      proofOfPaymentUrl: popFileUrl,
     });
     
     if (result.ok) setStatus("success");
@@ -219,7 +254,6 @@ export function BookingForm({
         <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto motion-pop">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
         </div>
-        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3">Request received</span>
         <h1 className="font-semibold text-ink text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
         <p className="text-stone mt-2 max-w-md mx-auto text-base leading-relaxed">
           We&apos;ve received your request for <span className="font-medium text-ink">{room?.name}</span>. We&apos;ll confirm availability on WhatsApp — usually within minutes during the day.
@@ -233,18 +267,17 @@ export function BookingForm({
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark inline-block py-2">Home</Link></li>
           <li className="text-walnut/40">/</li>
-          <li><Link href="/rooms" className="hover:text-terracotta-dark">Rooms</Link></li>
+          <li><Link href="/rooms" className="hover:text-terracotta-dark inline-block py-2">Rooms</Link></li>
           <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Book Your Stay</li>
         </ol>
       </nav>
 
       <section className="max-w-6xl mx-auto px-6 pb-8">
-        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3 motion-fade-up motion-ready" data-stagger="1">Leisure Booking</span>
-        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-2 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Book your stay</h1>
-        <p className="text-stone mt-3 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="3">
+        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl max-w-3xl motion-fade-up motion-ready" data-stagger="1">Book your stay</h1>
+        <p className="text-stone mt-3 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="2">
           Choose your dates, room, and meals. We&apos;ll check availability and confirm on WhatsApp.
         </p>
       </section>
@@ -296,13 +329,13 @@ export function BookingForm({
 
               <div className="bg-cream-light rounded-xl border border-walnut/10 p-3">
                 <div className="flex items-center justify-between mb-2 px-1">
-                  <button type="button" onClick={() => changeMonth(-1)} className="p-1.5 rounded hover:bg-white text-stone" aria-label="Previous month">
+                  <button type="button" onClick={() => changeMonth(-1)} className="w-11 h-11 rounded-lg hover:bg-white text-stone flex items-center justify-center -ml-2" aria-label="Previous month">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
                   </button>
                   <div className="font-semibold text-ink text-sm">
                     {currentMonth.toLocaleDateString("en-ZA", { month: "long", year: "numeric" })}
                   </div>
-                  <button type="button" onClick={() => changeMonth(1)} className="p-1.5 rounded hover:bg-white text-stone" aria-label="Next month">
+                  <button type="button" onClick={() => changeMonth(1)} className="w-11 h-11 rounded-lg hover:bg-white text-stone flex items-center justify-center -mr-2" aria-label="Next month">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M9 18l6-6-6-6"/></svg>
                   </button>
                 </div>
@@ -339,36 +372,39 @@ export function BookingForm({
                   const unavailable = checkIn && checkOut ? unavailableIds.includes(r.id) : false;
                   const selected = roomId === r.id;
                   return (
-                    <div
+                    <button
                       key={r.id}
-                      className={`rounded-xl border overflow-hidden transition-all ${
+                      type="button"
+                      disabled={unavailable}
+                      aria-pressed={selected}
+                      className={`rounded-xl border overflow-hidden transition-all text-left ${
                         selected 
                           ? "border-terracotta ring-2 ring-terracotta/30 bg-terracotta-tint/50" 
                           : unavailable 
                             ? "border-walnut/10 bg-cream-light opacity-60 cursor-not-allowed" 
                             : "border-walnut/10 bg-white hover:border-walnut/20 cursor-pointer"
                       }`}
-                      onClick={unavailable ? undefined : () => setRoomId(selected ? null : r.id)}
+                      onClick={() => setRoomId(selected ? null : r.id)}
                     >
-                      <div className="aspect-[16/9] overflow-hidden bg-cream relative">
+                      <span className="block aspect-[16/9] overflow-hidden bg-cream relative">
                         <PhotoPlaceholder label={r.name} />
                         {unavailable && (
-                          <div className="absolute inset-0 bg-ink/40 flex items-center justify-center">
+                          <span className="absolute inset-0 bg-ink/40 flex items-center justify-center">
                             <span className="bg-black/60 text-white text-xs px-2 py-1 rounded">Booked</span>
-                          </div>
+                          </span>
                         )}
-                        {r.flexible && !unavailable && <span className="absolute top-2 left-2 bg-gold-tint text-gold-dark text-[10px] font-bold uppercase px-2 py-0.5 rounded">Flexible</span>}
-                      </div>
-                      <div className="p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-semibold text-ink text-sm">{r.name}</div>
-                            <div className="text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
-                          </div>
-                          <div className="text-terracotta-dark font-semibold text-sm whitespace-nowrap">R{Number(r.baseRate)}<span className="text-stone/60 font-normal text-[10px]">/nt</span></div>
-                        </div>
-                      </div>
-                    </div>
+                        {r.flexible && !unavailable && <span className="absolute top-2 left-2 bg-ink/70 text-cream-light text-[10px] font-medium uppercase px-2 py-0.5 rounded">Flexible twin/double</span>}
+                      </span>
+                      <span className="block p-3">
+                        <span className="flex items-start justify-between gap-2">
+                          <span>
+                            <span className="font-semibold text-ink text-sm">{r.name}</span>
+                            <span className="block text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</span>
+                          </span>
+                          <span className="text-terracotta-dark font-semibold text-sm whitespace-nowrap">R{Number(r.baseRate)}<span className="text-stone/60 font-normal text-[10px]">/nt</span></span>
+                        </span>
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -376,9 +412,9 @@ export function BookingForm({
               <div className="mt-5 pt-5 border-t border-walnut/10">
                 <label className="block text-sm font-medium text-ink mb-2">How many guests? <span className="text-stone font-normal">(max 2 per room)</span></label>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setGuestCount((g) => Math.max(1, g - 1))} className="w-9 h-9 rounded-lg border border-walnut/20 hover:bg-cream-light flex items-center justify-center text-stone">−</button>
-                  <input type="number" min={1} max={2} value={guestCount} onChange={(e) => setGuestCount(Math.min(2, Math.max(1, Number(e.target.value))))} className="w-16 text-center border border-walnut/20 rounded-lg px-2 py-1.5 text-sm bg-white" />
-                  <button type="button" onClick={() => setGuestCount((g) => Math.min(2, g + 1))} className="w-9 h-9 rounded-lg border border-walnut/20 hover:bg-cream-light flex items-center justify-center text-stone">+</button>
+                  <button type="button" aria-label="Fewer guests" onClick={() => setGuestCount((g) => Math.max(1, g - 1))} className="w-11 h-11 rounded-lg border border-walnut/20 hover:bg-cream-light flex items-center justify-center text-stone">−</button>
+                  <input type="number" min={1} max={2} value={guestCount} aria-label="Number of guests" onChange={(e) => setGuestCount(Math.min(2, Math.max(1, Number(e.target.value))))} className="w-16 text-center border border-walnut/20 rounded-lg px-2 py-1.5 text-sm bg-white" />
+                  <button type="button" aria-label="More guests" onClick={() => setGuestCount((g) => Math.min(2, g + 1))} className="w-11 h-11 rounded-lg border border-walnut/20 hover:bg-cream-light flex items-center justify-center text-stone">+</button>
                 </div>
               </div>
             </div>
@@ -472,16 +508,17 @@ export function BookingForm({
                   </div>
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-ink mb-1.5">Upload proof of payment (optional)</label>
-                    <div
-                      className="file-drop border-2 border-dashed border-walnut/20 rounded-xl p-5 text-center cursor-pointer bg-cream-light hover:bg-cream transition-colors"
-                      onClick={() => document.getElementById("popFileInput")?.click()}
+                    <label
+                      htmlFor="popFileInput"
+                      className="file-drop border-2 border-dashed border-walnut/20 rounded-xl p-5 text-center cursor-pointer bg-cream-light hover:bg-cream transition-colors block"
                     >
-                      <input id="popFileInput" type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => setPopFileName(e.target.files?.[0]?.name ?? null)} />
-                      <div className="text-sm text-ink font-medium">
-                        {popFileName ? `✓ ${popFileName}` : "Tap to upload, or drag & drop"}
-                      </div>
-                      <div className="text-xs text-stone mt-1">PDF, JPG, or PNG · max 5MB</div>
-                    </div>
+                      <input id="popFileInput" type="file" accept="image/*,application/pdf" className="sr-only" onChange={(e) => handlePopFile(e.target.files?.[0])} />
+                      <span className="text-sm text-ink font-medium">
+                        {popUploading ? "Uploading…" : popFileName ? `✓ ${popFileName}` : "Tap to upload, or drag & drop"}
+                      </span>
+                      <span className="text-xs text-stone mt-1 block">PDF, JPG, or PNG · max 5MB</span>
+                      {popUploadError && <span className="block text-xs text-terracotta-dark mt-1">{popUploadError}</span>}
+                    </label>
                   </div>
                 </>
               )}
@@ -505,9 +542,8 @@ export function BookingForm({
           {/* SUMMARY SIDEBAR */}
           <aside className="lg:col-span-1">
             <div className="lg:sticky lg:top-[calc(var(--header-h)+1rem)] bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 motion-fade-up motion-ready">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4">
                 <h3 className="font-semibold text-ink text-lg">Your stay</h3>
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark">Leisure</span>
               </div>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-start"><span className="text-stone">Dates</span><span className="text-ink text-right font-medium">{checkIn ? (checkOut ? `${fmtDate(checkIn)} → ${fmtDate(checkOut)}` : `${fmtDate(checkIn)} → ?`) : "—"}</span></div>
@@ -542,32 +578,33 @@ export function BookingForm({
             {rooms
               .filter(r => r.id !== roomId && (checkIn && checkOut ? !unavailableIds.includes(r.id) : true))
               .map((r, i) => (
-                <div 
+                <button
                   key={r.id}
+                  type="button"
                   onClick={() => {
                     setRoomId(r.id);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-white rounded-2xl border border-walnut/10 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-terracotta/40 transition-all group motion-pop"
+                  className="bg-white rounded-2xl border border-walnut/10 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-terracotta/40 transition-all group motion-pop text-left"
                   data-stagger={(i % 6) + 1}
                 >
-                  <div className="aspect-[16/10] overflow-hidden bg-cream relative">
+                  <span className="block aspect-[16/10] overflow-hidden bg-cream relative">
                     <PhotoPlaceholder label={r.name} />
-                    {r.flexible && <span className="absolute top-2 left-2 bg-gold-tint text-gold-dark text-[10px] font-bold uppercase px-2 py-0.5 rounded">Flexible</span>}
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div>
-                        <div className="font-semibold text-ink text-base group-hover:text-terracotta-dark transition-colors">{r.name}</div>
-                        <div className="text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
-                      </div>
-                      <div className="text-terracotta-dark font-semibold text-base whitespace-nowrap">R{Number(r.baseRate)}</div>
-                    </div>
-                    <button className="w-full mt-3 py-2 text-sm font-semibold text-terracotta-dark border border-terracotta-dark/30 rounded-lg hover:bg-terracotta-tint transition-colors">
+                    {r.flexible && <span className="absolute top-2 left-2 bg-ink/70 text-cream-light text-[10px] font-medium uppercase px-2 py-0.5 rounded">Flexible twin/double</span>}
+                  </span>
+                  <span className="block p-4">
+                    <span className="flex items-start justify-between gap-2 mb-2">
+                      <span>
+                        <span className="font-semibold text-ink text-base group-hover:text-terracotta-dark transition-colors">{r.name}</span>
+                        <span className="block text-stone text-xs mt-0.5">{r.config} · {r.bathOrShower === "bath" ? "Bath" : "Shower"}</span>
+                      </span>
+                      <span className="text-terracotta-dark font-semibold text-base whitespace-nowrap">R{Number(r.baseRate)}</span>
+                    </span>
+                    <span className="block w-full mt-3 py-2 text-sm font-semibold text-terracotta-dark border border-terracotta-dark/30 rounded-lg group-hover:bg-terracotta-tint transition-colors text-center">
                       Switch to this room
-                    </button>
-                  </div>
-                </div>
+                    </span>
+                  </span>
+                </button>
               ))}
           </div>
         </section>

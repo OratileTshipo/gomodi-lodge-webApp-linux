@@ -68,8 +68,17 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
+    /* suppressHydrationWarning: the inline head script adds `motion-armed` to
+       <html> before first paint (so scroll-reveal hidden states apply only
+       once JS is active). React would otherwise flag that class as a
+       hydration mismatch. The script itself makes no-other DOM changes. */
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{document.documentElement.classList.add("motion-armed")}catch(e){}`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

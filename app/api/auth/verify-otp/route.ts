@@ -1,35 +1,68 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { createHash, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { users, authOtps } from "@/lib/db/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { buildSessionCookie, SESSION_COOKIE } from "@/lib/auth";
+
+const MAX_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
   try {
     const { phone, otp } = await request.json();
 
-    if (!phone || !otp || otp.length !== 6) {
+    if (!phone || !otp || typeof otp !== "string" || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
       return NextResponse.json({ error: "Invalid OTP format" }, { status: 401 });
     }
+    const cleanPhone = String(phone).trim();
 
-    // 1. Check if user exists in DB (Real Auth)
-    const [user] = await db.select().from(users).where(eq(users.phone, phone.trim()));
-
+    // 1. User must exist in the DB.
+    const [user] = await db.select().from(users).where(eq(users.phone, cleanPhone));
     if (!user) {
       return NextResponse.json({ error: "Phone number not registered." }, { status: 401 });
     }
 
-    // 2. Verify OTP (Stubbed for Local Dev - accepts any 6 digits)
-    // In production, this would check Redis/DB for the generated OTP
-    
-    // 3. Set Session Cookie
+    // 2. Find the most recent unconsumed, unexpired code for this phone.
+    const [otpRecord] = await db
+      .select()
+      .from(authOtps)
+      .where(and(eq(authOtps.phone, cleanPhone), eq(authOtps.consumed, false)))
+      .orderBy(desc(authOtps.createdAt))
+      .limit(1);
+    if (!otpRecord || otpRecord.expiresAt.getTime() < Date.now()) {
+      return NextResponse.json({ error: "OTP expired. Request a new one." }, { status: 401 });
+    }
+
+    // 3. Brute-force guard: 5 wrong attempts locks the code.
+    if (otpRecord.attempts >= MAX_ATTEMPTS) {
+      await db.update(authOtps).set({ consumed: true }).where(eq(authOtps.id, otpRecord.id));
+      return NextResponse.json({ error: "Too many attempts. Request a new OTP." }, { status: 401 });
+    }
+
+    // 4. Constant-time hash comparison.
+    const suppliedHash = createHash("sha256").update(String(otp)).digest("hex");
+    const storedBuf = Buffer.from(otpRecord.codeHash, "hex");
+    const suppliedBuf = Buffer.from(suppliedHash, "hex");
+    const matches = storedBuf.length === suppliedBuf.length && timingSafeEqual(storedBuf, suppliedBuf);
+
+    if (!matches) {
+      await db
+        .update(authOtps)
+        .set({ attempts: otpRecord.attempts + 1 })
+        .where(eq(authOtps.id, otpRecord.id));
+      return NextResponse.json({ error: "Incorrect OTP. Please try again." }, { status: 401 });
+    }
+
+    // 5. Consume the code and mint a signed session cookie.
+    await db.update(authOtps).set({ consumed: true }).where(eq(authOtps.id, otpRecord.id));
+
     const cookieStore = await cookies();
-    // We store userId and role. In a real app, use a signed JWT.
-    cookieStore.set("session", JSON.stringify({ userId: user.id, role: user.role, name: user.name }), {
+    cookieStore.set(SESSION_COOKIE, buildSessionCookie({ userId: user.id, role: user.role, name: user.name }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 8, // 8 hours (shift length)
+      maxAge: 60 * 60 * 8,
       path: "/",
     });
 

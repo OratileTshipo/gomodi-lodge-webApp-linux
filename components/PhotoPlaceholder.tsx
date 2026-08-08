@@ -14,12 +14,14 @@ export function PhotoPlaceholder({
       ? "bg-gold"
       : "bg-terracotta";
   return (
-    <div
-      className={`${bg} w-full h-full flex items-center justify-center ${className}`}
+    <span
+      className={`${bg} block w-full h-full flex items-center justify-center ${className}`}
     >
-      <span className="text-white font-bold text-xs uppercase tracking-wide opacity-90 text-center px-3">
+      {/* Dark scrim behind the caption lifts white text above AA on every
+          tone — the bare gold swatch (#d4a574) gave white text only 2.23:1. */}
+      <span className="bg-ink/45 text-white font-bold text-xs uppercase tracking-wide text-center px-3 py-1.5 rounded">
         {label}
       </span>
-    </div>
+    </span>
   );
 }

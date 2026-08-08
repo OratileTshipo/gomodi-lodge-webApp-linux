@@ -260,24 +260,73 @@ export function useKineticText(options?: { stagger?: number; duration?: number }
  */
 export function MotionObserver() {
   const pathname = usePathname();
+  // Only the FIRST run needs deferral (hydration). On later client-side
+  // navigations there is no hydration, so scanning can be immediate — the
+  // `load` event never fires again and a 1.5s defer would leave new pages'
+  // `.motion-ready` content invisible while the user waits.
+  const firstRun = useRef(true);
 
   useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("motion-visible");
-            io.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
-    );
+    let io: IntersectionObserver | null = null;
+    let cancelled = false;
 
-    const elements = document.querySelectorAll(".motion-ready:not(.motion-visible)");
-    elements.forEach((el) => io.observe(el));
+    const scan = () => {
+      if (cancelled) return;
+      io?.disconnect();
+      io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("motion-visible");
+              io?.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+      );
+      const elements = document.querySelectorAll(".motion-ready:not(.motion-visible)");
+      elements.forEach((el) => io!.observe(el));
+    };
 
-    return () => io.disconnect();
+    const start = () => {
+      if (cancelled) return;
+      scan();
+    };
+
+    if (firstRun.current) {
+      // First full-page load: defer scanning until AFTER React has hydrated
+      // the page content. Adding `motion-visible` to an element React has not
+      // hydrated yet makes React report a hydration mismatch (the className
+      // differs from its render). React's hydration runs on the main thread,
+      // so the observer is created on `requestIdleCallback` — i.e. only once
+      // the browser is idle after that work — with a `load` event and
+      // timeouts as fallbacks. The inline head script in layout.tsx arms
+      // `html.motion-armed` at first paint, so content stays hidden until the
+      // scan reveals in-view elements.
+      const idleStart =
+        "requestIdleCallback" in window
+          ? requestIdleCallback(start, { timeout: 1200 })
+          : setTimeout(start, 300);
+      window.addEventListener("load", start, { once: true });
+      const late = setTimeout(start, 1500);
+
+      firstRun.current = false;
+      return () => {
+        cancelled = true;
+        window.removeEventListener("load", start);
+        clearTimeout(late);
+        if (typeof idleStart === "number") cancelIdleCallback(idleStart);
+        else clearTimeout(idleStart);
+        io?.disconnect();
+      };
+    }
+
+    // Client-side navigation: no hydration involved, reveal immediately.
+    requestAnimationFrame(start);
+    return () => {
+      cancelled = true;
+      io?.disconnect();
+    };
   }, [pathname]);
 
   return null;

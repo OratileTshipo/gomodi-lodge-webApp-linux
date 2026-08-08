@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
+import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 
 const ROOM_TYPES: { id: "double" | "flexible"; label: string; price: number }[] = [
   { id: "double", label: "Double Room", price: 950 },
@@ -61,7 +62,7 @@ export default function CorporatePage() {
     return s + (type ? type.price * (l.count || 0) * nights : 0);
   }, 0);
   const addonEstimate =
-    (breakfast ? totalGuests * nights * 175 : 0) + (dinner ? totalGuests * nights * 300 : 0);
+    (breakfast ? totalGuests * nights * BREAKFAST_PRICE : 0) + (dinner ? totalGuests * nights * DINNER_PRICE : 0);
 
   function updateLine(i: number, patch: Partial<RoomLineInput>) {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -96,7 +97,7 @@ export default function CorporatePage() {
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark inline-block py-2">Home</Link></li>
           <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Corporate &amp; Government</li>
         </ol>
@@ -110,14 +111,13 @@ export default function CorporatePage() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/50 to-ink/80" />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
-            <span className="pill pill-corporate self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Corporate &amp; Government</span>
-            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">
+            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">
               Corporate accommodation, with the paperwork handled.
             </h1>
-            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
+            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">
               Contractor deployments, government rotations, and multi-room group stays. Send one form and we&apos;ll issue the formal quotations, invoices, and consolidated statements your finance team needs.
             </p>
-            <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
+            <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="3">
               <a href="#quote-form" className="px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white transition-colors">
                 Request a Quote
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
@@ -131,8 +131,7 @@ export default function CorporatePage() {
       <section className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
-            <span className="pill pill-corporate">Who We Serve</span>
-            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">The clients we host.</h2>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl">The clients we host.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -161,8 +160,7 @@ export default function CorporatePage() {
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
-            <span className="pill pill-corporate">The Documentation Trail</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">From quotation to invoice, in order.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">From quotation to invoice, in order.</h2>
             <p className="text-stone mt-4 leading-relaxed">
               Every document, from the first quote to the final consolidated statement, is issued by email and ready for your approval and payment process.
             </p>
@@ -197,8 +195,7 @@ export default function CorporatePage() {
       <section id="quote-form" className="py-16 md:py-24 bg-cream">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
-            <span className="pill pill-corporate">Request a Quote</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us what you need and we&apos;ll send a formal quote.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Tell us what you need and we&apos;ll send a formal quote.</h2>
           </div>
 
           {status === "success" ? (
@@ -268,7 +265,7 @@ export default function CorporatePage() {
                       <div key={i} className="room-line bg-cream-light rounded-xl border border-walnut/10 p-4">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-semibold text-ink">Room {i + 1}</span>
-                          <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1} className="text-stone hover:text-terracotta-dark p-1 rounded transition-colors disabled:opacity-30">
+                          <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1} aria-label={`Remove room ${i + 1}`} className="text-stone hover:text-terracotta-dark w-11 h-11 -m-2 flex items-center justify-center rounded transition-colors disabled:opacity-30">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                           </button>
                         </div>
@@ -303,11 +300,11 @@ export default function CorporatePage() {
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className={`addon-card flex items-start gap-3 rounded-xl p-4 border border-walnut/10 ${breakfast ? "selected" : ""}`}>
                     <input type="checkbox" checked={breakfast} onChange={(e) => setBreakfast(e.target.checked)} className="mt-1 accent-walnut" />
-                    <div className="flex-1"><div className="flex items-center justify-between"><span className="font-semibold text-ink text-sm">Breakfast</span><span className="text-walnut font-semibold text-sm">R150–R200 pp/day</span></div></div>
+                    <div className="flex-1"><div className="flex items-center justify-between"><span className="font-semibold text-ink text-sm">Breakfast</span><span className="text-walnut font-semibold text-sm">R{BREAKFAST_PRICE} pp/day</span></div></div>
                   </label>
                   <label className={`addon-card flex items-start gap-3 rounded-xl p-4 border border-walnut/10 ${dinner ? "selected" : ""}`}>
                     <input type="checkbox" checked={dinner} onChange={(e) => setDinner(e.target.checked)} className="mt-1 accent-walnut" />
-                    <div className="flex-1"><div className="flex items-center justify-between"><span className="font-semibold text-ink text-sm">Dinner</span><span className="text-walnut font-semibold text-sm">R250–R350 pp/day</span></div></div>
+                    <div className="flex-1"><div className="flex items-center justify-between"><span className="font-semibold text-ink text-sm">Dinner</span><span className="text-walnut font-semibold text-sm">R{DINNER_PRICE} pp/day</span></div></div>
                   </label>
                 </div>
               </div>
@@ -350,8 +347,7 @@ export default function CorporatePage() {
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
-            <span className="pill pill-corporate">Common Questions</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Before you request.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Before you request.</h2>
           </div>
           <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
@@ -372,8 +368,7 @@ export default function CorporatePage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center motion-fade-up motion-ready">
             <div>
-              <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to talk it through?</span>
-              <h2 className="font-display font-semibold text-2xl md:text-3xl mt-4">Get in touch.</h2>
+              <h2 className="font-display font-semibold text-2xl md:text-3xl">Get in touch.</h2>
               <p className="text-cream/80 mt-4">WhatsApp, phone, or email — whichever suits you.</p>
             </div>
             <div className="flex flex-col gap-3">

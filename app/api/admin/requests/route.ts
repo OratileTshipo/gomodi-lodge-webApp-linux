@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireStaff } from "@/lib/auth";
 import {
   bookingRequests,
   bookingRoomLines,
@@ -129,6 +130,13 @@ export function enrichRequests(
 
 export async function GET() {
   try {
+    // Server-side auth: any logged-in staff may READ the queue (the client
+    // gates approve/decline to managers); writes are manager-only in [id]/route.
+    const staff = await requireStaff();
+    if (!staff) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // 1. All pending requests across every category. Events are NOT joined
     //    against booking_room_lines (they have none) — inner-joining that
     //    table used to silently drop event requests from the queue.

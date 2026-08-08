@@ -62,7 +62,7 @@ export function RoomsExplorer({
       {/* BREADCRUMB */}
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
+          <li><Link href="/" className="hover:text-terracotta-dark inline-block py-2">Home</Link></li>
           <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Our Rooms</li>
         </ol>
@@ -70,18 +70,10 @@ export function RoomsExplorer({
 
       {/* HERO - mount-safe staggered entrance (pure CSS, always visible) */}
       <section className="max-w-6xl mx-auto px-6 pb-12">
-        <span className="pill pill-leisure motion-pop" data-stagger="1">Nine Rooms</span>
-        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="2">Every room, freshly renovated.</h1>
-        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-pop" data-stagger="3">
+        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="1">Every room, freshly renovated.</h1>
+        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-pop" data-stagger="2">
           Terracotta walls, walnut wood, and cream textiles throughout. Every room has a Smart TV, WiFi, air conditioning with fan and heater backup, and a shower or bath. One room can be set up as two singles or one double — tell us which you prefer when you book.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3 motion-pop" data-stagger="4">
-          <div className="badge">✓ Smart TV in every room</div>
-          <div className="badge">✓ Free WiFi</div>
-          <div className="badge">✓ A/C + fan/heater backup</div>
-          <div className="badge">✓ Shower or bath</div>
-          <div className="badge">✓ Secure parking</div>
-        </div>
       </section>
 
       {/* FILTER & SORT BAR - Removed backdrop-blur and fade-in for instant render */}
@@ -136,12 +128,6 @@ export function RoomsExplorer({
               <article key={room.id} className="room-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
                 <div className="aspect-[4/3] bg-cream overflow-hidden relative">
                   <PhotoPlaceholder label={room.name} />
-                  {room.flexible && (
-                    <span className="absolute top-3 left-3 pill pill-event">Flexible · Twin or Double</span>
-                  )}
-                  <span className="absolute top-3 right-3 pill pill-leisure">
-                    {room.flexible ? "Flexible" : "Double"}
-                  </span>
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <div className="flex items-start justify-between gap-3">
@@ -192,10 +178,7 @@ export function RoomsExplorer({
             <div className="p-6 md:p-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <span className={`pill ${activeRoom.flexible ? "pill-event" : "pill-leisure"}`}>
-                    {activeRoom.flexible ? "Flexible" : "Double"}
-                  </span>
-                  <h2 className="font-semibold text-ink text-xl md:text-2xl mt-3">{activeRoom.name}</h2>
+                  <h2 className="font-semibold text-ink text-xl md:text-2xl">{activeRoom.name}</h2>
                 </div>
                 <div className="text-right">
                   <div className="text-terracotta-dark font-semibold text-2xl">R{Number(activeRoom.baseRate).toLocaleString("en-ZA")}</div>

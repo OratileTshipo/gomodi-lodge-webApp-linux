@@ -129,6 +129,19 @@ export const staffTimeClocks = pgTable("staff_time_clocks", {
   notes: text("notes"),
 });
 
+// ---------- Auth OTPs (login codes) ----------
+// Stores the SHA-256 hash of a 6-digit login code (never the plaintext), its
+// expiry, and a failed-attempt counter so verify can lock out brute force.
+export const authOtps = pgTable("auth_otps", {
+  id: serial("id").primaryKey(),
+  phone: varchar("phone", { length: 30 }).notNull(),
+  codeHash: varchar("code_hash", { length: 64 }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  consumed: boolean("consumed").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // ---------- Proof of Payments ----------
 export const proofOfPayments = pgTable("proof_of_payments", {
   id: serial("id").primaryKey(),

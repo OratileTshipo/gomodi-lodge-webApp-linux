@@ -47,8 +47,7 @@ export function BranchModal() {
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
-        <span className="pill pill-leisure">Book Now</span>
-        <h3 className="font-semibold text-ink text-xl mt-3">How are you visiting?</h3>
+        <h3 className="font-semibold text-ink text-xl">How are you visiting?</h3>
         <p className="text-stone text-sm mt-2">
           Choose the one that fits your visit — each takes you to the right form.
         </p>
@@ -57,7 +56,6 @@ export function BranchModal() {
             onClick={() => goTo("/rooms")}
             className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border border-walnut/10 hover:border-terracotta/40 text-left transition-colors"
           >
-            <span className="pill pill-leisure">Leisure</span>
             <div className="flex-1">
               <div className="font-semibold text-ink text-sm">Request a Stay</div>
               <div className="text-stone text-xs">Dates, room, breakfast/dinner add-ons</div>
@@ -70,7 +68,6 @@ export function BranchModal() {
             onClick={() => goTo("/corporate")}
             className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border border-walnut/10 hover:border-walnut/40 text-left transition-colors"
           >
-            <span className="pill pill-corporate">Corporate</span>
             <div className="flex-1">
               <div className="font-semibold text-ink text-sm">Request a Quote</div>
               <div className="text-stone text-xs">Multi-room, PO number, formal quote</div>
@@ -83,7 +80,6 @@ export function BranchModal() {
             onClick={() => goTo("/events")}
             className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border border-walnut/10 hover:border-gold/40 text-left transition-colors"
           >
-            <span className="pill pill-event">Events</span>
             <div className="flex-1">
               <div className="font-semibold text-ink text-sm">Inquire About Your Event</div>
               <div className="text-stone text-xs">Weddings, showers, parties up to 50</div>

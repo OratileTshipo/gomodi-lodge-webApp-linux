@@ -167,8 +167,9 @@ export function AdminDashboard() {
     }
   }
 
-  const handleLogout = () => {
-    document.cookie = "session=; path=/; max-age=0";
+  const handleLogout = async () => {
+    // Session cookie is httpOnly — only the server can clear it.
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin");
   };
 
