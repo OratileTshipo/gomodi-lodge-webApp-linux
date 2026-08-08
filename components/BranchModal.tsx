@@ -50,7 +50,7 @@ export function BranchModal() {
         <span className="pill pill-leisure">Book Now</span>
         <h3 className="font-semibold text-ink text-xl mt-3">How are you visiting?</h3>
         <p className="text-stone text-sm mt-2">
-          Pick the booking path that fits. Each one takes you to the right form.
+          Choose the one that fits your visit — each takes you to the right form.
         </p>
         <div className="mt-6 space-y-3">
           <button

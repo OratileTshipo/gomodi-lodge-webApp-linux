@@ -71,36 +71,36 @@ export function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-cream-light flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-stone-900 mb-2">Gomodi Admin</h1>
-          <p className="text-stone-600">Staff approval and management screen</p>
+          <h1 className="font-display text-3xl font-semibold text-ink mb-2">Gomodi Admin</h1>
+          <p className="text-stone">Staff approval and management screen</p>
         </div>
 
         {/* DEVELOPMENT MODE OTP DISPLAY */}
         {devOtp && (
-          <div className="mb-6 bg-orange-100 border-2 border-orange-500 rounded-xl p-4 text-center">
-            <div className="text-orange-900 font-semibold text-sm mb-2">
+          <div className="mb-6 bg-gold-tint border-2 border-gold-dark rounded-xl p-4 text-center">
+            <div className="text-walnut font-semibold text-sm mb-2">
               🔧 Development Mode
             </div>
-            <div className="text-orange-800 text-xs mb-2">
+            <div className="text-walnut text-xs mb-2">
               Your OTP for testing:
             </div>
-            <div className="text-4xl font-bold text-orange-700 tracking-wider bg-white rounded-lg py-3 px-4 inline-block">
+            <div className="text-4xl font-bold text-terracotta-dark tracking-wider bg-white rounded-lg py-3 px-4 inline-block">
               {devOtp}
             </div>
-            <div className="text-orange-700 text-xs mt-2">
+            <div className="text-terracotta-dark text-xs mt-2">
               This will only show in development. In production, OTP arrives via WhatsApp.
             </div>
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-8">
+        <div className="bg-white rounded-2xl card-shadow border border-walnut/10 p-8">
           {step === "phone" ? (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   Phone Number
                 </label>
                 <input
@@ -108,15 +108,15 @@ export function AdminLogin() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+27..."
-                  className="w-full px-4 py-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-white border border-walnut/20 rounded-lg focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta"
                   required
                 />
               </div>
-              {error && <p className="text-red-600 text-sm">{error}</p>}
+              {error && <p className="text-terracotta-dark text-sm">{error}</p>}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                className="w-full btn-primary py-2.5 px-4 rounded-lg font-semibold disabled:opacity-50"
               >
                 {loading ? "Sending..." : "Request OTP"}
               </button>
@@ -124,7 +124,7 @@ export function AdminLogin() {
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
+                <label className="block text-sm font-medium text-ink mb-1">
                   Enter OTP
                 </label>
                 <input
@@ -132,15 +132,15 @@ export function AdminLogin() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="123456"
-                  className="w-full px-4 py-2 border border-stone-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 bg-white border border-walnut/20 rounded-lg focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta"
                   required
                 />
               </div>
-              {error && <p className="text-red-600 text-sm">{error}</p>}
+              {error && <p className="text-terracotta-dark text-sm">{error}</p>}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                className="w-full btn-primary py-2.5 px-4 rounded-lg font-semibold disabled:opacity-50"
               >
                 {loading ? "Verifying..." : "Verify & Login"}
               </button>
@@ -152,7 +152,7 @@ export function AdminLogin() {
                   setDevOtp(undefined);
                   setError("");
                 }}
-                className="w-full text-stone-600 hover:text-stone-900 text-sm"
+                className="w-full text-stone hover:text-ink text-sm"
               >
                 Back to phone number
               </button>
@@ -161,7 +161,7 @@ export function AdminLogin() {
         </div>
 
         {/* Test Credentials Helper */}
-        <div className="mt-6 text-center text-xs text-stone-500">
+        <div className="mt-6 text-center text-xs text-stone">
           <p>Test numbers:</p>
           <p>Owner: +27820000001</p>
           <p>Manager: +27820000002</p>

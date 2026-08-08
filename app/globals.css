@@ -17,7 +17,7 @@
   /* Real fonts loaded via next/font in layout.tsx (were previously never
      defined — the site silently fell back to system-ui). */
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: var(--font-playfair);
 
   /* ---------- Brand palette — matches the site design exactly ---------- */
@@ -119,15 +119,6 @@ img {
 .card-shadow:hover {
   box-shadow: 0 2px 4px rgba(74, 46, 34, 0.08), 0 8px 24px rgba(74, 46, 34, 0.1);
 }
-.fade-in {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.fade-in.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
 .pill {
   display: inline-flex;
   align-items: center;
@@ -196,18 +187,9 @@ img {
 .branch-card:hover, .segment-card:hover { transform: translateY(-4px); border-color: #4a2e22; }
 .event-type-card:hover { transform: translateY(-4px); }
 
-.process-card { transition: border-color 0.2s ease; }
-.process-card:hover { border-color: #4a2e22; }
-
 .doc-icon {
   width: 40px; height: 40px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.step-number {
-  width: 32px; height: 32px; border-radius: 999px;
-  background: #e8ddd6; color: #4a2e22;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 14px; flex-shrink: 0;
 }
 .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
 .summary-row.total {
@@ -237,13 +219,8 @@ img {
 .faq-item.open .faq-chevron { transform: rotate(180deg); }
 .faq-chevron { transition: transform 0.3s ease; }
 
-.room-card, .room-option { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease; }
+.room-card { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease; }
 .room-card:hover { transform: translateY(-4px); }
-.room-option { cursor: pointer; }
-.room-option:hover { transform: translateY(-2px); border-color: #c65d3c; }
-.room-option.selected { border-color: #c65d3c; background: #f5e3db; box-shadow: 0 0 0 2px #c65d3c; }
-.room-option.unavailable { opacity: 0.45; cursor: not-allowed; }
-.room-option.unavailable:hover { transform: none; border-color: rgba(74, 46, 34, 0.1); }
 
 .filter-btn { transition: all 0.2s ease; }
 .badge {
@@ -255,50 +232,10 @@ img {
 .addon-card { transition: border-color 0.2s ease, background 0.2s ease; cursor: pointer; }
 .addon-card:hover { border-color: #c65d3c; }
 .addon-card.selected { border-color: #c65d3c; background: #f5e3db; }
-.addon-check {
-  width: 20px; height: 20px; border-radius: 6px;
-  border: 2px solid rgba(74, 46, 34, 0.3);
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s ease; flex-shrink: 0;
-}
-.addon-card.selected .addon-check { background: #8f3e25; border-color: #8f3e25; }
-
-.cal-day {
-  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; border-radius: 8px; cursor: pointer;
-  transition: all 0.15s ease; position: relative;
-}
-.cal-day:hover:not(.disabled):not(.empty) { background: #f5e3db; }
-.cal-day.disabled { color: #c4b8ad; cursor: not-allowed; text-decoration: line-through; }
-.cal-day.in-range { background: #f5e3db; color: #8f3e25; border-radius: 0; }
-.cal-day.range-start { background: #8f3e25; color: #faf6f0; font-weight: 600; border-radius: 8px 0 0 8px; }
-.cal-day.range-end { background: #8f3e25; color: #faf6f0; font-weight: 600; border-radius: 0 8px 8px 0; }
-.cal-day.range-start.range-end { border-radius: 8px; }
-.cal-day.today { font-weight: 700; }
-.cal-day.today::after {
-  content: ""; position: absolute; bottom: 4px; left: 50%;
-  transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #c65d3c;
-}
-.cal-day.empty { cursor: default; }
-
 .file-drop { transition: border-color 0.2s ease, background 0.2s ease; }
 .file-drop:hover { border-color: #c65d3c; background: #f5e3db; }
 .file-drop.dragging { border-color: #c65d3c; background: #f5e3db; }
 
-.step-dot {
-  width: 28px; height: 28px; border-radius: 999px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600; flex-shrink: 0; transition: all 0.3s ease;
-}
-.step-dot.pending { background: #e8ddd6; color: #4a2e22; }
-.step-dot.active { background: #8f3e25; color: #faf6f0; }
-.step-dot.done { background: #4a2e22; color: #faf6f0; }
-.step-line { height: 2px; flex: 1; background: #e8ddd6; transition: background 0.3s ease; }
-.step-line.done { background: #4a2e22; }
-
-@media (min-width: 1024px) {
-  .summary-sticky { position: sticky; top: 96px; }
-}
 
 /* ---------- Short viewports: heroes become fully responsive ---------- */
 /* Below 650px of height (landscape phones, short laptop windows) the
@@ -357,20 +294,6 @@ img {
     margin-top: 1.25rem;
   }
 }
-
-/* ---------- Scroll-reveal + micro-interactions (additive polish) ---------- */
-@keyframes heroZoom {
-  from { transform: scale(1.08); }
-  to { transform: scale(1); }
-}
-.animate-hero-bg { animation: heroZoom 8s ease-out both; }
-
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
-}
-.reveal.reveal-visible { opacity: 1; transform: translateY(0); }
 
 /* ========== PERFORMANCE-OPTIMIZED MOTION SYSTEM ========== */
 /* Designed for mobile devices and 3G networks */
@@ -549,11 +472,6 @@ img {
   overflow: hidden;
 }
 
-.parallax-content {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
 /* Micro-interaction states */
 .interactive-element {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
@@ -598,41 +516,6 @@ img {
   transform: scale(1.05);
 }
 
-/* Skeleton loading animation */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    #e8ddd6 0%,
-    #f5ebdd 50%,
-    #e8ddd6 100%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-}
-
-@keyframes skeleton-loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* Pulse animation for loading states */
-.pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 /* Ripple effect for buttons (CSS-only) */
 .ripple {
   position: relative;
@@ -655,13 +538,28 @@ img {
   height: 300px;
 }
 
-/* Smooth focus ring */
-.focus-ring {
-  outline: none;
-  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Visible keyboard focus — branded ring (replaces the browser default).
+   Applies to links, buttons, and selects; text inputs/textarea already carry
+   their own visible focus treatment via form-input / focus:ring utilities. */
+:focus-visible {
+  outline: 2px solid #8f3e25;
+  outline-offset: 2px;
 }
-.focus-ring:focus-visible {
-  box-shadow: 0 0 0 3px rgba(198, 93, 60, 0.3);
+input:not([type]),
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+input[type="tel"],
+input[type="search"],
+textarea {
+  outline: none;
+}
+/* Form selects already show a visible ring via .form-input:focus, so they
+   skip the extra outline; checkboxes/radios deliberately keep it (small
+   targets with no other focus treatment). */
+select.form-input {
+  outline: none;
 }
 
 /* Reduced motion support - respects user preferences */

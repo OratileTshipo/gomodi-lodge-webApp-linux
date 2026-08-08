@@ -172,11 +172,13 @@ export function AdminDashboard() {
     router.push("/admin");
   };
 
+  // Reuse the public pill system so category chips match the site exactly
+  // (incl. the contrast-corrected event gold).
   const getCategoryColor = (cat: string) => {
-    if (cat === "leisure") return "bg-orange-100 text-orange-800";
-    if (cat === "corporate") return "bg-amber-900/10 text-amber-900";
-    if (cat === "event") return "bg-yellow-100 text-yellow-800";
-    return "bg-stone-100 text-stone-600";
+    if (cat === "leisure") return "pill pill-leisure";
+    if (cat === "corporate") return "pill pill-corporate";
+    if (cat === "event") return "pill pill-event";
+    return "pill pill-neutral";
   };
 
   const getCategoryLabel = (cat: string) => {
@@ -199,10 +201,10 @@ export function AdminDashboard() {
 
   if (!user || loading) {
     return (
-      <div className="min-h-screen bg-stone-50 p-6">
+      <div className="min-h-screen bg-cream-light p-6">
         <div className="max-w-4xl mx-auto space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-lg shadow-sm border border-stone-200 p-6 h-40 animate-pulse" />
+            <div key={i} className="bg-white rounded-2xl card-shadow border border-walnut/10 p-6 h-40 animate-pulse" />
           ))}
         </div>
       </div>
@@ -210,20 +212,20 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 p-4 md:p-6">
+    <div className="min-h-screen bg-cream-light p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-stone-900">
+            <h1 className="font-display text-2xl font-semibold text-ink">
               {isManager ? "Operations Dashboard" : "Staff Dashboard"}
             </h1>
-            <p className="text-sm text-stone-500">Logged in as {user.name} ({user.role})</p>
+            <p className="text-sm text-stone">Logged in as {user.name} ({user.role})</p>
           </div>
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button onClick={() => router.push("/")} className="text-stone-600 hover:text-stone-900 text-sm">← Site</button>
+            <button onClick={() => router.push("/")} className="text-stone hover:text-ink text-sm">← Site</button>
             <button onClick={handleLogout} className="text-red-600 text-sm font-medium">Logout</button>
             
             {/* TIME CLOCK */}
@@ -240,7 +242,7 @@ export function AdminDashboard() {
                 {clockLoading ? "Logging..." : (clockStatus === "clock_in" ? "Clock Out" : "Clock In")}
               </button>
               {clockTimestamp && clockStatus && (
-                <span className="text-[11px] text-stone-500">
+                <span className="text-[11px] text-stone">
                   {clockStatus === "clock_in" ? "Clocked in" : "Clocked out"} · {fmtClockTime(clockTimestamp)}
                 </span>
               )}
@@ -251,16 +253,16 @@ export function AdminDashboard() {
         {/* MANAGER ONLY: Operations Report */}
         {isManager && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-lg border border-stone-200">
-              <div className="text-stone-500 text-xs uppercase">Total Pending</div>
-              <div className="text-2xl font-bold text-stone-900">{requests.length}</div>
+            <div className="bg-white p-4 rounded-2xl card-shadow border border-walnut/10">
+              <div className="text-stone text-xs uppercase">Total Pending</div>
+              <div className="text-2xl font-bold text-ink">{requests.length}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-stone-200">
-              <div className="text-stone-500 text-xs uppercase">Conflicts</div>
+            <div className="bg-white p-4 rounded-2xl card-shadow border border-walnut/10">
+              <div className="text-stone text-xs uppercase">Conflicts</div>
               <div className="text-2xl font-bold text-red-600">{requests.filter(r => r.conflict).length}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-stone-200">
-              <div className="text-stone-500 text-xs uppercase">Occupancy (Est)</div>
+            <div className="bg-white p-4 rounded-2xl card-shadow border border-walnut/10">
+              <div className="text-stone text-xs uppercase">Occupancy (Est)</div>
               <div className="text-2xl font-bold text-green-600">65%</div>
             </div>
           </div>
@@ -269,13 +271,13 @@ export function AdminDashboard() {
         {/* REQUESTS LIST */}
         <div className="space-y-4">
            {requests.length === 0 && (
-             <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-12 text-center">
-               <p className="text-stone-600 text-lg">No pending requests — you&apos;re all caught up.</p>
+             <div className="bg-white rounded-2xl card-shadow border border-walnut/10 p-12 text-center">
+               <p className="text-stone text-lg">No pending requests — you&apos;re all caught up.</p>
              </div>
            )}
            
            {requests.map(req => (
-             <div key={req.id} className="bg-white p-4 md:p-6 rounded-lg border border-stone-200 shadow-sm">
+             <div key={req.id} className="bg-white p-4 md:p-6 rounded-2xl border border-walnut/10 card-shadow">
                 
                 {/* SOFT CONFLICT WARNING (Amber - Phase 2b Style Note) */}
                 {req.pendingWarning && (
@@ -298,47 +300,47 @@ export function AdminDashboard() {
                 )}
                 
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${getCategoryColor(req.category)}`}>
+                  <span className={getCategoryColor(req.category)}>
                     {getCategoryLabel(req.category)}
                   </span>
                   {/* Proof of Payment Badge - Phase 2b Style Note: Always show with text label */}
                   <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     req.proofOfPaymentUploaded 
                       ? "bg-green-100 text-green-800" 
-                      : "bg-stone-100 text-stone-600 border border-stone-200"
+                      : "bg-cream text-stone border border-walnut/10"
                   }`}>
                     Proof of Payment: {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
                   </span>
-                  <h3 className="font-semibold text-lg text-stone-900">{req.guestName}</h3>
+                  <h3 className="font-semibold text-lg text-ink">{req.guestName}</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-stone-100 pt-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-walnut/10 pt-4 mb-4">
                   {/* Corporate-specific fields */}
                   {req.category === "corporate" && req.corporateDetails && (
                     <>
                       <div className="md:col-span-2">
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Company</span>
-                        <span className="text-stone-900 font-medium">{req.corporateDetails.companyName}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Company</span>
+                        <span className="text-ink font-medium">{req.corporateDetails.companyName}</span>
                         {req.corporateDetails.jobTitle && (
-                          <span className="block text-stone-600 text-xs">({req.corporateDetails.jobTitle})</span>
+                          <span className="block text-stone text-xs">({req.corporateDetails.jobTitle})</span>
                         )}
                       </div>
                       {req.corporateDetails.poNumber && (
                         <div>
-                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">PO Number</span>
-                          <span className="text-stone-900 font-medium">{req.corporateDetails.poNumber}</span>
+                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">PO Number</span>
+                          <span className="text-ink font-medium">{req.corporateDetails.poNumber}</span>
                         </div>
                       )}
                       {req.corporateDetails.vatNumber && (
                         <div>
-                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">VAT Number</span>
-                          <span className="text-stone-900 font-medium">{req.corporateDetails.vatNumber}</span>
+                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">VAT Number</span>
+                          <span className="text-ink font-medium">{req.corporateDetails.vatNumber}</span>
                         </div>
                       )}
                       {req.corporateDetails.billingEmail && (
                         <div>
-                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Billing Email</span>
-                          <span className="text-stone-900 font-medium">{req.corporateDetails.billingEmail}</span>
+                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">Billing Email</span>
+                          <span className="text-ink font-medium">{req.corporateDetails.billingEmail}</span>
                         </div>
                       )}
                     </>
@@ -348,21 +350,21 @@ export function AdminDashboard() {
                   {req.category === "event" && req.eventDetails && (
                     <>
                       <div>
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Event Type</span>
-                        <span className="text-stone-900 font-medium capitalize">{req.eventDetails.eventType.replace("-", " ")}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Event Type</span>
+                        <span className="text-ink font-medium capitalize">{req.eventDetails.eventType.replace("-", " ")}</span>
                       </div>
                       <div>
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Event Date</span>
-                        <span className="text-stone-900 font-medium">{fmtDate(req.eventDetails.eventDate)}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Event Date</span>
+                        <span className="text-ink font-medium">{fmtDate(req.eventDetails.eventDate)}</span>
                       </div>
                       <div>
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Expected Guests</span>
-                        <span className="text-stone-900 font-medium">{req.eventDetails.expectedGuests}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Expected Guests</span>
+                        <span className="text-ink font-medium">{req.eventDetails.expectedGuests}</span>
                       </div>
                       {req.eventDetails.cateringPackage && (
                         <div>
-                          <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Catering</span>
-                          <span className="text-stone-900 font-medium capitalize">{req.eventDetails.cateringPackage.replace("-", " ")}</span>
+                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">Catering</span>
+                          <span className="text-ink font-medium capitalize">{req.eventDetails.cateringPackage.replace("-", " ")}</span>
                         </div>
                       )}
                       {req.eventDetails.interestedInRooms && (
@@ -377,34 +379,34 @@ export function AdminDashboard() {
                   {req.category === "leisure" && (
                     <>
                       <div>
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Dates</span>
-                        <span className="text-stone-900 font-medium">{req.checkIn && req.checkOut ? `${fmtDate(req.checkIn)} → ${fmtDate(req.checkOut)}` : "—"}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Dates</span>
+                        <span className="text-ink font-medium">{req.checkIn && req.checkOut ? `${fmtDate(req.checkIn)} → ${fmtDate(req.checkOut)}` : "—"}</span>
                       </div>
                       <div>
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Room</span>
-                        <span className="text-stone-900 font-medium">{req.roomName ?? "—"}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Room</span>
+                        <span className="text-ink font-medium">{req.roomName ?? "—"}</span>
                       </div>
                       <div>
-                        <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Guests</span>
-                        <span className="text-stone-900 font-medium">{req.guestCount ?? "—"}</span>
+                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Guests</span>
+                        <span className="text-ink font-medium">{req.guestCount ?? "—"}</span>
                       </div>
                     </>
                   )}
 
                   {/* Contact info for all */}
                   <div>
-                    <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Contact</span>
-                    <span className="text-stone-900 font-medium">{req.contactPhone}</span>
-                    {req.contactEmail && <span className="block text-stone-600 text-xs">{req.contactEmail}</span>}
+                    <span className="text-stone block text-xs uppercase tracking-wide mb-1">Contact</span>
+                    <span className="text-ink font-medium">{req.contactPhone}</span>
+                    {req.contactEmail && <span className="block text-stone text-xs">{req.contactEmail}</span>}
                   </div>
                   
                   {/* Add-ons */}
                   {req.addOns && req.addOns.length > 0 && (
                     <div className="md:col-span-2">
-                      <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Meals</span>
+                      <span className="text-stone block text-xs uppercase tracking-wide mb-1">Meals</span>
                       <div className="flex flex-wrap gap-2">
                         {req.addOns.map((addon, idx) => (
-                          <span key={idx} className="bg-stone-100 text-stone-700 px-2 py-1 rounded text-xs">
+                          <span key={idx} className="bg-walnut-tint text-walnut px-2 py-1 rounded text-xs">
                             {addon.type} ({addon.persons}p)
                           </span>
                         ))}
@@ -415,8 +417,8 @@ export function AdminDashboard() {
                   {/* Special Requests */}
                   {req.specialRequests && (
                     <div className="md:col-span-2">
-                      <span className="text-stone-500 block text-xs uppercase tracking-wide mb-1">Special Requests</span>
-                      <p className="text-stone-700 italic bg-stone-50 p-2 rounded border-l-2 border-orange-500">
+                      <span className="text-stone block text-xs uppercase tracking-wide mb-1">Special Requests</span>
+                      <p className="text-ink italic bg-cream p-2 rounded border-l-2 border-gold-dark">
                         &ldquo;{req.specialRequests}&rdquo;
                       </p>
                     </div>
@@ -425,22 +427,22 @@ export function AdminDashboard() {
 
                 {/* RBAC: Staff cannot approve/decline corporate or event requests */}
                 {!isManager && (req.category === "corporate" || req.category === "event") ? (
-                  <div className="pt-2 border-t border-stone-100">
-                    <div className="bg-stone-100 text-stone-600 px-3 py-2 rounded text-sm text-center font-medium opacity-50 pointer-events-none">
+                  <div className="pt-2 border-t border-walnut/10">
+                    <div className="bg-cream text-stone px-3 py-2 rounded-lg text-sm text-center font-medium opacity-60 pointer-events-none">
                       Manager Approval Required
                     </div>
                   </div>
                 ) : (
-                  <div className="flex gap-3 pt-2 border-t border-stone-100">
+                  <div className="flex gap-3 pt-2 border-t border-walnut/10">
                     <button 
                       onClick={() => handleBookingAction(req.id, "approve")} 
-                      className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700"
+                      className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
                     >
                       Approve
                     </button>
                     <button 
                       onClick={() => handleBookingAction(req.id, "decline")} 
-                      className="flex-1 bg-stone-200 text-stone-700 px-3 py-2 rounded text-sm font-medium hover:bg-stone-300"
+                      className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-medium"
                     >
                       Decline
                     </button>

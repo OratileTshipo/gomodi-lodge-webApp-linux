@@ -30,7 +30,7 @@ export default async function HomePage() {
               Welcome to Gomodi Guest Lodge — Mmabatho, Mafikeng.
             </h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
-              A warm, nine-room boutique guest house built for the way you actually travel. Leisure stays, corporate and government bookings, and private events — all in one place, booked directly with us.
+              A nine-room guest house in Mmabatho, Mafikeng. Book leisure stays, corporate and government accommodation, and private events directly with us — no booking platform in between.
             </p>
             <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <BookNowHeroButtonClient />
@@ -47,8 +47,8 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-leisure mb-4">Three Ways to Stay</span>
-            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Choose the booking path that fits your trip.</h2>
-            <p className="text-stone mt-4 text-base">One lodge, three tailored experiences. Pick the flow that matches your reason for visiting — we&apos;ll take it from there.</p>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Choose how you want to stay.</h2>
+            <p className="text-stone mt-4 text-base">Leisure, corporate, or events. Pick the one that fits your trip — you send the request, we confirm by WhatsApp.</p>
           </div>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -82,7 +82,7 @@ export default async function HomePage() {
                 pill: "pill-event",
                 title: "Events",
                 heading: "Weddings, showers & parties",
-                desc: "Host up to 50 guests in our multipurpose venue. Confirmed catering pricing, flexible setups, your event your way.",
+                desc: "Hold up to 50 guests in our venue. Confirmed catering prices and flexible setups.",
                 icon: "✓",
                 iconColor: "text-gold-dark",
                 items: ["Up to 50 guests", "Catering packages available", "Accommodation for guests on-site"],
@@ -120,18 +120,18 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
             <span className="pill pill-corporate">About the Lodge</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Freshly renovated. Thoughtfully run.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Freshly renovated. Family-run.</h2>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Gomodi Guest Lodge is a nine-room boutique guest house in South Africa — recently renovated with warm terracotta walls, dark walnut wood, and cream textiles throughout. We&apos;re family-run, personally managed, and built for guests who&apos;d rather book directly than navigate a big platform.
+              Gomodi Guest Lodge is a nine-room guest house in Mmabatho, Mafikeng. We&apos;ve recently renovated — terracotta walls, walnut wood, and cream textiles throughout. We&apos;re family-run and personally managed, and we take bookings directly rather than through a platform.
             </p>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Whether you&apos;re here for a weekend away, a week-long contract, or a celebration with the people who matter most — we&apos;ll look after you.
+              Weekend away, work stay, or a celebration — we&apos;ll make sure you&apos;re comfortable.
             </p>
             <div className="mt-8 grid grid-cols-3 gap-6">
               {[
                 { num: "9", label: "Rooms" },
                 { num: "50", label: "Event Capacity" },
-                { num: "3", label: "Booking Paths" },
+                { num: "3", label: "Ways to Book" },
               ].map((stat, i) => (
                 <div key={stat.label} className="motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
                   <div className="text-terracotta-dark font-semibold text-2xl">{stat.num}</div>
@@ -154,7 +154,7 @@ export default async function HomePage() {
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 motion-fade-up motion-ready">
             <div>
               <span className="pill pill-leisure">Our Rooms</span>
-              <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Nine rooms. One standard of comfort.</h2>
+              <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Nine rooms, all freshly renovated.</h2>
               <p className="text-stone mt-3 max-w-xl">Every room includes Smart TV, WiFi, air conditioning with fan/heater backup, and your choice of shower or bath. One flexible room can be set as two singles or one double.</p>
             </div>
             <Link href="/rooms" className="text-terracotta-dark font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all interactive-element">
@@ -199,7 +199,7 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-corporate">What&apos;s Included</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Comforts you can count on.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">What every room includes.</h2>
           </div>
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -229,12 +229,12 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="order-2 md:order-1 motion-fade-left motion-ready">
             <span className="pill pill-event">Events &amp; Functions</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Host your moment here.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Host your event here.</h2>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Weddings, baby showers, birthday parties and private functions — our multipurpose venue hosts up to 50 guests with confirmed catering packages and flexible setups.
+              Weddings, baby showers, birthdays, and private functions. Our venue holds up to 50 guests, with catering packages and flexible setups.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-ink">
-              {["Up to 50 guests seated or cocktail", "Catering packages from R150 pp", "On-site accommodation for your guests", "Confirmed pricing — no surprises"].map((item, i) => (
+              {["Up to 50 guests seated or cocktail", "Catering packages from R150 pp", "On-site accommodation for your guests", "Confirmed pricing"].map((item, i) => (
                 <li key={item} className="flex items-start gap-3 motion-fade-up motion-ready" data-stagger={i + 1}><span className="text-gold-dark font-bold">✓</span> {item}</li>
               ))}
             </ul>
@@ -259,9 +259,9 @@ export default async function HomePage() {
           </div>
           <div className="motion-fade-right motion-ready">
             <span className="pill pill-corporate">Corporate &amp; Government</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Accommodation that respects your procurement process.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Set up for corporate and government bookings.</h2>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Contractor deployments, government rotations, and multi-room group stays — one form captures everything, and we issue formal quotations, invoices, and consolidated statements that work with your finance team.
+              Contractor deployments, government rotations, and multi-room group stays. One form, and we issue the formal quotations, invoices, and consolidated statements your finance team needs.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-ink">
               {["Multi-room, multi-night in a single submission", "PO numbers and billing email captured upfront", "Formal quotation before you commit", "Invoice-ready documentation"].map((item, i) => (
@@ -278,8 +278,8 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-corporate">Payment</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Simple, familiar, flexible.</h2>
-            <p className="text-stone mt-3">Pay the way that suits you. No online card processing — just the methods our guests already use.</p>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">How you pay.</h2>
+            <p className="text-stone mt-3">EFT or cash on arrival. No online card processing — just the methods our guests already use.</p>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -304,7 +304,7 @@ export default async function HomePage() {
         <div className="max-w-4xl mx-auto px-6 text-center motion-fade-up motion-ready">
           <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to chat?</span>
           <h2 className="font-display font-semibold text-2xl md:text-3xl mt-4">Message us on WhatsApp.</h2>
-          <p className="text-cream/80 mt-4 max-w-xl mx-auto">Fastest way to reach us. We typically respond within minutes during business hours — and our booking confirmations come through WhatsApp too.</p>
+          <p className="text-cream/80 mt-4 max-w-xl mx-auto">The quickest way to reach us — we usually respond within minutes during business hours. Booking confirmations come through WhatsApp too.</p>
           <a href="#" className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-colors btn-press ripple">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
             Chat on WhatsApp

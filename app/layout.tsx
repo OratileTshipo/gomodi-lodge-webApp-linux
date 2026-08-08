@@ -21,7 +21,6 @@ import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { BranchModalProvider } from "@/components/BranchModalContext";
 import { BranchModal } from "@/components/BranchModal";
-import { FadeInObserver } from "@/components/FadeInObserver";
 import { HeaderSpacer } from "@/components/HeaderSpacer";
 import { MotionObserver } from "@/lib/motion";
 
@@ -84,7 +83,6 @@ export default function RootLayout({
           <Footer />
           <BranchModal />
           <HeaderSpacer />
-          <FadeInObserver />
           <MotionObserver />
         </BranchModalProvider>
       </body>

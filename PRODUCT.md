@@ -14,11 +14,11 @@ web
 
 ## Product Purpose
 
-Gomodi Guest Lodge is a 9-room boutique guest house in Mafikeng (Mmabatho), South Africa. The website exists so guests book **directly** instead of through a platform: three tailored journeys (Leisure / Corporate / Events) feed one booking-request pipeline, and staff approve or decline requests in a private admin area. Success means confirmed stays without a middleman — WhatsApp-speed responses for leisure guests and formal, procurement-ready documentation for corporate clients.
+Gomodi Guest Lodge is a 9-room boutique guest house in Mafikeng (Mmabatho), South Africa. The website exists so guests book **directly** instead of through a platform: three booking journeys (Leisure / Corporate / Events) feed one booking-request pipeline, and staff approve or decline requests in a private admin area. Success means confirmed stays without a middleman — WhatsApp-speed responses for leisure guests and formal, procurement-ready documentation for corporate clients.
 
 ## Positioning
 
-A family-run, personally managed boutique lodge whose website is built around the way guests actually travel: one lodge, three tailored booking paths, direct rates. Where platform listings are generic and slow, this site captures a full booking request (room, dates, meals, payment intent) in one submission and answers personally, with a single approval pipeline behind it.
+A family-run, personally managed lodge that books guests directly — no platform in between. Three booking paths (leisure, corporate, events) feed one request pipeline: leisure guests get a WhatsApp answer within minutes, corporate clients get formal, procurement-ready documents. The site speaks plainly and factually — prices, amenities, and a straight answer, with no marketing filler.
 
 ## Operating Context
 
@@ -42,7 +42,7 @@ A family-run, personally managed boutique lodge whose website is built around th
 - Name: **Gomodi Guest Lodge** (alternate name "Gomodi").
 - Motto: **"Iphe Lerato"** — prominently displayed in the footer.
 - Brand palette (binding): terracotta / walnut / cream / gold / ink, defined in the global theme.
-- Voice: warm, personal, hospitality-first; family-run and personally managed; encourages direct booking over platforms.
+- Voice: plain, human, and factual — family-run and personally managed; encourages direct booking over platforms. Marketing-fluff phrasing ("tailored experiences", "we'll take it from there" style copy) is explicitly rejected; a site-wide copy rewrite to plain owner-voiced language landed Aug 2026.
 - Emails: `enquiries@gomodiguestlodge.co.za`, `corporate@gomodiguestlodge.co.za`.
 
 ## Evidence on Hand
@@ -64,4 +64,4 @@ A family-run, personally managed boutique lodge whose website is built around th
 
 ## Accessibility & Inclusion
 
-General web accessibility good practice (semantic HTML, contrast, keyboard navigation) is the target; no formal standard was required.
+WCAG AA contrast enforced across public pages (≥4.5:1 text, ≥3:1 non-text — audited with a contrast script and verified in-browser, Aug 2026), minimum 44px touch targets, semantic HTML, and keyboard navigation. No formal third-party audit standard was required.

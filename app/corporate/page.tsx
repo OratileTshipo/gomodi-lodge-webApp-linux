@@ -112,10 +112,10 @@ export default function CorporatePage() {
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-corporate self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Corporate &amp; Government</span>
             <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">
-              Accommodation that respects your procurement process.
+              Corporate accommodation, with the paperwork handled.
             </h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
-              Contractor deployments, government rotations, and multi-room group stays — one form captures everything, and we issue the formal quotations, invoices, and consolidated statements your finance team needs.
+              Contractor deployments, government rotations, and multi-room group stays. Send one form and we&apos;ll issue the formal quotations, invoices, and consolidated statements your finance team needs.
             </p>
             <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
               <a href="#quote-form" className="px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white transition-colors">
@@ -132,7 +132,7 @@ export default function CorporatePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-corporate">Who We Serve</span>
-            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Built for the clients we already host.</h2>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">The clients we host.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -162,9 +162,9 @@ export default function CorporatePage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
             <span className="pill pill-corporate">The Documentation Trail</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Everything your finance team needs, in order.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">From quotation to invoice, in order.</h2>
             <p className="text-stone mt-4 leading-relaxed">
-              From the first quote to the final consolidated statement, every document is issued formally, by email, and ready for your internal approval and payment processes.
+              Every document, from the first quote to the final consolidated statement, is issued by email and ready for your approval and payment process.
             </p>
             <div className="mt-6 space-y-3">
               {[
@@ -198,7 +198,7 @@ export default function CorporatePage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-corporate">Request a Quote</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us what you need. We&apos;ll come back with a formal quote.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Tell us what you need and we&apos;ll send a formal quote.</h2>
           </div>
 
           {status === "success" ? (
@@ -373,8 +373,8 @@ export default function CorporatePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center motion-fade-up motion-ready">
             <div>
               <span className="pill" style={{ background: "rgba(245,235,221,0.15)", color: "#FAF6F0" }}>Prefer to talk it through?</span>
-              <h2 className="font-display font-semibold text-2xl md:text-3xl mt-4">We&apos;re a message or call away.</h2>
-              <p className="text-cream/80 mt-4">Reach us by WhatsApp, phone, or email — whichever suits your process.</p>
+              <h2 className="font-display font-semibold text-2xl md:text-3xl mt-4">Get in touch.</h2>
+              <p className="text-cream/80 mt-4">WhatsApp, phone, or email — whichever suits you.</p>
             </div>
             <div className="flex flex-col gap-3">
               <a href="#" className="inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-colors">WhatsApp</a>

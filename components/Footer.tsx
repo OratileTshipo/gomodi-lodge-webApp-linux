@@ -18,7 +18,7 @@ export function Footer() {
           </div>
           <p className="text-sm max-w-sm">
             Nine rooms, freshly renovated. Leisure stays, corporate bookings, and
-            private events — all booked directly with us.
+            private events — booked directly with us.
           </p>
           <div className="mt-4 text-xs text-cream/70">
             <p className="font-medium text-cream/80 mb-1">Address</p>

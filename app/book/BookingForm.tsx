@@ -222,7 +222,7 @@ export function BookingForm({
         <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3">Request received</span>
         <h1 className="font-semibold text-ink text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
         <p className="text-stone mt-2 max-w-md mx-auto text-base leading-relaxed">
-          Your request for <span className="font-medium text-ink">{room?.name}</span> is received. We&apos;ll WhatsApp you shortly to confirm availability and lock in your booking — usually within minutes during the day.
+          We&apos;ve received your request for <span className="font-medium text-ink">{room?.name}</span>. We&apos;ll confirm availability on WhatsApp — usually within minutes during the day.
         </p>
         <Link href="/rooms" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Rooms</Link>
       </main>
@@ -234,18 +234,18 @@ export function BookingForm({
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2">
           <li><Link href="/" className="hover:text-terracotta-dark">Home</Link></li>
-          <li className="text-stone/50">/</li>
+          <li className="text-walnut/40">/</li>
           <li><Link href="/rooms" className="hover:text-terracotta-dark">Rooms</Link></li>
-          <li className="text-stone/50">/</li>
+          <li className="text-walnut/40">/</li>
           <li className="text-ink font-medium">Book Your Stay</li>
         </ol>
       </nav>
 
       <section className="max-w-6xl mx-auto px-6 pb-8">
         <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-terracotta-tint text-terracotta-dark mb-3 motion-fade-up motion-ready" data-stagger="1">Leisure Booking</span>
-        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-2 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Let&apos;s get you booked in.</h1>
+        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-2 max-w-3xl motion-fade-up motion-ready" data-stagger="2">Book your stay</h1>
         <p className="text-stone mt-3 max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="3">
-          Tell us when you&apos;d like to come, which room you fancy, and whether you&apos;d like us to sort meals. We&apos;ll check availability and come back to you on WhatsApp.
+          Choose your dates, room, and meals. We&apos;ll check availability and confirm on WhatsApp.
         </p>
       </section>
 
@@ -497,7 +497,7 @@ export function BookingForm({
                 <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta-dark hover:bg-[#74301f] text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-colors shadow-sm">
                   {status === "submitting" ? "Sending…" : "Send booking request"}
                 </button>
-                <p className="text-stone text-xs mt-3 text-center">Submitting doesn&apos;t confirm your booking — we&apos;ll check availability and come back to you on WhatsApp.</p>
+                <p className="text-stone text-xs mt-3 text-center">Submitting this doesn&apos;t confirm your booking — we&apos;ll check availability and confirm on WhatsApp.</p>
               </div>
             </div>
           </form>
@@ -533,9 +533,9 @@ export function BookingForm({
       {roomId && rooms.filter(r => r.id !== roomId && (checkIn && checkOut ? !unavailableIds.includes(r.id) : true)).length > 0 && (
         <section className="max-w-6xl mx-auto px-6 pb-20 border-t border-walnut/10 pt-12 mt-8 motion-pop">
           <div className="text-center mb-8">
-            <h2 className="font-display text-2xl font-semibold text-ink">Not quite the right fit?</h2>
+            <h2 className="font-display text-2xl font-semibold text-ink">Prefer a different room?</h2>
             <p className="text-stone mt-2 max-w-xl mx-auto">
-              Here are our other available rooms for your selected dates. Tap any room to switch your booking instantly.
+              Other rooms available for your dates — tap one to switch.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

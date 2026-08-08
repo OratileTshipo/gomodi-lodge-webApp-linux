@@ -71,9 +71,9 @@ export function RoomsExplorer({
       {/* HERO - mount-safe staggered entrance (pure CSS, always visible) */}
       <section className="max-w-6xl mx-auto px-6 pb-12">
         <span className="pill pill-leisure motion-pop" data-stagger="1">Nine Rooms</span>
-        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="2">Every room, freshly renovated. One standard of comfort.</h1>
+        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="2">Every room, freshly renovated.</h1>
         <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-pop" data-stagger="3">
-          Warm terracotta walls, dark walnut wood, and cream textiles throughout. Every room includes Smart TV, WiFi, air conditioning with fan and heater backup, and your choice of shower or bath. One flexible room can be set as two singles or one double — just tell us what you need.
+          Terracotta walls, walnut wood, and cream textiles throughout. Every room has a Smart TV, WiFi, air conditioning with fan and heater backup, and a shower or bath. One room can be set up as two singles or one double — tell us which you prefer when you book.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 motion-pop" data-stagger="4">
           <div className="badge">✓ Smart TV in every room</div>
@@ -113,7 +113,7 @@ export function RoomsExplorer({
               id="sortSelect"
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              className="bg-white border border-walnut/20 rounded-lg px-3 py-2 text-sm text-ink focus:outline-none focus:border-terracotta"
+              className="bg-white border border-walnut/20 rounded-lg px-3 py-2 text-sm text-ink focus:border-terracotta"
             >
               <option value="default">Default order</option>
               <option value="price-asc">Price: Low to High</option>
@@ -237,7 +237,7 @@ export function RoomsExplorer({
                     <svg className="flex-shrink-0 mt-0.5 text-gold-dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                     <div>
                       <div className="font-semibold text-ink text-sm">Flexible configuration</div>
-                      <p className="text-stone text-sm mt-1">Tell us when you book whether you&apos;d like this room set up as two single beds or one double — we&apos;ll have it ready for your arrival.</p>
+                      <p className="text-stone text-sm mt-1">Let us know when you book whether you&apos;d like two single beds or one double, and we&apos;ll have it ready for you.</p>
                     </div>
                   </div>
                 </div>

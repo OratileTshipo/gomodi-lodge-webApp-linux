@@ -81,7 +81,7 @@ export default function EventsPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/75" />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <span className="pill pill-event self-start mb-4 motion-fade-up motion-ready" data-stagger="1">Events &amp; Functions</span>
-            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">Host your moment here.</h1>
+            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="2">Host your event here.</h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
               Weddings, baby showers, birthday parties and private functions — for up to 50 guests, with confirmed catering and on-site accommodation.
             </p>
@@ -98,14 +98,14 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-event">What We Host</span>
-            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Your event, your way.</h2>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl mt-4">Events we host.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               ["Weddings", "Intimate ceremonies and receptions for up to 50 guests, with on-site accommodation for the wedding party."],
-              ["Baby Showers", "Warm, beautifully set spaces for your celebration — catering and décor coordination available."],
-              ["Birthday Parties", "Milestones deserve a proper setting. Flexible layouts for seated dinners or cocktail-style celebrations."],
-              ["Private Functions", "Anniversaries, family gatherings, reunions — any occasion worth celebrating."],
+              ["Baby Showers", "Set up for your celebration, with catering and décor coordination available."],
+              ["Birthday Parties", "Flexible layouts for seated dinners or cocktail-style celebrations."],
+              ["Private Functions", "Anniversaries, family gatherings, and reunions."],
             ].map(([title, text], i) => (
               <article key={title} className="event-type-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready interactive-element card-lift" data-stagger={i + 1}>
                 <div className="aspect-[4/3] overflow-hidden"><PhotoPlaceholder label={title} tone="gold" /></div>
@@ -124,8 +124,8 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
             <span className="pill pill-event">The Venue</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">A space that works for your guests.</h2>
-            <p className="text-stone mt-4 leading-relaxed">Our multipurpose function space flexes with your event — seated dinners, cocktail setups, buffet layouts, or open floor for dancing.</p>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">A flexible space for your event.</h2>
+            <p className="text-stone mt-4 leading-relaxed">Seated dinners, cocktail setups, buffet layouts, or an open floor for dancing.</p>
             <div className="mt-6 grid grid-cols-2 gap-4">
               {[["50", "Max Guests"], ["Flexible", "Layout Options"], ["9", "Rooms for Guests"], ["On-site", "Secure Parking"]].map(([n, l], i) => (
                 <div key={l} className="bg-white rounded-xl p-4 border border-walnut/10 motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
@@ -146,7 +146,7 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <span className="pill pill-event">Catering Packages</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Confirmed pricing. No surprises.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Confirmed pricing.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="1">
@@ -208,10 +208,9 @@ export default function EventsPage() {
               <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
               </div>
-              <h3 className="font-semibold text-ink text-xl mb-2">Inquiry received!</h3>
+              <h3 className="font-semibold text-ink text-xl mb-2">Inquiry received.</h3>
               <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto">
-                Thank you for considering Gomodi Guest Lodge for your <span className="font-medium text-ink capitalize">{eventType.replace("-", " ")}</span>. 
-                We&apos;ll check venue availability for <span className="font-medium text-ink">{new Date(eventDate).toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" })}</span> and reply within one business day with a tailored package.
+                Thanks — we&apos;ve received your inquiry. We&apos;ll check availability for <span className="font-medium text-ink">{new Date(eventDate).toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" })}</span> and reply within one business day with options and pricing.
               </p>
               <Link href="/" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Home</Link>
             </div>
@@ -316,7 +315,7 @@ export default function EventsPage() {
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center motion-fade-up motion-ready">
             <span className="pill pill-event">Common Questions</span>
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Before you ask.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl mt-4">Good to know.</h2>
           </div>
           <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
