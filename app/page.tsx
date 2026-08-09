@@ -4,6 +4,7 @@ import { rooms } from "@/lib/db/schema";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { BookNowHeroButtonClient } from "@/components/BookNowHeroButtonClient";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { HeroParallax } from "@/components/HeroParallax";
 
 export const dynamic = "force-dynamic";
 
@@ -22,19 +23,38 @@ export default async function HomePage() {
       <section className="relative">
         <div className="hero-outer relative h-[70vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[720px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
-            <PhotoPlaceholder label="Gomodi Guest Lodge exterior at golden hour" className="absolute inset-0" />
+            <HeroParallax>
+              <PhotoPlaceholder
+                label="Gomodi Guest Lodge exterior at golden hour"
+                className="absolute inset-0"
+              />
+            </HeroParallax>
           </div>
           <div className="absolute inset-0 hero-gradient" />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
-            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-2xl motion-fade-up motion-ready" data-stagger="1">
+            <h1
+              className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-2xl motion-fade-up motion-ready"
+              data-stagger="1"
+            >
               Welcome to Gomodi Guest Lodge — Mmabatho, Mafikeng.
             </h1>
-            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="3">
-              A nine-room guest house in Mmabatho, Mafikeng. Book leisure stays, corporate and government accommodation, and private events directly with us — no booking platform in between.
+            <p
+              className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready"
+              data-stagger="3"
+            >
+              A nine-room guest house in Mmabatho, Mafikeng. Book leisure
+              stays, corporate and government accommodation, and private events
+              directly with us — no booking platform in between.
             </p>
-            <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="4">
+            <div
+              className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready"
+              data-stagger="4"
+            >
               <BookNowHeroButtonClient />
-              <Link href="/rooms" className="px-6 py-3 rounded-lg font-semibold text-base border border-cream-light/40 text-cream-light hover:bg-cream-light/10 inline-flex items-center justify-center interactive-element">
+              <Link
+                href="/rooms"
+                className="px-6 py-3 rounded-lg font-semibold text-base border border-cream-light/40 text-cream-light hover:bg-cream-light/10 inline-flex items-center justify-center interactive-element backdrop-blur-sm"
+              >
                 View Rooms
               </Link>
             </div>
@@ -46,8 +66,13 @@ export default async function HomePage() {
       <section id="stay" className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
-            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl">Choose how you want to stay.</h2>
-            <p className="text-stone mt-4 text-base">Leisure, corporate, or events. Pick the one that fits your trip — you send the request, we confirm by WhatsApp.</p>
+            <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl">
+              Choose how you want to stay.
+            </h2>
+            <p className="text-stone mt-4 text-base">
+              Leisure, corporate, or events. Pick the one that fits your trip —
+              you send the request, we confirm by WhatsApp.
+            </p>
           </div>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -58,7 +83,12 @@ export default async function HomePage() {
                 desc: "Pick your room, add breakfast or dinner, send us a request. We confirm by WhatsApp within minutes.",
                 icon: "✓",
                 iconColor: "text-terracotta-dark",
-                items: ["9 rooms, including flexible twin/double", `Breakfast R${BREAKFAST_PRICE} · Dinner R${DINNER_PRICE} pp`, "Cash on arrival or EFT"],
+                iconBg: "bg-terracotta-tint",
+                items: [
+                  "9 rooms, including flexible twin/double",
+                  `Breakfast R${BREAKFAST_PRICE} · Dinner R${DINNER_PRICE} pp`,
+                  "Cash on arrival or EFT",
+                ],
                 link: "/rooms",
                 linkText: "Request a Stay",
                 img: "Leisure guest room",
@@ -69,7 +99,12 @@ export default async function HomePage() {
                 desc: "Multi-room, multi-night quote in one form. PO numbers, formal quotations, invoices and consolidated statements.",
                 icon: "✓",
                 iconColor: "text-walnut",
-                items: ["One submission, many rooms", "PO reference & billing email", "Invoice-ready documentation"],
+                iconBg: "bg-walnut-tint",
+                items: [
+                  "One submission, many rooms",
+                  "PO reference & billing email",
+                  "Invoice-ready documentation",
+                ],
                 link: "/corporate",
                 linkText: "Request a Quote",
                 img: "Corporate guest room",
@@ -81,26 +116,57 @@ export default async function HomePage() {
                 desc: "Hold up to 50 guests in our venue. Confirmed catering prices and flexible setups.",
                 icon: "✓",
                 iconColor: "text-gold-dark",
-                items: ["Up to 50 guests", "Catering packages available", "Accommodation for guests on-site"],
+                iconBg: "bg-gold-tint",
+                items: [
+                  "Up to 50 guests",
+                  "Catering packages available",
+                  "Accommodation for guests on-site",
+                ],
                 link: "/events",
                 linkText: "Inquire About Your Event",
                 img: "Event space set for wedding",
                 imgTone: "gold",
               },
             ].map((item, i) => (
-              <article key={item.title} className="branch-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
+              <article
+                key={item.title}
+                className="branch-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready"
+                data-stagger={i + 1}
+              >
                 <div className="aspect-[4/3] overflow-hidden image-zoom">
-                  <PhotoPlaceholder label={item.img} tone={item.imgTone as "walnut" | "gold"} />
+                  <PhotoPlaceholder
+                    label={item.img}
+                    tone={item.imgTone as "walnut" | "gold"}
+                  />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-semibold text-ink text-lg">{item.heading}</h3>
-                  <p className="text-stone text-sm mt-2">{item.desc}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className={`w-8 h-8 rounded-lg ${item.iconBg} flex items-center justify-center`}
+                    >
+                      <span className={`${item.iconColor} text-sm font-bold`}>
+                        {item.icon}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-ink text-lg">
+                      {item.heading}
+                    </h3>
+                  </div>
+                  <p className="text-stone text-sm">{item.desc}</p>
                   <ul className="mt-4 space-y-2 text-sm text-ink">
                     {item.items.map((it) => (
-                      <li key={it} className="flex items-start gap-2"><span className={`${item.iconColor} mt-0.5`}>{item.icon}</span> {it}</li>
+                      <li key={it} className="flex items-start gap-2">
+                        <span className={`${item.iconColor} mt-0.5`}>
+                          {item.icon}
+                        </span>{" "}
+                        {it}
+                      </li>
                     ))}
                   </ul>
-                  <Link href={item.link} className="mt-6 block text-center btn-primary btn-press px-4 py-2.5 rounded-lg font-semibold text-sm ripple">
+                  <Link
+                    href={item.link}
+                    className="mt-6 block text-center btn-primary btn-press px-4 py-2.5 rounded-lg font-semibold text-sm ripple"
+                  >
                     {item.linkText}
                   </Link>
                 </div>
@@ -114,12 +180,19 @@ export default async function HomePage() {
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Freshly renovated. Family-run.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              Freshly renovated. Family-run.
+            </h2>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Gomodi Guest Lodge is a nine-room guest house in Mmabatho, Mafikeng. We&apos;ve recently renovated — terracotta walls, walnut wood, and cream textiles throughout. We&apos;re family-run and personally managed, and we take bookings directly rather than through a platform.
+              Gomodi Guest Lodge is a nine-room guest house in Mmabatho,
+              Mafikeng. We&apos;ve recently renovated — terracotta walls, walnut
+              wood, and cream textiles throughout. We&apos;re family-run and
+              personally managed, and we take bookings directly rather than
+              through a platform.
             </p>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Weekend away, work stay, or a celebration — we&apos;ll make sure you&apos;re comfortable.
+              Weekend away, work stay, or a celebration — we&apos;ll make sure
+              you&apos;re comfortable.
             </p>
             <div className="mt-8 grid grid-cols-3 gap-6">
               {[
@@ -127,9 +200,17 @@ export default async function HomePage() {
                 { num: "50", label: "Event Capacity" },
                 { num: "3", label: "Ways to Book" },
               ].map((stat, i) => (
-                <div key={stat.label} className="motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
-                  <div className="text-terracotta-dark font-semibold text-2xl">{stat.num}</div>
-                  <div className="text-stone text-xs uppercase tracking-wide mt-1">{stat.label}</div>
+                <div
+                  key={stat.label}
+                  className="motion-scale-in motion-ready interactive-element"
+                  data-stagger={i + 1}
+                >
+                  <div className="text-terracotta-dark font-semibold text-2xl">
+                    {stat.num}
+                  </div>
+                  <div className="text-stone text-xs uppercase tracking-wide mt-1">
+                    {stat.label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -147,12 +228,30 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 motion-fade-up motion-ready">
             <div>
-              <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Nine rooms, all freshly renovated.</h2>
-              <p className="text-stone mt-3 max-w-xl">Every room includes Smart TV, WiFi, air conditioning with fan/heater backup, and your choice of shower or bath. One flexible room can be set as two singles or one double.</p>
+              <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+                Nine rooms, all freshly renovated.
+              </h2>
+              <p className="text-stone mt-3 max-w-xl">
+                Every room includes Smart TV, WiFi, air conditioning with
+                fan/heater backup, and your choice of shower or bath. One
+                flexible room can be set as two singles or one double.
+              </p>
             </div>
-            <Link href="/rooms" className="text-terracotta-dark font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all interactive-element">
+            <Link
+              href="/rooms"
+              className="text-terracotta-dark font-semibold text-sm inline-flex items-center gap-2 hover:gap-3 transition-all interactive-element"
+            >
               View all 9 rooms
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
             </Link>
           </div>
 
@@ -161,7 +260,7 @@ export default async function HomePage() {
               <Link
                 key={room.id}
                 href={`/book?room=${room.id}`}
-                className="card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready interactive-element"
+                className="card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready"
                 data-stagger={i + 1}
               >
                 <div className="aspect-[4/3] bg-cream overflow-hidden image-zoom">
@@ -170,10 +269,14 @@ export default async function HomePage() {
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-ink">{room.name}</h3>
-                    <span className="text-terracotta-dark font-semibold text-sm">R{Number(room.baseRate).toFixed(0)}/night</span>
+                    <span className="text-terracotta-dark font-semibold text-sm">
+                      R{Number(room.baseRate).toFixed(0)}/night
+                    </span>
                   </div>
                   <p className="text-stone text-sm mt-1">
-                    {room.config} · {room.bathOrShower === "bath" ? "Bath" : "Shower"} · 2 guests
+                    {room.config} ·{" "}
+                    {room.bathOrShower === "bath" ? "Bath" : "Shower"} · 2
+                    guests
                   </p>
                 </div>
               </Link>
@@ -186,24 +289,73 @@ export default async function HomePage() {
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">What every room includes.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              What every room includes.
+            </h2>
           </div>
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { title: "Smart TV", sub: "In every room", d: "M2 7h20v13H2zM17 2l-5 5-5-5" },
-              { title: "Free WiFi", sub: "Lodge-wide", d: "M5 12.55a11 11 0 0 1 14 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" },
-              { title: "A/C + Backup", sub: "Fan & heater ready", d: "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" },
-              { title: "Breakfast", sub: `R${BREAKFAST_PRICE} pp`, d: "M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3" },
-              { title: "Dinner", sub: `R${DINNER_PRICE} pp`, d: "M3 11h18M5 6h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" },
-              { title: "Secure Parking", sub: "On-site", d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" },
-              { title: "Flexible Check-in", sub: "By arrangement", d: "M12 6v6l4 2" },
-              { title: "Personal Host", sub: "Owner-managed", d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" },
+              {
+                title: "Smart TV",
+                sub: "In every room",
+                d: "M2 7h20v13H2zM17 2l-5 5-5-5",
+              },
+              {
+                title: "Free WiFi",
+                sub: "Lodge-wide",
+                d: "M5 12.55a11 11 0 0 1 14 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+              },
+              {
+                title: "A/C + Backup",
+                sub: "Fan & heater ready",
+                d: "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83",
+              },
+              {
+                title: "Breakfast",
+                sub: `R${BREAKFAST_PRICE} pp`,
+                d: "M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3",
+              },
+              {
+                title: "Dinner",
+                sub: `R${DINNER_PRICE} pp`,
+                d: "M3 11h18M5 6h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z",
+              },
+              {
+                title: "Secure Parking",
+                sub: "On-site",
+                d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+              },
+              {
+                title: "Flexible Check-in",
+                sub: "By arrangement",
+                d: "M12 6v6l4 2",
+              },
+              {
+                title: "Personal Host",
+                sub: "Owner-managed",
+                d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+              },
             ].map((a, i) => (
-              <div key={a.title} className="bg-white rounded-xl p-6 border border-walnut/10 card-shadow motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
+              <div
+                key={a.title}
+                className="bg-white rounded-xl p-5 border border-walnut/10 card-shadow card-lift motion-scale-in motion-ready"
+                data-stagger={i + 1}
+              >
                 <div className="w-10 h-10 rounded-lg bg-terracotta-tint flex items-center justify-center text-terracotta-dark">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d={a.d} /></svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path d={a.d} />
+                  </svg>
                 </div>
-                <h3 className="font-semibold text-ink mt-3 text-sm">{a.title}</h3>
+                <h3 className="font-semibold text-ink mt-3 text-sm">
+                  {a.title}
+                </h3>
                 <p className="text-stone text-xs mt-1">{a.sub}</p>
               </div>
             ))}
@@ -215,17 +367,40 @@ export default async function HomePage() {
       <section id="events" className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="order-2 md:order-1 motion-fade-left motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Host your event here.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              Host your event here.
+            </h2>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Weddings, baby showers, birthdays, and private functions. Our venue holds up to 50 guests, with catering packages and flexible setups.
+              Weddings, baby showers, birthdays, and private functions. Our
+              venue holds up to 50 guests, with catering packages and flexible
+              setups.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-ink">
-              {["Up to 50 guests seated or cocktail", "Catering packages from R150 pp", "On-site accommodation for your guests", "Confirmed pricing"].map((item, i) => (
-                <li key={item} className="flex items-start gap-3 motion-fade-up motion-ready" data-stagger={i + 1}><span className="text-gold-dark font-bold">✓</span> {item}</li>
+              {[
+                "Up to 50 guests seated or cocktail",
+                "Catering packages from R150 pp",
+                "On-site accommodation for your guests",
+                "Confirmed pricing",
+              ].map((item, i) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-3 motion-fade-up motion-ready"
+                  data-stagger={i + 1}
+                >
+                  <span className="text-gold-dark font-bold">✓</span> {item}
+                </li>
               ))}
             </ul>
-            <Link href="/events" className="mt-8 inline-block btn-primary btn-press px-6 py-3 rounded-lg font-semibold ripple">Inquire About Your Event</Link>
-            <p className="text-stone text-xs mt-4 italic">Day-use of the meeting/function space is priced on request while final touches to the renovation are completed.</p>
+            <Link
+              href="/events"
+              className="mt-8 inline-block btn-gold btn-press px-6 py-3 rounded-lg font-semibold ripple"
+            >
+              Inquire About Your Event
+            </Link>
+            <p className="text-stone text-xs mt-4 italic">
+              Day-use of the meeting/function space is priced on request while
+              final touches to the renovation are completed.
+            </p>
           </div>
           <div className="order-1 md:order-2 motion-fade-right motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
@@ -240,20 +415,43 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <PhotoPlaceholder label="Corporate accommodation" tone="walnut" />
+              <PhotoPlaceholder
+                label="Corporate accommodation"
+                tone="walnut"
+              />
             </div>
           </div>
           <div className="motion-fade-right motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Set up for corporate and government bookings.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              Set up for corporate and government bookings.
+            </h2>
             <p className="text-stone mt-4 text-base leading-relaxed">
-              Contractor deployments, government rotations, and multi-room group stays. One form, and we issue the formal quotations, invoices, and consolidated statements your finance team needs.
+              Contractor deployments, government rotations, and multi-room group
+              stays. One form, and we issue the formal quotations, invoices, and
+              consolidated statements your finance team needs.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-ink">
-              {["Multi-room, multi-night in a single submission", "PO numbers and billing email captured upfront", "Formal quotation before you commit", "Invoice-ready documentation"].map((item, i) => (
-                <li key={item} className="flex items-start gap-3 motion-fade-up motion-ready" data-stagger={i + 1}><span className="text-walnut font-bold">✓</span> {item}</li>
+              {[
+                "Multi-room, multi-night in a single submission",
+                "PO numbers and billing email captured upfront",
+                "Formal quotation before you commit",
+                "Invoice-ready documentation",
+              ].map((item, i) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-3 motion-fade-up motion-ready"
+                  data-stagger={i + 1}
+                >
+                  <span className="text-walnut font-bold">✓</span> {item}
+                </li>
               ))}
             </ul>
-            <Link href="/corporate" className="mt-8 inline-block btn-primary btn-press px-6 py-3 rounded-lg font-semibold ripple">Request a Corporate Quote</Link>
+            <Link
+              href="/corporate"
+              className="mt-8 inline-block btn-primary btn-press px-6 py-3 rounded-lg font-semibold ripple"
+            >
+              Request a Corporate Quote
+            </Link>
           </div>
         </div>
       </section>
@@ -262,18 +460,56 @@ export default async function HomePage() {
       <section id="payment" className="py-16 md:py-20 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">How you pay.</h2>
-            <p className="text-stone mt-3">EFT or cash on arrival. No online card processing — just the methods our guests already use.</p>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              How you pay.
+            </h2>
+            <p className="text-stone mt-3">
+              EFT or cash on arrival. No online card processing — just the
+              methods our guests already use.
+            </p>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: "M2 7h20v13H2zM17 2l-5 5-5-5", title: "EFT / Bank Transfer", desc: "Pay directly to our business account. Upload proof of payment and we'll verify within one business day.", bg: "bg-walnut-tint", color: "text-walnut" },
-              { icon: "M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z", title: "Cash on Arrival", desc: "Perfect for leisure guests. Settle in person at check-in — no advance payment required.", bg: "bg-terracotta-tint", color: "text-terracotta-dark" },
-              { icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8", title: "Proof of Payment", desc: "Upload your POP directly through your booking confirmation and we'll mark it verified on your record.", bg: "bg-gold-tint", color: "text-gold-dark" },
+              {
+                icon: "M2 7h20v13H2zM17 2l-5 5-5-5",
+                title: "EFT / Bank Transfer",
+                desc: "Pay directly to our business account. Upload proof of payment and we'll verify within one business day.",
+                bg: "bg-walnut-tint",
+                color: "text-walnut",
+              },
+              {
+                icon: "M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
+                title: "Cash on Arrival",
+                desc: "Perfect for leisure guests. Settle in person at check-in — no advance payment required.",
+                bg: "bg-terracotta-tint",
+                color: "text-terracotta-dark",
+              },
+              {
+                icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8",
+                title: "Proof of Payment",
+                desc: "Upload your POP directly through your booking confirmation and we'll mark it verified on your record.",
+                bg: "bg-gold-tint",
+                color: "text-gold-dark",
+              },
             ].map((p, i) => (
-              <div key={p.title} className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
-                <div className={`w-12 h-12 rounded-xl ${p.bg} flex items-center justify-center ${p.color}`}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d={p.icon}/></svg>
+              <div
+                key={p.title}
+                className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow card-lift motion-scale-in motion-ready"
+                data-stagger={i + 1}
+              >
+                <div
+                  className={`w-12 h-12 rounded-xl ${p.bg} flex items-center justify-center ${p.color}`}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path d={p.icon} />
+                  </svg>
                 </div>
                 <h3 className="font-semibold text-ink mt-4">{p.title}</h3>
                 <p className="text-stone text-sm mt-2">{p.desc}</p>
@@ -284,15 +520,45 @@ export default async function HomePage() {
       </section>
 
       {/* WHATSAPP CTA */}
-      <section id="contact" className="py-16 md:py-20 bg-walnut text-cream-light">
-        <div className="max-w-4xl mx-auto px-6 text-center motion-fade-up motion-ready">
-          <h2 className="font-display font-semibold text-2xl md:text-3xl">Message us on WhatsApp.</h2>
-          <p className="text-cream/80 mt-4 max-w-xl mx-auto">The quickest way to reach us — we usually respond within minutes during business hours. Booking confirmations come through WhatsApp too.</p>
-          <a href="#" className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-colors btn-press ripple">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      <section
+        id="contact"
+        className="relative py-16 md:py-20 bg-walnut text-cream-light overflow-hidden"
+      >
+        {/* Subtle pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, white 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+        <div className="relative max-w-4xl mx-auto px-6 text-center motion-fade-up motion-ready">
+          <h2 className="font-display font-semibold text-2xl md:text-3xl">
+            Message us on WhatsApp.
+          </h2>
+          <p className="text-cream/80 mt-4 max-w-xl mx-auto">
+            The quickest way to reach us — we usually respond within minutes
+            during business hours. Booking confirmations come through WhatsApp
+            too.
+          </p>
+          <a
+            href="#"
+            className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-all btn-press ripple shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:shadow-[#25D366]/30"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+            </svg>
             Chat on WhatsApp
           </a>
-          <p className="text-cream/60 text-xs mt-6">Or call us directly · Email enquiries welcome</p>
+          <p className="text-cream/60 text-xs mt-6">
+            Or call us directly · Email enquiries welcome
+          </p>
         </div>
       </section>
     </main>

@@ -118,10 +118,11 @@ img {
   );
 }
 .card-shadow {
-  box-shadow: 0 1px 2px rgba(74, 46, 34, 0.06), 0 4px 16px rgba(74, 46, 34, 0.06);
+  box-shadow: 0 1px 3px rgba(74, 46, 34, 0.06), 0 4px 16px rgba(74, 46, 34, 0.06);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .card-shadow:hover {
-  box-shadow: 0 2px 4px rgba(74, 46, 34, 0.08), 0 8px 24px rgba(74, 46, 34, 0.1);
+  box-shadow: 0 2px 6px rgba(74, 46, 34, 0.08), 0 8px 28px rgba(74, 46, 34, 0.1);
 }
 .pill {
   display: inline-flex;
@@ -145,7 +146,7 @@ img {
      buttons. terracotta-dark #8f3e25 reaches 6.76:1 on cream-light. */
   background: #8f3e25;
   color: #faf6f0;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 .btn-primary:hover { background: #74301f; }
 .btn-primary:active { transform: translateY(1px); }
@@ -154,14 +155,14 @@ img {
 .btn-outline {
   border: 1px solid #4a2e22;
   color: #4a2e22;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 .btn-outline:hover { background: #4a2e22; color: #faf6f0; }
 
 .btn-gold {
   background: #d4a574;
   color: #2a1e18;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 .btn-gold:hover { background: #8f6a3e; color: #faf6f0; }
 
@@ -186,10 +187,12 @@ img {
 .menu-closed { max-height: 0; opacity: 0; overflow: hidden; }
 
 .branch-card, .segment-card, .event-type-card {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s ease;
 }
-.branch-card:hover, .segment-card:hover { transform: translateY(-4px); border-color: #4a2e22; }
-.event-type-card:hover { transform: translateY(-4px); }
+.branch-card:hover, .segment-card:hover { transform: translateY(-6px); border-color: #4a2e22; }
+.event-type-card:hover { transform: translateY(-6px); }
 
 .doc-icon {
   width: 40px; height: 40px; border-radius: 10px;
@@ -218,13 +221,13 @@ img {
 
 .faq-item { border-bottom: 1px solid rgba(74, 46, 34, 0.1); }
 .faq-item:last-child { border-bottom: none; }
-.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease; }
 .faq-item.open .faq-answer { max-height: 400px; padding-top: 12px; padding-bottom: 16px; }
 .faq-item.open .faq-chevron { transform: rotate(180deg); }
-.faq-chevron { transition: transform 0.3s ease; }
+.faq-chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-.room-card { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease; }
-.room-card:hover { transform: translateY(-4px); }
+.room-card { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease; }
+.room-card:hover { transform: translateY(-6px); }
 
 .filter-btn { transition: all 0.2s ease; }
 
@@ -499,9 +502,9 @@ html.motion-armed .motion-blur-reveal:not(.motion-visible) {
 
 /* Micro-interaction states */
 .interactive-element {
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .interactive-element:hover {
@@ -522,12 +525,12 @@ html.motion-armed .motion-blur-reveal:not(.motion-visible) {
 
 /* Card hover lift with shadow */
 .card-lift {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .card-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(74, 46, 34, 0.12);
+  transform: translateY(-6px);
+  box-shadow: 0 14px 28px rgba(74, 46, 34, 0.12);
 }
 
 /* Image hover zoom */
@@ -535,7 +538,7 @@ html.motion-armed .motion-blur-reveal:not(.motion-visible) {
   overflow: hidden;
 }
 .image-zoom img {
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .image-zoom:hover img {
   transform: scale(1.05);
@@ -585,6 +588,12 @@ textarea {
    targets with no other focus treatment). */
 select.form-input {
   outline: none;
+}
+
+/* Section divider — subtle gradient separator between alternating sections */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74, 46, 34, 0.08), transparent);
 }
 
 /* Reduced motion support - respects user preferences */
@@ -643,5 +652,10 @@ select.form-input {
   .motion-fade-left,
   .motion-fade-right {
     transition: all 0.3s ease;
+  }
+
+  /* Reduce card lift distance on touch devices */
+  .card-lift:hover {
+    transform: translateY(-3px);
   }
 }

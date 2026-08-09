@@ -55,6 +55,7 @@ export function BookingForm({
   const [currentMonth, setCurrentMonth] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
+  const [monthTransition, setMonthTransition] = useState<"none" | "left" | "right">("none");
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [selectingCheckIn, setSelectingCheckIn] = useState(!initialCheckIn);
@@ -122,14 +123,53 @@ export function BookingForm({
   }
 
   function changeMonth(delta: number) {
-    setCurrentMonth((prev) => {
-      const next = new Date(prev.getFullYear(), prev.getMonth() + delta, 1);
-      const min = new Date(today.getFullYear(), today.getMonth(), 1);
-      const max = new Date(today.getFullYear(), today.getMonth() + 6, 1);
-      if (next < min) return min;
-      if (next > max) return max;
-      return next;
-    });
+    setMonthTransition(delta > 0 ? "right" : "left");
+    setTimeout(() => {
+      setCurrentMonth((prev) => {
+        const next = new Date(prev.getFullYear(), prev.getMonth() + delta, 1);
+        const min = new Date(today.getFullYear(), today.getMonth(), 1);
+        const max = new Date(today.getFullYear(), today.getMonth() + 6, 1);
+        if (next < min) return min;
+        if (next > max) return max;
+        return next;
+      });
+      setMonthTransition("none");
+    }, 150);
+  }
+
+  function clearDates() {
+    setCheckIn("");
+    setCheckOut("");
+    setSelectingCheckIn(true);
+  }
+
+  function selectQuickDate(range: "tonight" | "weekend" | "next-week") {
+    const now = new Date();
+    let start: Date;
+    let end: Date;
+
+    if (range === "tonight") {
+      start = now;
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    } else if (range === "weekend") {
+      // Find next Friday
+      const dayOfWeek = now.getDay();
+      const daysUntilFri = (5 - dayOfWeek + 7) % 7 || 7;
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilFri);
+      end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 2);
+    } else {
+      // Next Monday-Friday
+      const dayOfWeek = now.getDay();
+      const daysUntilMon = (1 - dayOfWeek + 7) % 7 || 7;
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilMon);
+      end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 5);
+    }
+
+    // Navigate to the month of the start date
+    setCurrentMonth(new Date(start.getFullYear(), start.getMonth(), 1));
+    setCheckIn(toISO(start));
+    setCheckOut(toISO(end));
+    setSelectingCheckIn(true);
   }
 
   function renderCalendarDays() {
@@ -138,31 +178,64 @@ export function BookingForm({
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayISO = toISO(today);
+    const checkInDate = checkIn ? new Date(checkIn + "T00:00:00") : null;
+    const checkOutDate = checkOut ? new Date(checkOut + "T00:00:00") : null;
     const cells = [];
 
-    for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} className="h-9" />);
+    for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} className="h-10" />);
 
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
       const dateStr = toISO(date);
       const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const isSelected = dateStr === checkIn || dateStr === checkOut;
-      const inRange = !!(checkIn && checkOut && date > new Date(checkIn) && date < new Date(checkOut));
-      
-      let cls = "h-9 min-w-9 flex items-center justify-center text-sm rounded-full transition-all ";
-      
+      const isToday = dateStr === todayISO;
+      const isCheckIn = dateStr === checkIn;
+      const isCheckOut = dateStr === checkOut;
+      const isSelected = isCheckIn || isCheckOut;
+      const inRange = !!(checkInDate && checkOutDate && date > checkInDate && date < checkOutDate);
+      const isRangeStart = isCheckIn && checkOut;
+      const isRangeEnd = isCheckOut && checkIn;
+
+      // Determine if this cell needs left/right rounding for range
+      const prevDate = new Date(year, month, d - 1);
+      const prevStr = d > 1 ? toISO(prevDate) : "";
+      const nextDate = new Date(year, month, d + 1);
+      const nextStr = d < daysInMonth ? toISO(nextDate) : "";
+      const prevInRange = !!(checkInDate && checkOutDate && prevDate >= checkInDate && prevDate <= checkOutDate && d > 1);
+      const nextInRange = !!(checkInDate && checkOutDate && nextDate >= checkInDate && nextDate <= checkOutDate && d < daysInMonth);
+
+      let cls = "relative h-10 min-w-10 flex items-center justify-center text-sm transition-all duration-150 ";
+
       if (isPast) {
-        cls += "text-stone/50 disabled:cursor-not-allowed ";
+        cls += "text-stone/40 cursor-not-allowed ";
       } else {
-        cls += "hover:bg-terracotta-tint text-ink ";
+        cls += "cursor-pointer ";
       }
 
-      if (dateStr === todayISO && !isPast) cls += "font-bold text-terracotta-dark ";
-
       if (isSelected) {
-        cls += "bg-terracotta-dark text-white font-semibold shadow-sm ";
+        // Selected dates: filled circle
+        cls += "bg-terracotta-dark text-white font-semibold shadow-md shadow-terracotta-dark/20 z-10 ";
+        if (isRangeStart) cls += "rounded-l-full rounded-r-lg ";
+        else if (isRangeEnd) cls += "rounded-r-full rounded-l-lg ";
+        else cls += "rounded-full ";
       } else if (inRange) {
-        cls += "bg-terracotta-tint text-terracotta-dark font-medium ";
+        // In-range dates: subtle background, no rounding (connected to neighbors)
+        cls += "bg-terracotta-tint/60 text-terracotta-dark font-medium ";
+        if (!prevInRange && !isRangeStart) cls += "rounded-l-lg ";
+        else cls += "rounded-none ";
+        if (!nextInRange && !isRangeEnd) cls += "rounded-r-lg ";
+        else cls += "rounded-none ";
+      } else {
+        // Regular dates
+        cls += "rounded-full ";
+        if (!isPast) {
+          cls += "hover:bg-terracotta-tint hover:text-terracotta-dark hover:scale-105 active:scale-95 text-ink ";
+        }
+      }
+
+      // Today indicator
+      if (isToday && !isSelected) {
+        cls += " font-bold text-terracotta-dark ";
       }
 
       cells.push(
@@ -176,6 +249,9 @@ export function BookingForm({
           onClick={() => pickDate(dateStr)}
         >
           {d}
+          {isToday && !isSelected && (
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-terracotta" />
+          )}
         </button>
       );
     }
@@ -250,15 +326,20 @@ export function BookingForm({
 
   if (status === "success") {
     return (
-      <main className="max-w-2xl mx-auto px-6 py-16 text-center motion-pop">
-        <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto motion-pop">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+      <main className="max-w-2xl mx-auto px-6 py-16 text-center">
+        <div className="motion-pop" data-stagger="1">
+          <div className="w-16 h-16 rounded-full bg-gold-tint flex items-center justify-center mb-5 mx-auto shadow-lg shadow-gold/20">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
         </div>
-        <h1 className="font-semibold text-ink text-2xl mt-3">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
-        <p className="text-stone mt-2 max-w-md mx-auto text-base leading-relaxed">
+        <h1 className="font-semibold text-ink text-2xl mt-3 motion-pop" data-stagger="2">Thanks, {fullName.split(" ")[0] || "there"}!</h1>
+        <p className="text-stone mt-3 max-w-md mx-auto text-base leading-relaxed motion-pop" data-stagger="3">
           We&apos;ve received your request for <span className="font-medium text-ink">{room?.name}</span>. We&apos;ll confirm availability on WhatsApp — usually within minutes during the day.
         </p>
-        <Link href="/rooms" className="mt-6 inline-block border border-walnut/20 text-ink hover:bg-cream-light px-5 py-2.5 rounded-lg font-semibold transition-colors interactive-element">Back to Rooms</Link>
+        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center motion-pop" data-stagger="4">
+          <Link href="/rooms" className="inline-block btn-primary px-6 py-3 rounded-lg font-semibold btn-press ripple">Browse More Rooms</Link>
+          <Link href="/" className="inline-block btn-outline px-6 py-3 rounded-lg font-semibold btn-press">Back to Home</Link>
+        </div>
       </main>
     );
   }
@@ -284,17 +365,22 @@ export function BookingForm({
 
       {/* PROGRESS */}
       <section className="max-w-6xl mx-auto px-6 pb-6">
-        <div className="flex items-center gap-2 md:gap-3 text-xs">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${nights > 0 ? "bg-terracotta-dark text-white" : "bg-terracotta-tint text-terracotta-dark"}`}>1</div>
-          <div className={`h-0.5 flex-1 ${nights > 0 ? "bg-terracotta" : "bg-walnut/10"}`} />
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta-dark text-white" : nights > 0 ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>2</div>
-          <div className={`h-0.5 flex-1 ${roomId ? "bg-terracotta" : "bg-walnut/10"}`} />
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${roomId ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>3</div>
-          <div className="h-0.5 flex-1 bg-walnut/10" />
-          <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-cream-light text-stone/60">4</div>
-        </div>
-        <div className="flex items-center justify-between mt-2 text-[11px] text-stone font-medium uppercase tracking-wide">
-          <span>Dates</span><span>Room</span><span>Meals</span><span>Details</span>
+        <div className="bg-white rounded-2xl border border-walnut/10 p-4 shadow-sm">
+          <div className="flex items-center gap-2 md:gap-3 text-xs">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${nights > 0 ? "bg-terracotta-dark text-white shadow-sm shadow-terracotta-dark/30" : "bg-terracotta-tint text-terracotta-dark"}`}>1</div>
+            <div className={`h-0.5 flex-1 rounded-full transition-colors duration-300 ${nights > 0 ? "bg-terracotta" : "bg-walnut/10"}`} />
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${roomId ? "bg-terracotta-dark text-white shadow-sm shadow-terracotta-dark/30" : nights > 0 ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>2</div>
+            <div className={`h-0.5 flex-1 rounded-full transition-colors duration-300 ${roomId ? "bg-terracotta" : "bg-walnut/10"}`} />
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${roomId ? "bg-terracotta-tint text-terracotta-dark" : "bg-cream-light text-stone/60"}`}>3</div>
+            <div className="h-0.5 flex-1 rounded-full bg-walnut/10" />
+            <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold bg-cream-light text-stone/60">4</div>
+          </div>
+          <div className="flex items-center justify-between mt-2.5 text-[10px] text-stone font-semibold uppercase tracking-wider">
+            <span className={nights > 0 ? "text-terracotta-dark" : ""}>Dates</span>
+            <span className={roomId ? "text-terracotta-dark" : ""}>Room</span>
+            <span>Meals</span>
+            <span>Details</span>
+          </div>
         </div>
       </section>
 
@@ -305,57 +391,127 @@ export function BookingForm({
               <div className="rounded-xl border border-terracotta bg-terracotta-tint p-4 text-sm text-terracotta-dark">{errorMessage}</div>
             )}
 
-            {/* STEP 1: DATES (Compact) */}
+            {/* STEP 1: DATES */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="mb-4">
                 <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Step 1</span>
                 <h2 className="font-semibold text-ink text-lg mt-1">Pick your dates</h2>
               </div>
-              
+
+              {/* Check-in / Check-out indicator */}
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-cream-light p-3 rounded-lg border border-walnut/10">
-                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold mb-1">Check-in</div>
+                <button
+                  type="button"
+                  onClick={() => setSelectingCheckIn(true)}
+                  className={`text-left p-3 rounded-lg border-2 transition-all duration-200 ${
+                    selectingCheckIn
+                      ? "border-terracotta bg-terracotta-tint/50 shadow-sm shadow-terracotta/10"
+                      : "border-walnut/10 bg-cream-light hover:border-walnut/20"
+                  }`}
+                >
+                  <div className="text-[10px] uppercase tracking-wide font-semibold mb-1 flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectingCheckIn ? "bg-terracotta" : "bg-stone/30"}`} />
+                    Check-in
+                  </div>
                   <div className="text-sm font-semibold text-ink">
                     {checkIn ? fmtDate(checkIn) : "Select date"}
                   </div>
-                </div>
-                <div className="bg-cream-light p-3 rounded-lg border border-walnut/10">
-                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold mb-1">Check-out</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { if (checkIn) setSelectingCheckIn(false); }}
+                  className={`text-left p-3 rounded-lg border-2 transition-all duration-200 ${
+                    !selectingCheckIn && checkIn
+                      ? "border-terracotta bg-terracotta-tint/50 shadow-sm shadow-terracotta/10"
+                      : "border-walnut/10 bg-cream-light hover:border-walnut/20"
+                  }`}
+                >
+                  <div className="text-[10px] uppercase tracking-wide font-semibold mb-1 flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${!selectingCheckIn && checkIn ? "bg-terracotta" : "bg-stone/30"}`} />
+                    Check-out
+                  </div>
                   <div className="text-sm font-semibold text-ink">
                     {checkOut ? fmtDate(checkOut) : "Select date"}
                   </div>
-                </div>
+                </button>
               </div>
 
+              {/* Quick date shortcuts */}
+              <div className="flex gap-2 mb-4">
+                {([
+                  { key: "tonight" as const, label: "Tonight" },
+                  { key: "weekend" as const, label: "This weekend" },
+                  { key: "next-week" as const, label: "Next week" },
+                ]).map((q) => (
+                  <button
+                    key={q.key}
+                    type="button"
+                    onClick={() => selectQuickDate(q.key)}
+                    className="flex-1 px-2 py-1.5 text-[11px] font-medium text-stone bg-cream border border-walnut/10 rounded-lg hover:bg-terracotta-tint hover:text-terracotta-dark hover:border-terracotta/30 transition-all"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Calendar */}
               <div className="bg-cream-light rounded-xl border border-walnut/10 p-3">
                 <div className="flex items-center justify-between mb-2 px-1">
-                  <button type="button" onClick={() => changeMonth(-1)} className="w-11 h-11 rounded-lg hover:bg-white text-stone flex items-center justify-center -ml-2" aria-label="Previous month">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 18l-6-6 6-6"/></svg>
+                  <button
+                    type="button"
+                    onClick={() => changeMonth(-1)}
+                    className="w-10 h-10 rounded-lg hover:bg-white hover:shadow-sm text-stone flex items-center justify-center transition-all"
+                    aria-label="Previous month"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="transition-transform"><path d="M15 18l-6-6 6-6"/></svg>
                   </button>
-                  <div className="font-semibold text-ink text-sm">
+                  <div className="font-semibold text-ink text-sm select-none">
                     {currentMonth.toLocaleDateString("en-ZA", { month: "long", year: "numeric" })}
                   </div>
-                  <button type="button" onClick={() => changeMonth(1)} className="w-11 h-11 rounded-lg hover:bg-white text-stone flex items-center justify-center -mr-2" aria-label="Next month">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M9 18l6-6-6-6"/></svg>
+                  <button
+                    type="button"
+                    onClick={() => changeMonth(1)}
+                    className="w-10 h-10 rounded-lg hover:bg-white hover:shadow-sm text-stone flex items-center justify-center transition-all"
+                    aria-label="Next month"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="transition-transform"><path d="M9 18l6-6-6-6"/></svg>
                   </button>
                 </div>
-                
+
                 <div className="grid grid-cols-7 gap-1 mb-1 text-center text-[10px] uppercase tracking-wide text-stone font-semibold">
-                  {["S","M","T","W","T","F","S"].map((d, i) => <div key={i}>{d}</div>)}
+                  {["S","M","T","W","T","F","S"].map((d, i) => <div key={i} className="py-1">{d}</div>)}
                 </div>
-                
-                <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+
+                <div className={`grid grid-cols-7 gap-1 transition-all duration-150 ${
+                  monthTransition === "left" ? "opacity-0 -translate-x-2" :
+                  monthTransition === "right" ? "opacity-0 translate-x-2" :
+                  "opacity-100 translate-x-0"
+                }`}>{renderCalendarDays()}</div>
               </div>
 
-              {checkIn && (
-                <div className="mt-3 text-xs text-stone text-center">
-                  {checkOut ? (
-                    <><span className="font-medium text-ink">{nights} night{nights > 1 ? "s" : ""}</span> · {fmtDate(checkIn)} → {fmtDate(checkOut)}</>
+              {/* Date summary + clear */}
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-xs text-stone">
+                  {checkIn ? (
+                    checkOut ? (
+                      <><span className="font-medium text-ink">{nights} night{nights > 1 ? "s" : ""}</span> · {fmtDate(checkIn)} → {fmtDate(checkOut)}</>
+                    ) : (
+                      <>Now select your <span className="font-medium text-terracotta-dark">check-out</span> date</>
+                    )
                   ) : (
-                    <>Now select your <span className="font-medium text-ink">check-out</span> date</>
+                    <span>Tap a date to begin</span>
                   )}
                 </div>
-              )}
+                {(checkIn || checkOut) && (
+                  <button
+                    type="button"
+                    onClick={clearDates}
+                    className="text-xs text-stone hover:text-terracotta-dark font-medium px-2 py-1 rounded hover:bg-terracotta-tint/50 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* STEP 2: ROOM */}
@@ -531,7 +687,7 @@ export function BookingForm({
                 <label className="text-sm text-stone">I&apos;m happy for Gomodi Guest Lodge to keep my details to manage this booking, in line with POPIA. *</label>
               </div>
               <div className="mt-6">
-                <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta-dark hover:bg-[#74301f] text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-colors shadow-sm">
+                <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta-dark hover:bg-[#74301f] text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-all shadow-sm shadow-terracotta-dark/20 hover:shadow-md hover:shadow-terracotta-dark/30 btn-press ripple">
                   {status === "submitting" ? "Sending…" : "Send booking request"}
                 </button>
                 <p className="text-stone text-xs mt-3 text-center">Submitting this doesn&apos;t confirm your booking — we&apos;ll check availability and confirm on WhatsApp.</p>
@@ -541,7 +697,8 @@ export function BookingForm({
 
           {/* SUMMARY SIDEBAR */}
           <aside className="lg:col-span-1">
-            <div className="lg:sticky lg:top-[calc(var(--header-h)+1rem)] bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 motion-fade-up motion-ready">
+            <div className="lg:sticky lg:top-[calc(var(--header-h)+1rem)] bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 motion-fade-up motion-ready overflow-hidden relative">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-terracotta via-gold to-terracotta-dark rounded-t-2xl" />
               <div className="mb-4">
                 <h3 className="font-semibold text-ink text-lg">Your stay</h3>
               </div>
@@ -585,7 +742,7 @@ export function BookingForm({
                     setRoomId(r.id);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-white rounded-2xl border border-walnut/10 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-terracotta/40 transition-all group motion-pop text-left"
+                  className="bg-white rounded-2xl border border-walnut/10 shadow-sm overflow-hidden cursor-pointer hover:shadow-md hover:border-terracotta/40 transition-all group motion-pop text-left card-lift"
                   data-stagger={(i % 6) + 1}
                 >
                   <span className="block aspect-[16/10] overflow-hidden bg-cream relative">
