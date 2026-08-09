@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
-import { HeroParallax } from "@/components/HeroParallax";
+import HeroSlideshow from "@/components/HeroSlideshow";
 
 type Room = {
   id: number;
@@ -50,10 +50,26 @@ export function RoomsExplorer({
     if (activeRoom) {
       setActiveImageIndex(0);
       const t = setTimeout(() => setModalMounted(true), 10);
-      return () => clearTimeout(t);
+      // Lock body scroll while the modal is open — no page scroll behind it
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        clearTimeout(t);
+        document.body.style.overflow = prevOverflow;
+      };
     } else {
       setModalMounted(false);
     }
+  }, [activeRoom]);
+
+  // Close modal on Escape
+  useEffect(() => {
+    if (!activeRoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveRoom(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [activeRoom]);
 
   const suffix = useMemo(() => {
@@ -98,22 +114,25 @@ export function RoomsExplorer({
       </nav>
 
       {/* HERO */}
-      <section className="relative h-[40vh] min-h-[280px] max-h-[400px] overflow-hidden parallax-container mb-0">
-        <div className="absolute inset-0">
-          <HeroParallax>
-            <Image
-              src="/images/reception/rooms-building-1.jpeg"
-              alt="Gomodi Guest Lodge rooms building"
-              fill
-              priority
-              className="object-cover"
-              sizes="100vw"
-            />
-          </HeroParallax>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/70" />
-        <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-10">
+      <section className="relative h-[45vh] min-h-[300px] max-h-[440px] overflow-hidden parallax-container mb-0">
+        <HeroSlideshow
+          images={[
+            { src: "/images/rooms/room1.jpeg", alt: "Room 1 — main view" },
+            { src: "/images/rooms/room1-view1.jpeg", alt: "Room 1 — second view" },
+            { src: "/images/rooms/room1-view2.jpeg", alt: "Room 1 — third view" },
+            { src: "/images/rooms/room1-view3.jpeg", alt: "Room 1 — fourth view" },
+            { src: "/images/rooms/room1-view4.jpeg", alt: "Room 1 — fifth view" },
+            { src: "/images/rooms/room1-bed-tv.jpeg", alt: "Room 1 — bed and TV" },
+            { src: "/images/rooms/room1-bathroom.jpeg", alt: "Room 1 — bathroom" },
+          ]}
+          interval={5000}
+          className="absolute inset-0"
+        />
+        <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12">
           <h1 className="font-display font-semibold text-cream-light text-3xl md:text-4xl max-w-3xl motion-fade-up motion-ready" data-stagger="1">Every room, freshly renovated.</h1>
+          <p className="text-cream/90 mt-3 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">
+            Terracotta walls, walnut wood, and cream textiles — nine rooms, all recently renovated.
+          </p>
         </div>
       </section>
 
@@ -173,7 +192,21 @@ export function RoomsExplorer({
             {sorted.map((room, i) => {
               const images = getRoomImages(room.id);
               return (
-                <article key={room.id} className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
+                <article
+                  key={room.id}
+                  className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop cursor-pointer group"
+                  data-stagger={(i % 6) + 1}
+                  onClick={() => setActiveRoom(room)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setActiveRoom(room);
+                    }
+                  }}
+                  aria-label={`View details for ${room.name}`}
+                >
                   <div className="aspect-[4/3] bg-cream overflow-hidden relative image-zoom">
                     {images.length > 0 ? (
                       <Image
@@ -191,10 +224,16 @@ export function RoomsExplorer({
                         {images.length} photos
                       </div>
                     )}
+                    {/* Hover hint */}
+                    <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <span className="bg-white/90 text-ink text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                        View details &amp; photos
+                      </span>
+                    </div>
                   </div>
                   <div className="p-5 flex flex-col flex-1">
                     <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-semibold text-ink text-base leading-tight">{room.name}</h3>
+                      <h3 className="font-semibold text-ink text-base leading-tight group-hover:text-terracotta-dark transition-colors">{room.name}</h3>
                       <div className="text-terracotta-dark font-semibold text-base whitespace-nowrap">
                         R{Number(room.baseRate).toLocaleString("en-ZA")}<span className="text-stone text-xs font-normal"> / night</span>
                       </div>
@@ -212,8 +251,22 @@ export function RoomsExplorer({
                       )}
                     </div>
                     <div className="mt-5 flex gap-2">
-                      <button onClick={() => setActiveRoom(room)} className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press">View details</button>
-                      <Link href={`/book?room=${room.id}${suffix}`} className="flex-1 text-center btn-primary px-3 py-2 rounded-lg text-sm font-semibold btn-press ripple">Book this room</Link>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveRoom(room);
+                        }}
+                        className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press"
+                      >
+                        View details
+                      </button>
+                      <Link
+                        href={`/book?room=${room.id}${suffix}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 text-center btn-primary px-3 py-2 rounded-lg text-sm font-semibold btn-press ripple"
+                      >
+                        Book this room
+                      </Link>
                     </div>
                   </div>
                 </article>
@@ -231,163 +284,153 @@ export function RoomsExplorer({
         )}
       </section>
 
-      {/* ROOM DETAIL MODAL */}
+      {/* ROOM DETAIL MODAL — compact two-pane layout */}
       {activeRoom && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={`${activeRoom.name} details`}>
           <div className={`absolute inset-0 bg-ink/60 backdrop-blur-sm transition-opacity duration-300 ${modalMounted ? "opacity-100" : "opacity-0"}`} onClick={() => setActiveRoom(null)} />
-          <div className={`relative bg-cream-light rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto card-shadow transition-all duration-300 ease-out ${modalMounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"}`}>
-            <button onClick={() => setActiveRoom(null)} className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-cream-light/90 backdrop-blur-sm hover:bg-walnut/10 transition-colors shadow-sm" aria-label="Close">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-            
-            {/* Image Gallery */}
-            <div className="relative aspect-[16/9] overflow-hidden rounded-t-2xl bg-ink/10">
-              {(() => {
-                const images = getRoomImages(activeRoom.id);
-                if (images.length > 0) {
-                  return (
-                    <>
-                      <Image
-                        src={images[activeImageIndex]?.src || images[0].src}
-                        alt={images[activeImageIndex]?.alt || activeRoom.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 768px"
-                      />
-                      {images.length > 1 && (
-                        <>
-                          {/* Navigation arrows */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
-                            }}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-ink hover:bg-white transition-all shadow-lg"
-                            aria-label="Previous image"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex((prev) => (prev + 1) % images.length);
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-ink hover:bg-white transition-all shadow-lg"
-                            aria-label="Next image"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
-                          {/* Dots indicator */}
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                            {images.map((_, idx) => (
-                              <button
-                                key={idx}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveImageIndex(idx);
-                                }}
-                                className={`w-2 h-2 rounded-full transition-all ${
-                                  idx === activeImageIndex ? "bg-white scale-125" : "bg-white/50 hover:bg-white/75"
-                                }`}
-                                aria-label={`View image ${idx + 1}`}
-                              />
-                            ))}
-                          </div>
-                          {/* Image counter */}
-                          <div className="absolute top-3 left-3 bg-ink/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                            {activeImageIndex + 1} / {images.length}
-                          </div>
-                        </>
-                      )}
-                    </>
-                  );
-                }
-                return <PhotoPlaceholder label={activeRoom.name} />;
-              })()}
-            </div>
 
-            {/* Thumbnail strip */}
-            {getRoomImages(activeRoom.id).length > 1 && (
-              <div className="px-4 py-3 bg-cream border-b border-walnut/10 overflow-x-auto">
-                <div className="flex gap-2">
-                  {getRoomImages(activeRoom.id).map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`relative w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 transition-all ${
-                        idx === activeImageIndex ? "ring-2 ring-terracotta ring-offset-2" : "opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <Image
-                        src={img.src}
-                        alt={img.alt}
-                        fill
-                        className="object-cover"
-                        sizes="64px"
-                      />
-                    </button>
-                  ))}
-                </div>
+          <div className={`relative bg-white rounded-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden card-shadow transition-all duration-300 ease-out ${modalMounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"}`}>
+            {/* Sticky header: name + price + close, always visible */}
+            <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b border-walnut/10 bg-white flex-shrink-0">
+              <div className="min-w-0">
+                <h2 className="font-semibold text-ink text-lg md:text-xl truncate">{activeRoom.name}</h2>
+                <p className="text-stone text-xs mt-0.5">
+                  {activeRoom.config} · {activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"} · Room {activeRoom.id} of 9
+                </p>
               </div>
-            )}
-
-            <div className="p-6 md:p-8">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-semibold text-ink text-xl md:text-2xl">{activeRoom.name}</h2>
-                </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="text-right">
-                  <div className="text-terracotta-dark font-semibold text-2xl">R{Number(activeRoom.baseRate).toLocaleString("en-ZA")}</div>
+                  <div className="text-terracotta-dark font-semibold text-xl">R{Number(activeRoom.baseRate).toLocaleString("en-ZA")}</div>
                   <div className="text-stone text-xs">per night</div>
                 </div>
+                <button onClick={() => setActiveRoom(null)} className="p-2 rounded-lg hover:bg-walnut/10 transition-colors" aria-label="Close">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
               </div>
-              <p className="text-stone mt-4 leading-relaxed">{activeRoom.description}</p>
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
-                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Config</div>
-                  <div className="text-ink text-sm font-medium mt-1">{activeRoom.config}</div>
+            </div>
+
+            {/* Body: gallery left, details right — no page scroll, internal scroll only */}
+            <div className="flex-1 min-h-0 flex flex-col md:flex-row">
+              {/* LEFT: image gallery */}
+              <div className="w-full md:w-1/2 md:border-r border-walnut/10 flex flex-col min-h-0 bg-cream-light">
+                <div className="relative w-full h-56 sm:h-64 md:h-auto md:flex-1 min-h-0 overflow-hidden bg-ink/10">
+                  {(() => {
+                    const images = getRoomImages(activeRoom.id);
+                    if (images.length > 0) {
+                      return (
+                        <>
+                          <Image
+                            src={images[activeImageIndex]?.src || images[0].src}
+                            alt={images[activeImageIndex]?.alt || activeRoom.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
+                          {images.length > 1 && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                                }}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-ink hover:bg-white transition-all shadow-lg"
+                                aria-label="Previous image"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImageIndex((prev) => (prev + 1) % images.length);
+                                }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-ink hover:bg-white transition-all shadow-lg"
+                                aria-label="Next image"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                              </button>
+                              <div className="absolute top-3 left-3 bg-ink/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                                {activeImageIndex + 1} / {images.length}
+                              </div>
+                            </>
+                          )}
+                        </>
+                      );
+                    }
+                    return <PhotoPlaceholder label={activeRoom.name} />;
+                  })()}
                 </div>
-                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
-                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Bathroom</div>
-                  <div className="text-ink text-sm font-medium mt-1">{activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
-                </div>
-                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
-                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Guests</div>
-                  <div className="text-ink text-sm font-medium mt-1">Up to 2</div>
-                </div>
-                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
-                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Room</div>
-                  <div className="text-ink text-sm font-medium mt-1">Room {activeRoom.id} of 9</div>
-                </div>
-              </div>
-              <div className="mt-6">
-                <h3 className="font-semibold text-ink text-sm mb-3">What&apos;s included</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {activeRoom.amenities.map((a) => (
-                    <div key={a} className="flex items-center gap-2 text-sm text-ink">
-                      <span className="text-terracotta-dark">✓</span>{a}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {activeRoom.flexible && (
-                <div className="mt-6 bg-gold-tint border border-gold/30 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <svg className="flex-shrink-0 mt-0.5 text-gold-dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                    <div>
-                      <div className="font-semibold text-ink text-sm">Flexible configuration</div>
-                      <p className="text-stone text-sm mt-1">Let us know when you book whether you&apos;d like two single beds or one double, and we&apos;ll have it ready for you.</p>
+
+                {/* Thumbnail strip */}
+                {getRoomImages(activeRoom.id).length > 1 && (
+                  <div className="px-3 py-2.5 bg-white border-t border-walnut/10 overflow-x-auto flex-shrink-0">
+                    <div className="flex gap-2">
+                      {getRoomImages(activeRoom.id).map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`relative w-14 h-11 rounded-lg overflow-hidden flex-shrink-0 transition-all ${
+                            idx === activeImageIndex ? "ring-2 ring-terracotta ring-offset-1" : "opacity-60 hover:opacity-100"
+                          }`}
+                          aria-label={`View image ${idx + 1}`}
+                        >
+                          <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="56px" />
+                        </button>
+                      ))}
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* RIGHT: details (scrolls internally, never the page) */}
+              <div className="w-full md:w-1/2 overflow-y-auto min-h-0 p-5 md:p-6 flex flex-col">
+                <p className="text-stone leading-relaxed text-sm">{activeRoom.description}</p>
+
+                <div className="mt-5 grid grid-cols-2 gap-2.5">
+                  <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                    <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Config</div>
+                    <div className="text-ink text-sm font-medium mt-1">{activeRoom.config}</div>
+                  </div>
+                  <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                    <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Bathroom</div>
+                    <div className="text-ink text-sm font-medium mt-1">{activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
+                  </div>
+                  <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                    <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Guests</div>
+                    <div className="text-ink text-sm font-medium mt-1">Up to 2</div>
+                  </div>
+                  <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                    <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Flexible</div>
+                    <div className="text-ink text-sm font-medium mt-1">{activeRoom.flexible ? "Twin/Double" : "Fixed"}</div>
+                  </div>
                 </div>
-              )}
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <Link href={`/book?room=${activeRoom.id}${suffix}`} className="flex-1 text-center btn-primary px-4 py-3 rounded-lg font-semibold btn-press ripple">Book this room</Link>
-                <button onClick={() => setActiveRoom(null)} className="flex-1 btn-outline px-4 py-3 rounded-lg font-semibold btn-press">Close</button>
+
+                <div className="mt-5">
+                  <h3 className="font-semibold text-ink text-sm mb-2.5">What&apos;s included</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
+                    {activeRoom.amenities.map((a) => (
+                      <div key={a} className="flex items-center gap-2 text-sm text-ink">
+                        <span className="text-terracotta-dark">✓</span>{a}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {activeRoom.flexible && (
+                  <div className="mt-5 bg-gold-tint border border-gold/30 rounded-xl p-3.5">
+                    <div className="flex items-start gap-2.5">
+                      <svg className="flex-shrink-0 mt-0.5 text-gold-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      <div>
+                        <div className="font-semibold text-ink text-sm">Flexible configuration</div>
+                        <p className="text-stone text-sm mt-0.5">Two singles or one double — tell us your preference when you book.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-auto pt-5 flex flex-col sm:flex-row gap-2.5">
+                  <Link href={`/book?room=${activeRoom.id}${suffix}`} className="flex-1 text-center btn-primary px-4 py-3 rounded-lg font-semibold btn-press ripple">Book this room</Link>
+                  <button onClick={() => setActiveRoom(null)} className="flex-1 btn-outline px-4 py-3 rounded-lg font-semibold btn-press">Close</button>
+                </div>
               </div>
             </div>
           </div>

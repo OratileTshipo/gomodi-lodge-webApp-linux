@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
-import { HeroParallax } from "@/components/HeroParallax";
+import HeroSlideshow from "@/components/HeroSlideshow";
 import { submitEventInquiry } from "./actions";
 
 const CATERING_OPTIONS = [
@@ -104,19 +104,15 @@ export default function EventsPage() {
       {/* HERO */}
       <section className="relative">
         <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
-          <div className="absolute inset-0 motion-zoom-out motion-ready">
-            <HeroParallax>
-              <Image
-                src="/images/events/graduation.jpeg"
-                alt="Celebration at Gomodi Guest Lodge venue"
-                fill
-                priority
-                className="object-cover"
-                sizes="100vw"
-              />
-            </HeroParallax>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/75" />
+          <HeroSlideshow
+            images={[
+              { src: "/images/events/graduation.jpeg", alt: "Graduation celebration" },
+              { src: "/images/events/birthday-party.jpeg", alt: "Birthday party setup" },
+              { src: "/images/events/baby-shower.jpeg", alt: "Baby shower celebration" },
+            ]}
+            interval={5500}
+            className="absolute inset-0"
+          />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">Host your event here.</h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
-import { HeroParallax } from "@/components/HeroParallax";
+import HeroSlideshow from "@/components/HeroSlideshow";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 
@@ -108,19 +108,16 @@ export default function CorporatePage() {
       {/* HERO */}
       <section className="relative">
         <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
-          <div className="absolute inset-0 motion-zoom-out motion-ready">
-            <HeroParallax>
-              <Image
-                src="/images/rooms/room1-view1.jpeg"
-                alt="Gomodi Guest Lodge guest room"
-                fill
-                priority
-                className="object-cover"
-                sizes="100vw"
-              />
-            </HeroParallax>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/50 to-ink/80" />
+          <HeroSlideshow
+            images={[
+              { src: "/images/rooms/room1-view1.jpeg", alt: "Guest room — bed view" },
+              { src: "/images/rooms/room1-view2.jpeg", alt: "Guest room — seating area" },
+              { src: "/images/rooms/room1-view3.jpeg", alt: "Guest room — another view" },
+              { src: "/images/rooms/room1.jpeg", alt: "Gomodi Guest Lodge guest room" },
+            ]}
+            interval={5500}
+            className="absolute inset-0"
+          />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">
               Corporate accommodation, with the paperwork handled.

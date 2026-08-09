@@ -4,7 +4,6 @@ import { rooms } from "@/lib/db/schema";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { BookNowHeroButtonClient } from "@/components/BookNowHeroButtonClient";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
-import { HeroParallax } from "@/components/HeroParallax";
 import HeroSlideshow from "@/components/HeroSlideshow";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +28,11 @@ export default async function HomePage() {
               { src: "/images/reception/reception-2.jpeg", alt: "Reception entrance" },
               { src: "/images/reception/reception-3.jpeg", alt: "Lodge exterior view" },
               { src: "/images/reception/rooms-building-1.jpeg", alt: "Guest rooms building" },
+              { src: "/images/reception/rooms-building-2.jpeg", alt: "Rooms building second view" },
+              { src: "/images/reception/rooms-building-3.jpeg", alt: "Rooms building third view" },
+              { src: "/images/reception/rooms-building-4.jpeg", alt: "Rooms building fourth view" },
             ]}
-            interval={6000}
+            interval={5500}
             className="absolute inset-0"
           />
           <div className="absolute inset-0 hero-gradient" />
