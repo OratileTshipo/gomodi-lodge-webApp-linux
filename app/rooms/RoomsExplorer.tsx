@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { HeroParallax } from "@/components/HeroParallax";
 
@@ -19,6 +20,19 @@ type Room = {
 type Filter = "all" | "double" | "flexible";
 type Sort = "default" | "price-asc" | "price-desc" | "name-asc";
 
+// Real images for Room 1 — other rooms use PhotoPlaceholder
+const ROOM_IMAGES: Record<number, { src: string; alt: string }[]> = {
+  1: [
+    { src: "/images/rooms/room1.jpeg", alt: "Room 1 main view" },
+    { src: "/images/rooms/room1-view1.jpeg", alt: "Room 1 second view" },
+    { src: "/images/rooms/room1-view2.jpeg", alt: "Room 1 third view" },
+    { src: "/images/rooms/room1-view3.jpeg", alt: "Room 1 fourth view" },
+    { src: "/images/rooms/room1-view4.jpeg", alt: "Room 1 fifth view" },
+    { src: "/images/rooms/room1-bed-tv.jpeg", alt: "Room 1 bed and TV" },
+    { src: "/images/rooms/room1-bathroom.jpeg", alt: "Room 1 bathroom" },
+  ],
+};
+
 export function RoomsExplorer({
   rooms,
   carryParams,
@@ -30,9 +44,11 @@ export function RoomsExplorer({
   const [sort, setSort] = useState<Sort>("default");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
   const [modalMounted, setModalMounted] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     if (activeRoom) {
+      setActiveImageIndex(0);
       const t = setTimeout(() => setModalMounted(true), 10);
       return () => clearTimeout(t);
     } else {
@@ -67,6 +83,8 @@ export function RoomsExplorer({
     if (sort === "name-asc") return a.name.localeCompare(b.name);
     return 0;
   });
+
+  const getRoomImages = (roomId: number) => ROOM_IMAGES[roomId] || [];
 
   return (
     <main className="page-transition">
@@ -144,39 +162,56 @@ export function RoomsExplorer({
       {/* ROOMS GRID */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         {sorted.length > 0 ? (
-          // Key the grid by filter+sort so card entrances replay on every change (mount-safe, no observer dependency)
           <div key={`${filter}-${sort}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sorted.map((room, i) => (
-              <article key={room.id} className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
-                <div className="aspect-[4/3] bg-cream overflow-hidden relative image-zoom">
-                  <PhotoPlaceholder label={room.name} />
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-semibold text-ink text-base leading-tight">{room.name}</h3>
-                    <div className="text-terracotta-dark font-semibold text-base whitespace-nowrap">
-                      R{Number(room.baseRate).toLocaleString("en-ZA")}<span className="text-stone text-xs font-normal"> / night</span>
-                    </div>
-                  </div>
-                  <p className="text-stone text-sm mt-1">
-                    {room.config} · {room.bathOrShower === "bath" ? "Bath" : "Shower"} · Up to 2 guests
-                  </p>
-                  <p className="text-stone text-sm mt-3 line-clamp-2 flex-1">{room.description}</p>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {room.amenities.slice(0, 4).map((a) => (
-                      <span key={a} className="text-[11px] px-2 py-1 rounded bg-cream text-stone">{a}</span>
-                    ))}
-                    {room.amenities.length > 4 && (
-                      <span className="text-[11px] px-2 py-1 rounded bg-walnut-tint text-walnut">+{room.amenities.length - 4} more</span>
+            {sorted.map((room, i) => {
+              const images = getRoomImages(room.id);
+              return (
+                <article key={room.id} className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
+                  <div className="aspect-[4/3] bg-cream overflow-hidden relative image-zoom">
+                    {images.length > 0 ? (
+                      <Image
+                        src={images[0].src}
+                        alt={images[0].alt}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <PhotoPlaceholder label={room.name} />
+                    )}
+                    {images.length > 1 && (
+                      <div className="absolute top-3 right-3 bg-ink/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                        {images.length} photos
+                      </div>
                     )}
                   </div>
-                  <div className="mt-5 flex gap-2">
-                    <button onClick={() => setActiveRoom(room)} className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press">View details</button>
-                    <Link href={`/book?room=${room.id}${suffix}`} className="flex-1 text-center btn-primary px-3 py-2 rounded-lg text-sm font-semibold btn-press ripple">Book this room</Link>
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-semibold text-ink text-base leading-tight">{room.name}</h3>
+                      <div className="text-terracotta-dark font-semibold text-base whitespace-nowrap">
+                        R{Number(room.baseRate).toLocaleString("en-ZA")}<span className="text-stone text-xs font-normal"> / night</span>
+                      </div>
+                    </div>
+                    <p className="text-stone text-sm mt-1">
+                      {room.config} · {room.bathOrShower === "bath" ? "Bath" : "Shower"} · Up to 2 guests
+                    </p>
+                    <p className="text-stone text-sm mt-3 line-clamp-2 flex-1">{room.description}</p>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {room.amenities.slice(0, 4).map((a) => (
+                        <span key={a} className="text-[11px] px-2 py-1 rounded bg-cream text-stone">{a}</span>
+                      ))}
+                      {room.amenities.length > 4 && (
+                        <span className="text-[11px] px-2 py-1 rounded bg-walnut-tint text-walnut">+{room.amenities.length - 4} more</span>
+                      )}
+                    </div>
+                    <div className="mt-5 flex gap-2">
+                      <button onClick={() => setActiveRoom(room)} className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press">View details</button>
+                      <Link href={`/book?room=${room.id}${suffix}`} className="flex-1 text-center btn-primary px-3 py-2 rounded-lg text-sm font-semibold btn-press ripple">Book this room</Link>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20">
@@ -197,9 +232,102 @@ export function RoomsExplorer({
             <button onClick={() => setActiveRoom(null)} className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-cream-light/90 backdrop-blur-sm hover:bg-walnut/10 transition-colors shadow-sm" aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-            <div className="aspect-[16/9] overflow-hidden rounded-t-2xl">
-              <PhotoPlaceholder label={activeRoom.name} />
+            
+            {/* Image Gallery */}
+            <div className="relative aspect-[16/9] overflow-hidden rounded-t-2xl bg-ink/10">
+              {(() => {
+                const images = getRoomImages(activeRoom.id);
+                if (images.length > 0) {
+                  return (
+                    <>
+                      <Image
+                        src={images[activeImageIndex]?.src || images[0].src}
+                        alt={images[activeImageIndex]?.alt || activeRoom.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 768px"
+                      />
+                      {images.length > 1 && (
+                        <>
+                          {/* Navigation arrows */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                            }}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-ink hover:bg-white transition-all shadow-lg"
+                            aria-label="Previous image"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex((prev) => (prev + 1) % images.length);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-ink hover:bg-white transition-all shadow-lg"
+                            aria-label="Next image"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                          {/* Dots indicator */}
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            {images.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImageIndex(idx);
+                                }}
+                                className={`w-2 h-2 rounded-full transition-all ${
+                                  idx === activeImageIndex ? "bg-white scale-125" : "bg-white/50 hover:bg-white/75"
+                                }`}
+                                aria-label={`View image ${idx + 1}`}
+                              />
+                            ))}
+                          </div>
+                          {/* Image counter */}
+                          <div className="absolute top-3 left-3 bg-ink/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                            {activeImageIndex + 1} / {images.length}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                }
+                return <PhotoPlaceholder label={activeRoom.name} />;
+              })()}
             </div>
+
+            {/* Thumbnail strip */}
+            {getRoomImages(activeRoom.id).length > 1 && (
+              <div className="px-4 py-3 bg-cream border-b border-walnut/10 overflow-x-auto">
+                <div className="flex gap-2">
+                  {getRoomImages(activeRoom.id).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 transition-all ${
+                        idx === activeImageIndex ? "ring-2 ring-terracotta ring-offset-2" : "opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <Image
+                        src={img.src}
+                        alt={img.alt}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="p-6 md:p-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>

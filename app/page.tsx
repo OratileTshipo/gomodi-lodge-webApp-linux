@@ -5,6 +5,7 @@ import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { BookNowHeroButtonClient } from "@/components/BookNowHeroButtonClient";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 import { HeroParallax } from "@/components/HeroParallax";
+import HeroSlideshow from "@/components/HeroSlideshow";
 
 export const dynamic = "force-dynamic";
 
@@ -21,15 +22,17 @@ export default async function HomePage() {
     <main className="page-transition">
       {/* HERO */}
       <section className="relative">
-        <div className="hero-outer relative h-[70vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[720px] overflow-hidden parallax-container">
-          <div className="absolute inset-0 motion-zoom-out motion-ready">
-            <HeroParallax>
-              <PhotoPlaceholder
-                label="Gomodi Guest Lodge exterior at golden hour"
-                className="absolute inset-0"
-              />
-            </HeroParallax>
-          </div>
+        <div className="hero-outer relative h-[70vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[720px] overflow-hidden">
+          <HeroSlideshow
+            images={[
+              { src: "/images/reception/reception-1.jpeg", alt: "Gomodi Guest Lodge reception building" },
+              { src: "/images/reception/reception-2.jpeg", alt: "Reception entrance" },
+              { src: "/images/reception/reception-3.jpeg", alt: "Lodge exterior view" },
+              { src: "/images/reception/rooms-building-1.jpeg", alt: "Guest rooms building" },
+            ]}
+            interval={6000}
+            className="absolute inset-0"
+          />
           <div className="absolute inset-0 hero-gradient" />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <h1
