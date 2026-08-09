@@ -106,7 +106,14 @@ export default function EventsPage() {
         <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
             <HeroParallax>
-              <PhotoPlaceholder label="Event space set for a wedding" tone="gold" className="absolute inset-0" />
+              <Image
+                src="/images/events/graduation.jpeg"
+                alt="Celebration at Gomodi Guest Lodge venue"
+                fill
+                priority
+                className="object-cover"
+                sizes="100vw"
+              />
             </HeroParallax>
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/75" />

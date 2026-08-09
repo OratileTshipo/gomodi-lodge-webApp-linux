@@ -94,7 +94,8 @@ export default async function HomePage() {
                 ],
                 link: "/rooms",
                 linkText: "Request a Stay",
-                img: "Leisure guest room",
+                img: "/images/rooms/room1.jpeg",
+                imgTone: "terracotta" as const,
               },
               {
                 title: "Corporate",
@@ -110,8 +111,8 @@ export default async function HomePage() {
                 ],
                 link: "/corporate",
                 linkText: "Request a Quote",
-                img: "Corporate guest room",
-                imgTone: "walnut",
+                img: "/images/rooms/room1-view2.jpeg",
+                imgTone: "walnut" as const,
               },
               {
                 title: "Events",
@@ -127,8 +128,8 @@ export default async function HomePage() {
                 ],
                 link: "/events",
                 linkText: "Inquire About Your Event",
-                img: "Event space set for wedding",
-                imgTone: "gold",
+                img: "/images/events/birthday-party.jpeg",
+                imgTone: "gold" as const,
               },
             ].map((item, i) => (
               <article
@@ -137,10 +138,19 @@ export default async function HomePage() {
                 data-stagger={i + 1}
               >
                 <div className="aspect-[4/3] overflow-hidden image-zoom">
-                  <PhotoPlaceholder
-                    label={item.img}
-                    tone={item.imgTone as "walnut" | "gold"}
-                  />
+                  {item.img.startsWith("/") ? (
+                    <img
+                      src={item.img}
+                      alt={item.heading}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <PhotoPlaceholder
+                      label={item.img}
+                      tone={item.imgTone as "walnut" | "gold"}
+                    />
+                  )}
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-3">
@@ -220,7 +230,12 @@ export default async function HomePage() {
           </div>
           <div className="motion-fade-right motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <PhotoPlaceholder label="Renovated guest room" />
+              <img
+                src="/images/reception/reception-3.jpeg"
+                alt="Gomodi Guest Lodge reception"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
             </div>
           </div>
         </div>
@@ -267,7 +282,16 @@ export default async function HomePage() {
                 data-stagger={i + 1}
               >
                 <div className="aspect-[4/3] bg-cream overflow-hidden image-zoom">
-                  <PhotoPlaceholder label={room.name} />
+                  {room.id === 1 ? (
+                    <img
+                      src="/images/rooms/room1.jpeg"
+                      alt={room.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <PhotoPlaceholder label={room.name} />
+                  )}
                 </div>
                 <div className="p-5">
                   <div className="flex items-center justify-between">
@@ -407,7 +431,12 @@ export default async function HomePage() {
           </div>
           <div className="order-1 md:order-2 motion-fade-right motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <PhotoPlaceholder label="Event space" tone="gold" />
+              <img
+                src="/images/events/baby-shower.jpeg"
+                alt="Baby shower celebration at Gomodi"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
             </div>
           </div>
         </div>
@@ -418,9 +447,11 @@ export default async function HomePage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready image-zoom">
             <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <PhotoPlaceholder
-                label="Corporate accommodation"
-                tone="walnut"
+              <img
+                src="/images/rooms/room1-view3.jpeg"
+                alt="Corporate accommodation room"
+                className="w-full h-full object-cover"
+                loading="lazy"
               />
             </div>
           </div>

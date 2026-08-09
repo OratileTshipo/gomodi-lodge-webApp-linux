@@ -101,7 +101,14 @@ export function RoomsExplorer({
       <section className="relative h-[40vh] min-h-[280px] max-h-[400px] overflow-hidden parallax-container mb-0">
         <div className="absolute inset-0">
           <HeroParallax>
-            <PhotoPlaceholder label="Guest rooms overview" className="absolute inset-0" />
+            <Image
+              src="/images/reception/rooms-building-1.jpeg"
+              alt="Gomodi Guest Lodge rooms building"
+              fill
+              priority
+              className="object-cover"
+              sizes="100vw"
+            />
           </HeroParallax>
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/70" />

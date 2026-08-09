@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { HeroParallax } from "@/components/HeroParallax";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
@@ -109,7 +110,14 @@ export default function CorporatePage() {
         <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
           <div className="absolute inset-0 motion-zoom-out motion-ready">
             <HeroParallax>
-              <PhotoPlaceholder label="Corporate guest room" tone="walnut" className="absolute inset-0" />
+              <Image
+                src="/images/rooms/room1-view1.jpeg"
+                alt="Gomodi Guest Lodge guest room"
+                fill
+                priority
+                className="object-cover"
+                sizes="100vw"
+              />
             </HeroParallax>
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-ink/30 via-ink/50 to-ink/80" />
