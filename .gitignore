@@ -15,9 +15,7 @@ __pycache__/
 node_modules/
 venv/
 .venv/
-.env
-.env.local
-.env.*
+
 
 # Build outputs
 dist/
