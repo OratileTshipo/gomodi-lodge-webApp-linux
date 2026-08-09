@@ -1,6 +1,6 @@
 # PROJECT_SPEC.md
 
-> Generated from a full analysis of the working codebase (Aug 2026). This is a **read-only reference document** — application code was not modified.
+> Generated from a full analysis of the working codebase (Aug 2026). Updated after comprehensive UI/UX polish pass (Aug 9, 2026).
 
 ## 1. Overview & Stack
 
@@ -42,11 +42,12 @@ gomodi-lodge/
 │       ├── admin/time-clock/     # GET/POST: staff clock in/out (staff-auth)
 │       └── upload/               # POST: Vercel Blob proof-of-payment upload
 ├── components/                   # Shared UI
-│   ├── Nav.tsx                   # Fixed header (~73px), desktop + mobile menu, "Book Now"
-│   ├── Footer.tsx                # "Iphe Lerato" motto, contact, POPIA/terms (44px targets)
-│   ├── BranchModal.tsx / BranchModalContext.tsx  # "How are you visiting?" chooser (Context)
+│   ├── Nav.tsx                   # Fixed header (~73px), backdrop-blur, mobile slide menu, active states
+│   ├── Footer.tsx                # "Iphe Lerato" motto, gradient top border, SVG contact icons
+│   ├── BranchModal.tsx / BranchModalContext.tsx  # "How are you visiting?" chooser (staggered entrance)
+│   ├── HeroParallax.tsx          # Reusable parallax scroll effect for hero images
 │   ├── HeaderSpacer.tsx          # Syncs --header-h CSS var with real header height
-│   ├── BookNowHeroButtonClient.tsx / PhotoPlaceholder.tsx  # Colored divs (no real photos)
+│   ├── BookNowHeroButtonClient.tsx / PhotoPlaceholder.tsx  # Rich gradient placeholders
 ├── lib/
 │   ├── db/index.ts               # pg Pool + drizzle instance (reads DATABASE_URL)
 │   ├── db/schema.ts              # All tables: users, rooms, booking_requests,
@@ -95,12 +96,12 @@ gomodi-lodge/
   - **cream** `#f5ebdd` (light `#faf6f0`, dark `#e8dcc6`) — page background `#faf6f0`.
   - **gold** `#d4a574` (light `#e8c9a5`, dark `#8f6a3e`, tint `#f5e8d8`) — premium accents/CTA.
   - **ink** `#2a1e18`, **stone** `#6b5b50` — text; `--color-skeleton` fills for loading states.
-  - Legacy admin dashboard still uses a separate orange/green/red palette (approve/decline/conflict semantics).
+  - Admin dashboard uses brand-consistent palette (walnut approve, terracotta decline, gold-tint warnings).
 - **Typography & Layout Principles:**
   - Fonts: Inter (`--font-sans`) for body/UI, Playfair Display (`--font-display`, `font-display` utility) for headlines; the "Iphe Lerato" motto is Playfair italic gold.
   - Container: `max-w-6xl mx-auto px-4 md:px-6` site-wide; forms often `max-w-4xl`; cards `rounded-2xl border border-walnut/10 card-shadow`.
   - **Fixed header discipline:** `Nav` is `fixed top-0 z-40` (~73px); root layout offsets content with `pt-[var(--header-h)]` (synced live by `HeaderSpacer`); sticky bars (rooms filter) stick at `top-[73px]` / `var(--header-h)`.
-  - Responsive grid convention: `grid-cols-1 md:grid-cols-2` / `md:grid-cols-3` / `md:grid-cols-4`; hero sections use `.hero-gradient` overlays on `PhotoPlaceholder`.
+  - Responsive grid convention: `grid-cols-1 md:grid-cols-2` / `md:grid-cols-3` / `md:grid-cols-4`; hero sections use `.hero-gradient` overlays on `PhotoPlaceholder` with `HeroParallax` scroll effect.
   - Accessibility (audited, WCAG AA): ≥4.5:1 text contrast, 44px touch targets (nav links `py-3`, footer links `min-h-11`), visible `:focus-visible` terracotta ring, `prefers-reduced-motion` support, semantic HTML.
 - **UI Component Conventions:** Reusable classes in `globals.css` — `.pill-*` (leisure/corporate/event/neutral/active category tags), `.btn-primary` / `.btn-outline` / `.btn-gold` (with `.btn-press` press feedback), `.card-shadow` (with hover lift), `.form-input` (focus ring + `.error` state), `.addon-card` / `.catering-card` (selectable cards), `.faq-item` (accordion), `.branch-card` / `.segment-card` / `.event-type-card` (hover lift), `.file-drop` (drag state), `.summary-row` (quote totals). Motion utilities: `.motion-ready`/`.motion-fade-up`/`-left`/`-right`/`.motion-scale-in`/`.motion-zoom-out`/`.motion-blur-reveal` with `data-stagger="1..8"` (observed by `MotionObserver`), `.motion-pop` for elements mounted **after** load, `.page-transition`, `.interactive-element`, `.image-zoom`, `.ripple`, `.kinetic-word`.
 
@@ -136,27 +137,40 @@ Setup & runtime constraints:
   - Follow the motion system strictly: scroll-reveal classes need `motion-ready` + observer support; elements mounted after load (success screens, filtered grids) must use **`.motion-pop`**, never bare `motion-ready`/`motion-scale-in` (they stay `opacity: 0`).
   - Respect the fixed-header offset (`--header-h`) and keep sticky bars aligned to it. Maintain WCAG AA contrast, 44px touch targets, and `prefers-reduced-motion`.
   - Apply `UI UX Pro Max` design standards for layout, spacing, and visual hierarchy (the skill pack is locked in `skills-lock.json`: design-system, ui-styling, banner-design, etc.).
+  - Admin pages use the same brand tokens as public pages — no raw green/red/orange for approve/decline/conflict.
+  - Calendar components use active-state indicators, quick-date shortcuts, range visualization, and clear buttons.
+  - Modals use staggered entrance animations (backdrop fade + content slide-up).
   - Voice: plain, human, factual — no marketing filler (per PRODUCT.md brand commitments).
 - **Commit Rules:** Any AI making code modifications must update **`PROGRESS.md`** with the modified files and completed tasks.
 
-## 7. Pending Uncommitted Changes (local Linux repo — Aug 9, 2026)
+## 7. UI/UX Polish Changelog (Aug 9, 2026)
 
-Working-tree changes sitting on `main` that are **not yet committed** (verified via `git status`, Aug 9 2026). These will be included in the next commit and should be reflected in progress tracking (`PROGRESS.md`).
+Comprehensive UI/UX polish pass applied across all pages. Commit `49423aa`.
 
-**Staged (ready to commit):**
-- **Renamed `PRODUCT.md` → `docs/02-requirements/PRODUCT.md`** — the authoritative product-requirements document moved into the docs/02-requirements folder as part of the docs reorganization. (Content is real and binding: platform, users, capabilities, brand commitments.)
+**Components rewritten:**
+- `AdminLogin.tsx` — Split-screen branded layout (desktop: walnut brand panel + cream form; mobile: centered logo). Replaced emoji dev-OTP with SVG icon. Shadow-glow buttons.
+- `AdminDashboard.tsx` — Sticky branded header with logo, nav, time clock. Refined stat cards (`text-[10px] uppercase tracking-wider` labels). Walnut approve / terracotta decline buttons. Brand-consistent conflict banners (gold-tint soft, terracotta-tint hard). Empty state with checkmark icon.
+- `PhotoPlaceholder.tsx` — Rich multi-stop gradients (145° angle) + subtle radial dot pattern + vignette. Caption uses backdrop-blur + shadow.
+- `Footer.tsx` — Gradient top accent line. SVG contact icons (WhatsApp, email, location). Auto-incrementing copyright year.
+- `Nav.tsx` — Backdrop-blur header. Logo hover shadow glow. Mobile menu with slide animation + active state highlighting.
+- `BranchModal.tsx` — Staggered entrance animation (backdrop + modal + options cascade at 60ms). Colored icon containers per journey.
 
-**Unstaged modifications:**
-- **Deleted `.agents/knowledge.md`** — agent knowledge file removed from the working tree; the live project knowledge now lives in the tracked root `knowledge.md`.
-- **Modified `tsconfig.tsbuildinfo`** — TypeScript incremental-build metadata. ⚠️ Known gotcha: this file is committed to git; avoid committing incidental changes to it unless the change is intentional.
+**New component:**
+- `HeroParallax.tsx` — Reusable parallax scroll effect for hero images. Uses IntersectionObserver + rAF. Respects `prefers-reduced-motion`. Applied to homepage, rooms, corporate, and events heroes.
 
-**Untracked new files:**
-- `PROJECT_SPEC.md` — this specification (generated Aug 2026).
-- `bun.lock` — Bun lockfile (the repo also tracks `package-lock.json`). Decide whether to keep both lockfiles or standardize on one before committing.
-- `docs/01-overview/project-overview.md` — placeholder (to be filled by BA/System Designer).
-- `docs/03-design/adr-log.md`, `docs/03-design/system-design.md` — placeholder ADR log + system design docs.
-- `docs/04-planning/project-plan.md`, `docs/04-planning/sprint-log.md` — placeholder planning docs.
-- `docs/05-meetings/meeting-notes.md` — placeholder meeting notes.
-- `docs/06-testing/test-log.md`, `docs/06-testing/test-plan.md` — placeholder test-plan/log docs.
+**Calendar UX overhaul (BookingForm.tsx):**
+- Active check-in/check-out indicator boxes (clickable, border highlight, dot indicator).
+- Quick-date shortcuts: "Tonight", "This weekend", "Next week".
+- Enhanced date cells: `hover:scale-105 active:scale-95`, shadow glow on selected, smart range border-radius.
+- Today dot indicator below number.
+- Clear dates button.
+- Month transition animation (slide left/right).
 
-**Note:** All `docs/0X-*` folders except `docs/02-requirements/` contain placeholder template files that still need real content; none of them are application code.
+**globals.css additions:**
+- `.card-lift` — refined hover (translateY(-6px) + larger shadow).
+- `.section-divider` — gradient separator utility.
+- Smoother `card-shadow` transitions.
+- Mobile card-lift reduced to -3px.
+
+**Remaining uncommitted (pre-existing, not part of polish):**
+- `.agents/knowledge.md` deletion, `tsconfig.tsbuildinfo` modification, `bun.lock`, docs placeholders.

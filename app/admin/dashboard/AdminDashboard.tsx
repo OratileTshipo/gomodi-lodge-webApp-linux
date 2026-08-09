@@ -35,7 +35,6 @@ interface BookingRequest {
   guestName: string;
   contactPhone: string;
   contactEmail?: string | null;
-  // null for event requests, which have no room line
   checkIn?: string | null;
   checkOut?: string | null;
   roomName?: string | null;
@@ -48,12 +47,6 @@ interface BookingRequest {
   corporateDetails?: CorporateDetails | null;
   eventDetails?: EventDetails | null;
   proofOfPaymentUploaded: boolean;
-  quote?: {
-    id: number;
-    quoteNumber: string;
-    status: "draft" | "sent" | "accepted" | "declined";
-    total: string;
-  } | null;
 }
 
 interface User {
@@ -73,9 +66,6 @@ export function AdminDashboard() {
 
   const isManager = user?.role === "owner" || user?.role === "assistant";
 
-  // Mount-time data fetches live directly in the effects as async IIFEs so
-  // setState only ever runs in async continuations (react-hooks lint rule).
-  // `router` is stable so the session check still runs exactly once on mount.
   useEffect(() => {
     void (async () => {
       try {
@@ -100,8 +90,9 @@ export function AdminDashboard() {
         const res = await fetch("/api/admin/requests");
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        // RBAC Filter: Staff only see Leisure. Managers see all.
-        const filtered = !manager ? data.filter((r: BookingRequest) => r.category === "leisure") : data;
+        const filtered = !manager
+          ? data.filter((r: BookingRequest) => r.category === "leisure")
+          : data;
         setRequests(filtered);
       } catch (err) {
         console.error("Failed to load requests:", err);
@@ -127,7 +118,7 @@ export function AdminDashboard() {
     if (!user) return;
     setClockLoading(true);
     const newAction = clockStatus === "clock_in" ? "clock_out" : "clock_in";
-    
+
     try {
       const res = await fetch("/api/admin/time-clock", {
         method: "POST",
@@ -138,7 +129,6 @@ export function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setClockStatus(newAction);
-      // Show the exact logged timestamp returned by the server
       setClockTimestamp(data.record?.timestamp ?? new Date().toISOString());
     } catch {
       alert("Failed to log time. Please try again.");
@@ -148,10 +138,11 @@ export function AdminDashboard() {
   }
 
   async function handleBookingAction(id: number, action: "approve" | "decline") {
-    const confirmMsg = action === "approve" 
-      ? "Approve this booking? The guest will be notified." 
-      : "Decline this booking?";
-      
+    const confirmMsg =
+      action === "approve"
+        ? "Approve this booking? The guest will be notified."
+        : "Decline this booking?";
+
     if (!confirm(confirmMsg)) return;
 
     try {
@@ -166,21 +157,20 @@ export function AdminDashboard() {
         alert(result.error || `Failed to ${action} booking.`);
         return;
       }
-      
+
       setRequests((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
-      alert(`Failed to ${action} booking: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(
+        `Failed to ${action} booking: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     }
   }
 
   const handleLogout = async () => {
-    // Session cookie is httpOnly — only the server can clear it.
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin");
   };
 
-  // Reuse the public pill system so category chips match the site exactly
-  // (incl. the contrast-corrected event gold).
   const getCategoryColor = (cat: string) => {
     if (cat === "leisure") return "pill pill-leisure";
     if (cat === "corporate") return "pill pill-corporate";
@@ -195,7 +185,11 @@ export function AdminDashboard() {
     return cat.toUpperCase();
   };
 
-  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-ZA", {
+      day: "numeric",
+      month: "short",
+    });
 
   const fmtClockTime = (iso: string) =>
     new Date(iso).toLocaleString("en-ZA", {
@@ -208,10 +202,32 @@ export function AdminDashboard() {
 
   if (!user || loading) {
     return (
-      <div className="min-h-screen bg-cream-light p-6">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-2xl card-shadow border border-walnut/10 p-6 h-40 animate-pulse" />
+      <div className="min-h-screen bg-cream-light">
+        {/* Skeleton header */}
+        <div className="bg-white border-b border-walnut/10 px-6 py-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-5 w-48 bg-skeleton rounded animate-pulse" />
+              <div className="h-3 w-32 bg-skeleton-light rounded animate-pulse" />
+            </div>
+            <div className="h-9 w-24 bg-skeleton rounded-lg animate-pulse" />
+          </div>
+        </div>
+        {/* Skeleton cards */}
+        <div className="max-w-5xl mx-auto p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-walnut/10 p-5 h-24 animate-pulse"
+              />
+            ))}
+          </div>
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl border border-walnut/10 p-6 h-48 animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -219,276 +235,397 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-cream-light p-4 md:p-6">
-      <div className="max-w-5xl mx-auto">
-        
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-ink">
-              {isManager ? "Operations Dashboard" : "Staff Dashboard"}
-            </h1>
-            <p className="text-sm text-stone">Logged in as {user.name} ({user.role})</p>
+    <div className="min-h-screen bg-cream-light">
+      {/* HEADER */}
+      <header className="bg-white border-b border-walnut/10 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-terracotta flex items-center justify-center text-cream-light font-bold text-sm shadow-sm shadow-terracotta/20">
+              G
+            </div>
+            <div>
+              <h1 className="font-display text-lg font-semibold text-ink leading-tight">
+                {isManager ? "Operations Dashboard" : "Staff Dashboard"}
+              </h1>
+              <p className="text-xs text-stone">
+                {user.name} · {user.role}
+              </p>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button onClick={() => router.push("/")} className="text-stone hover:text-ink text-sm">← Site</button>
-            {isManager && (
-              <button
-                onClick={() => router.push("/admin/quotes")}
-                className="px-3 py-2 rounded-lg border border-walnut/20 text-walnut text-sm font-medium hover:bg-walnut-tint/40 transition-colors"
-              >
-                Quotations
-              </button>
-            )}
-            <button onClick={handleLogout} className="text-red-600 text-sm font-medium">Logout</button>
-            
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => router.push("/")}
+              className="px-3 py-2 text-stone hover:text-ink hover:bg-walnut/5 text-sm rounded-lg transition-colors"
+            >
+              ← Site
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 text-stone hover:text-terracotta-dark hover:bg-terracotta-tint/50 text-sm font-medium rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+
             {/* TIME CLOCK */}
-            <div className="flex flex-col items-end gap-1">
+            <div className="ml-2 pl-2 border-l border-walnut/10">
               <button
                 onClick={handleClockAction}
                 disabled={clockLoading}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 ${clockStatus === "clock_in" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-50`}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 transition-all btn-press ${
+                  clockStatus === "clock_in"
+                    ? "bg-terracotta-dark hover:bg-[#74301f] shadow-sm shadow-terracotta-dark/20"
+                    : "bg-walnut hover:bg-walnut-dark shadow-sm shadow-walnut/20"
+                } disabled:opacity-50`}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
-                {clockLoading ? "Logging..." : (clockStatus === "clock_in" ? "Clock Out" : "Clock In")}
+                {clockLoading
+                  ? "Logging..."
+                  : clockStatus === "clock_in"
+                    ? "Clock Out"
+                    : "Clock In"}
               </button>
               {clockTimestamp && clockStatus && (
-                <span className="text-[11px] text-stone">
-                  {clockStatus === "clock_in" ? "Clocked in" : "Clocked out"} · {fmtClockTime(clockTimestamp)}
+                <span className="block text-[10px] text-stone text-right mt-1">
+                  {clockStatus === "clock_in" ? "Clocked in" : "Clocked out"} ·{" "}
+                  {fmtClockTime(clockTimestamp)}
                 </span>
               )}
             </div>
           </div>
         </div>
+      </header>
 
-        {/* MANAGER ONLY: Operations Report */}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
+        {/* MANAGER: Stats */}
         {isManager && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-2xl card-shadow border border-walnut/10">
-              <div className="text-stone text-xs uppercase">Total Pending</div>
-              <div className="text-2xl font-bold text-ink">{requests.length}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white p-5 rounded-2xl border border-walnut/10 shadow-sm">
+              <div className="text-stone text-[11px] uppercase tracking-wider font-semibold">
+                Pending Requests
+              </div>
+              <div className="text-3xl font-bold text-ink mt-1">
+                {requests.length}
+              </div>
             </div>
-            <div className="bg-white p-4 rounded-2xl card-shadow border border-walnut/10">
-              <div className="text-stone text-xs uppercase">Conflicts</div>
-              <div className="text-2xl font-bold text-red-600">{requests.filter(r => r.conflict).length}</div>
+            <div className="bg-white p-5 rounded-2xl border border-walnut/10 shadow-sm">
+              <div className="text-stone text-[11px] uppercase tracking-wider font-semibold">
+                Conflicts
+              </div>
+              <div className="text-3xl font-bold text-terracotta-dark mt-1">
+                {requests.filter((r) => r.conflict).length}
+              </div>
             </div>
-            <div className="bg-white p-4 rounded-2xl card-shadow border border-walnut/10">
-              <div className="text-stone text-xs uppercase">Occupancy (Est)</div>
-              <div className="text-2xl font-bold text-green-600">65%</div>
+            <div className="bg-white p-5 rounded-2xl border border-walnut/10 shadow-sm">
+              <div className="text-stone text-[11px] uppercase tracking-wider font-semibold">
+                Occupancy (Est)
+              </div>
+              <div className="text-3xl font-bold text-walnut mt-1">65%</div>
             </div>
           </div>
         )}
 
-        {/* REQUESTS LIST */}
+        {/* REQUESTS */}
         <div className="space-y-4">
-           {requests.length === 0 && (
-             <div className="bg-white rounded-2xl card-shadow border border-walnut/10 p-12 text-center">
-               <p className="text-stone text-lg">No pending requests — you&apos;re all caught up.</p>
-             </div>
-           )}
-           
-           {requests.map(req => (
-             <div key={req.id} className="bg-white p-4 md:p-6 rounded-2xl border border-walnut/10 card-shadow">
-                
-                {/* SOFT CONFLICT WARNING (Amber - Phase 2b Style Note) */}
-                {req.pendingWarning && (
-                  <div className="bg-amber-100 border border-amber-300 text-amber-900 font-bold p-3 rounded-md mb-3 text-sm tracking-wide flex items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    {req.pendingWarning}
-                  </div>
+          {requests.length === 0 && (
+            <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-12 text-center">
+              <div className="w-14 h-14 rounded-full bg-cream flex items-center justify-center mx-auto mb-4">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  className="text-stone"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <p className="text-stone font-medium">All caught up</p>
+              <p className="text-stone/60 text-sm mt-1">
+                No pending requests to review
+              </p>
+            </div>
+          )}
+
+          {requests.map((req) => (
+            <div
+              key={req.id}
+              className="bg-white p-5 md:p-6 rounded-2xl border border-walnut/10 shadow-sm"
+            >
+              {/* Conflict banners */}
+              {req.pendingWarning && (
+                <div className="bg-gold-tint border border-gold/40 text-gold-dark font-medium p-3 rounded-lg mb-4 text-sm flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  {req.pendingWarning}
+                </div>
+              )}
+
+              {req.conflict && (
+                <div className="bg-terracotta-tint border border-terracotta/40 text-terracotta-dark font-medium p-3 rounded-lg mb-4 text-sm flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  {req.conflict}
+                </div>
+              )}
+
+              {/* Header row */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className={getCategoryColor(req.category)}>
+                  {getCategoryLabel(req.category)}
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    req.proofOfPaymentUploaded
+                      ? "bg-walnut-tint text-walnut"
+                      : "bg-cream text-stone border border-walnut/10"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${req.proofOfPaymentUploaded ? "bg-walnut" : "bg-stone/30"}`}
+                  />
+                  POP {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
+                </span>
+                <h3 className="font-semibold text-ink text-base ml-auto">
+                  {req.guestName}
+                </h3>
+              </div>
+
+              {/* Details grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-walnut/10 pt-4 mb-4">
+                {/* Corporate fields */}
+                {req.category === "corporate" && req.corporateDetails && (
+                  <>
+                    <div className="md:col-span-2">
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Company
+                      </span>
+                      <span className="text-ink font-medium">
+                        {req.corporateDetails.companyName}
+                      </span>
+                      {req.corporateDetails.jobTitle && (
+                        <span className="block text-stone text-xs">
+                          ({req.corporateDetails.jobTitle})
+                        </span>
+                      )}
+                    </div>
+                    {req.corporateDetails.poNumber && (
+                      <div>
+                        <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                          PO Number
+                        </span>
+                        <span className="text-ink font-medium">
+                          {req.corporateDetails.poNumber}
+                        </span>
+                      </div>
+                    )}
+                    {req.corporateDetails.vatNumber && (
+                      <div>
+                        <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                          VAT Number
+                        </span>
+                        <span className="text-ink font-medium">
+                          {req.corporateDetails.vatNumber}
+                        </span>
+                      </div>
+                    )}
+                    {req.corporateDetails.billingEmail && (
+                      <div>
+                        <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                          Billing Email
+                        </span>
+                        <span className="text-ink font-medium">
+                          {req.corporateDetails.billingEmail}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* HARD CONFLICT BANNER (Red - Phase 2b Style Note) */}
-                {req.conflict && (
-                  <div className="bg-red-600 text-white font-bold p-3 rounded-md mb-4 text-sm tracking-wide flex items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                      <line x1="12" y1="9" x2="12" y2="13"/>
-                      <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    {req.conflict}
-                  </div>
+                {/* Event fields */}
+                {req.category === "event" && req.eventDetails && (
+                  <>
+                    <div>
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Event Type
+                      </span>
+                      <span className="text-ink font-medium capitalize">
+                        {req.eventDetails.eventType.replace("-", " ")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Event Date
+                      </span>
+                      <span className="text-ink font-medium">
+                        {fmtDate(req.eventDetails.eventDate)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Expected Guests
+                      </span>
+                      <span className="text-ink font-medium">
+                        {req.eventDetails.expectedGuests}
+                      </span>
+                    </div>
+                    {req.eventDetails.cateringPackage && (
+                      <div>
+                        <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                          Catering
+                        </span>
+                        <span className="text-ink font-medium capitalize">
+                          {req.eventDetails.cateringPackage.replace("-", " ")}
+                        </span>
+                      </div>
+                    )}
+                    {req.eventDetails.interestedInRooms && (
+                      <div className="md:col-span-2">
+                        <span className="inline-flex items-center gap-1.5 bg-walnut-tint text-walnut px-2.5 py-1 rounded text-xs font-medium">
+                          Interested in room bookings
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
-                
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className={getCategoryColor(req.category)}>
-                    {getCategoryLabel(req.category)}
+
+                {/* Leisure fields */}
+                {req.category === "leisure" && (
+                  <>
+                    <div>
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Dates
+                      </span>
+                      <span className="text-ink font-medium">
+                        {req.checkIn && req.checkOut
+                          ? `${fmtDate(req.checkIn)} → ${fmtDate(req.checkOut)}`
+                          : "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Room
+                      </span>
+                      <span className="text-ink font-medium">
+                        {req.roomName ?? "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                        Guests
+                      </span>
+                      <span className="text-ink font-medium">
+                        {req.guestCount ?? "—"}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {/* Contact */}
+                <div>
+                  <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                    Contact
                   </span>
-                  {/* Proof of Payment Badge - Phase 2b Style Note: Always show with text label */}
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    req.proofOfPaymentUploaded 
-                      ? "bg-green-100 text-green-800" 
-                      : "bg-cream text-stone border border-walnut/10"
-                  }`}>
-                    Proof of Payment: {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
+                  <span className="text-ink font-medium">
+                    {req.contactPhone}
                   </span>
-                  {/* Quotation badge */}
-                  {req.quote && (
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      req.quote.status === "sent"
-                        ? "bg-green-100 text-green-800"
-                        : req.quote.status === "accepted"
-                        ? "bg-green-600 text-white"
-                        : "bg-gold-tint text-gold-dark"
-                    }`}>
-                      Quote: {req.quote.quoteNumber} · {req.quote.status === "draft" ? "Draft" : req.quote.status}
+                  {req.contactEmail && (
+                    <span className="block text-stone text-xs">
+                      {req.contactEmail}
                     </span>
                   )}
-                  <h3 className="font-semibold text-lg text-ink">{req.guestName}</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm border-t border-walnut/10 pt-4 mb-4">
-                  {/* Corporate-specific fields */}
-                  {req.category === "corporate" && req.corporateDetails && (
-                    <>
-                      <div className="md:col-span-2">
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Company</span>
-                        <span className="text-ink font-medium">{req.corporateDetails.companyName}</span>
-                        {req.corporateDetails.jobTitle && (
-                          <span className="block text-stone text-xs">({req.corporateDetails.jobTitle})</span>
-                        )}
-                      </div>
-                      {req.corporateDetails.poNumber && (
-                        <div>
-                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">PO Number</span>
-                          <span className="text-ink font-medium">{req.corporateDetails.poNumber}</span>
-                        </div>
-                      )}
-                      {req.corporateDetails.vatNumber && (
-                        <div>
-                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">VAT Number</span>
-                          <span className="text-ink font-medium">{req.corporateDetails.vatNumber}</span>
-                        </div>
-                      )}
-                      {req.corporateDetails.billingEmail && (
-                        <div>
-                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">Billing Email</span>
-                          <span className="text-ink font-medium">{req.corporateDetails.billingEmail}</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Event-specific fields */}
-                  {req.category === "event" && req.eventDetails && (
-                    <>
-                      <div>
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Event Type</span>
-                        <span className="text-ink font-medium capitalize">{req.eventDetails.eventType.replace("-", " ")}</span>
-                      </div>
-                      <div>
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Event Date</span>
-                        <span className="text-ink font-medium">{fmtDate(req.eventDetails.eventDate)}</span>
-                      </div>
-                      <div>
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Expected Guests</span>
-                        <span className="text-ink font-medium">{req.eventDetails.expectedGuests}</span>
-                      </div>
-                      {req.eventDetails.cateringPackage && (
-                        <div>
-                          <span className="text-stone block text-xs uppercase tracking-wide mb-1">Catering</span>
-                          <span className="text-ink font-medium capitalize">{req.eventDetails.cateringPackage.replace("-", " ")}</span>
-                        </div>
-                      )}
-                      {req.eventDetails.interestedInRooms && (
-                        <div className="md:col-span-2">
-                          <span className="text-green-700 bg-green-50 px-2 py-1 rounded text-xs font-medium">Interested in room bookings for guests</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* Standard fields for all categories */}
-                  {req.category === "leisure" && (
-                    <>
-                      <div>
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Dates</span>
-                        <span className="text-ink font-medium">{req.checkIn && req.checkOut ? `${fmtDate(req.checkIn)} → ${fmtDate(req.checkOut)}` : "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Room</span>
-                        <span className="text-ink font-medium">{req.roomName ?? "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-stone block text-xs uppercase tracking-wide mb-1">Guests</span>
-                        <span className="text-ink font-medium">{req.guestCount ?? "—"}</span>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Contact info for all */}
-                  <div>
-                    <span className="text-stone block text-xs uppercase tracking-wide mb-1">Contact</span>
-                    <span className="text-ink font-medium">{req.contactPhone}</span>
-                    {req.contactEmail && <span className="block text-stone text-xs">{req.contactEmail}</span>}
-                  </div>
-                  
-                  {/* Add-ons */}
-                  {req.addOns && req.addOns.length > 0 && (
-                    <div className="md:col-span-2">
-                      <span className="text-stone block text-xs uppercase tracking-wide mb-1">Meals</span>
-                      <div className="flex flex-wrap gap-2">
-                        {req.addOns.map((addon, idx) => (
-                          <span key={idx} className="bg-walnut-tint text-walnut px-2 py-1 rounded text-xs">
-                            {addon.type} ({addon.persons}p)
-                          </span>
-                        ))}
-                      </div>
+                {/* Meals */}
+                {req.addOns && req.addOns.length > 0 && (
+                  <div className="md:col-span-2">
+                    <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                      Meals
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {req.addOns.map((addon, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-cream text-stone px-2 py-0.5 rounded text-xs border border-walnut/10"
+                        >
+                          {addon.type} ({addon.persons}p)
+                        </span>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Special Requests */}
-                  {req.specialRequests && (
-                    <div className="md:col-span-2">
-                      <span className="text-stone block text-xs uppercase tracking-wide mb-1">Special Requests</span>
-                      <p className="text-ink italic bg-cream p-2 rounded border-l-2 border-gold-dark">
-                        &ldquo;{req.specialRequests}&rdquo;
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Quote review link for managers */}
-                {isManager && req.quote && (
-                  <div className="pt-3 pb-1">
-                    <button
-                      onClick={() => router.push(`/admin/quotes/${req.quote!.id}`)}
-                      className="text-terracotta-dark text-sm font-semibold hover:underline"
-                    >
-                      Review &amp; send quotation →
-                    </button>
                   </div>
                 )}
 
-                {/* RBAC: Staff cannot approve/decline corporate or event requests */}
-                {!isManager && (req.category === "corporate" || req.category === "event") ? (
-                  <div className="pt-2 border-t border-walnut/10">
-                    <div className="bg-cream text-stone px-3 py-2 rounded-lg text-sm text-center font-medium opacity-60 pointer-events-none">
-                      Manager Approval Required
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-3 pt-2 border-t border-walnut/10">
-                    <button 
-                      onClick={() => handleBookingAction(req.id, "approve")} 
-                      className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700"
-                    >
-                      Approve
-                    </button>
-                    <button 
-                      onClick={() => handleBookingAction(req.id, "decline")} 
-                      className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-medium"
-                    >
-                      Decline
-                    </button>
+                {/* Special Requests */}
+                {req.specialRequests && (
+                  <div className="md:col-span-2">
+                    <span className="text-stone block text-[10px] uppercase tracking-wider font-semibold mb-1">
+                      Special Requests
+                    </span>
+                    <p className="text-ink italic bg-cream p-2.5 rounded-lg border-l-2 border-gold-dark text-sm">
+                      &ldquo;{req.specialRequests}&rdquo;
+                    </p>
                   </div>
                 )}
-             </div>
-           ))}
+              </div>
+
+              {/* Actions */}
+              {!isManager &&
+              (req.category === "corporate" || req.category === "event") ? (
+                <div className="pt-3 border-t border-walnut/10">
+                  <div className="bg-cream text-stone px-4 py-2.5 rounded-lg text-sm text-center font-medium">
+                    Manager Approval Required
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-3 pt-3 border-t border-walnut/10">
+                  <button
+                    onClick={() => handleBookingAction(req.id, "approve")}
+                    className="flex-1 bg-walnut text-cream-light px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-walnut-dark transition-colors btn-press shadow-sm shadow-walnut/20"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleBookingAction(req.id, "decline")}
+                    className="flex-1 border border-walnut/20 text-walnut px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-walnut/5 transition-colors btn-press"
+                  >
+                    Decline
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

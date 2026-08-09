@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
+import { HeroParallax } from "@/components/HeroParallax";
 
 type Room = {
   id: number;
@@ -28,6 +29,16 @@ export function RoomsExplorer({
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("default");
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
+  const [modalMounted, setModalMounted] = useState(false);
+
+  useEffect(() => {
+    if (activeRoom) {
+      const t = setTimeout(() => setModalMounted(true), 10);
+      return () => clearTimeout(t);
+    } else {
+      setModalMounted(false);
+    }
+  }, [activeRoom]);
 
   const suffix = useMemo(() => {
     const p = new URLSearchParams();
@@ -68,16 +79,27 @@ export function RoomsExplorer({
         </ol>
       </nav>
 
-      {/* HERO - mount-safe staggered entrance (pure CSS, always visible) */}
-      <section className="max-w-6xl mx-auto px-6 pb-12">
-        <h1 className="font-display font-semibold text-ink text-3xl md:text-4xl mt-4 max-w-3xl motion-pop" data-stagger="1">Every room, freshly renovated.</h1>
-        <p className="text-stone mt-4 max-w-2xl text-base leading-relaxed motion-pop" data-stagger="2">
+      {/* HERO */}
+      <section className="relative h-[40vh] min-h-[280px] max-h-[400px] overflow-hidden parallax-container mb-0">
+        <div className="absolute inset-0">
+          <HeroParallax>
+            <PhotoPlaceholder label="Guest rooms overview" className="absolute inset-0" />
+          </HeroParallax>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-ink/20 via-ink/40 to-ink/70" />
+        <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-10">
+          <h1 className="font-display font-semibold text-cream-light text-3xl md:text-4xl max-w-3xl motion-fade-up motion-ready" data-stagger="1">Every room, freshly renovated.</h1>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-6 pb-12 pt-8">
+        <p className="text-stone max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="2">
           Terracotta walls, walnut wood, and cream textiles throughout. Every room has a Smart TV, WiFi, air conditioning with fan and heater backup, and a shower or bath. One room can be set up as two singles or one double — tell us which you prefer when you book.
         </p>
       </section>
 
-      {/* FILTER & SORT BAR - Removed backdrop-blur and fade-in for instant render */}
-      <section className="max-w-6xl mx-auto px-6 pb-8 sticky top-[var(--header-h)] z-30 bg-cream-light py-4 border-y border-walnut/10">
+      {/* FILTER & SORT BAR */}
+      <section className="max-w-6xl mx-auto px-6 pb-8 sticky top-[var(--header-h)] z-30 bg-cream-light/95 backdrop-blur-md py-4 border-y border-walnut/10 shadow-[0_1px_3px_rgba(74,46,34,0.04)]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter rooms">
             <button
@@ -105,7 +127,7 @@ export function RoomsExplorer({
               id="sortSelect"
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              className="bg-white border border-walnut/20 rounded-lg px-3 py-2 text-sm text-ink focus:border-terracotta"
+              className="bg-white border border-walnut/20 rounded-lg px-3 py-2 text-sm text-ink focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition-all"
             >
               <option value="default">Default order</option>
               <option value="price-asc">Price: Low to High</option>
@@ -125,8 +147,8 @@ export function RoomsExplorer({
           // Key the grid by filter+sort so card entrances replay on every change (mount-safe, no observer dependency)
           <div key={`${filter}-${sort}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sorted.map((room, i) => (
-              <article key={room.id} className="room-card card-shadow bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
-                <div className="aspect-[4/3] bg-cream overflow-hidden relative">
+              <article key={room.id} className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop" data-stagger={(i % 6) + 1}>
+                <div className="aspect-[4/3] bg-cream overflow-hidden relative image-zoom">
                   <PhotoPlaceholder label={room.name} />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
@@ -149,8 +171,8 @@ export function RoomsExplorer({
                     )}
                   </div>
                   <div className="mt-5 flex gap-2">
-                    <button onClick={() => setActiveRoom(room)} className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold">View details</button>
-                    <Link href={`/book?room=${room.id}${suffix}`} className="flex-1 text-center btn-primary px-3 py-2 rounded-lg text-sm font-semibold">Book this room</Link>
+                    <button onClick={() => setActiveRoom(room)} className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press">View details</button>
+                    <Link href={`/book?room=${room.id}${suffix}`} className="flex-1 text-center btn-primary px-3 py-2 rounded-lg text-sm font-semibold btn-press ripple">Book this room</Link>
                   </div>
                 </div>
               </article>
@@ -158,8 +180,11 @@ export function RoomsExplorer({
           </div>
         ) : (
           <div className="text-center py-20">
+            <div className="w-16 h-16 rounded-full bg-walnut-tint flex items-center justify-center mx-auto mb-4">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="text-walnut"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
             <div className="text-stone text-lg">No rooms match that filter.</div>
-            <button onClick={() => setFilter("all")} className="mt-4 btn-outline px-4 py-2 rounded-lg text-sm font-semibold">Show all rooms</button>
+            <button onClick={() => setFilter("all")} className="mt-4 btn-outline px-4 py-2 rounded-lg text-sm font-semibold btn-press">Show all rooms</button>
           </div>
         )}
       </section>
@@ -167,9 +192,9 @@ export function RoomsExplorer({
       {/* ROOM DETAIL MODAL */}
       {activeRoom && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm" onClick={() => setActiveRoom(null)} />
-          <div className="relative bg-cream-light rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto card-shadow motion-pop">
-            <button onClick={() => setActiveRoom(null)} className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-cream-light/90 hover:bg-walnut/10" aria-label="Close">
+          <div className={`absolute inset-0 bg-ink/60 backdrop-blur-sm transition-opacity duration-300 ${modalMounted ? "opacity-100" : "opacity-0"}`} onClick={() => setActiveRoom(null)} />
+          <div className={`relative bg-cream-light rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto card-shadow transition-all duration-300 ease-out ${modalMounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-95"}`}>
+            <button onClick={() => setActiveRoom(null)} className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-cream-light/90 backdrop-blur-sm hover:bg-walnut/10 transition-colors shadow-sm" aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
             <div className="aspect-[16/9] overflow-hidden rounded-t-2xl">
@@ -187,20 +212,20 @@ export function RoomsExplorer({
               </div>
               <p className="text-stone mt-4 leading-relaxed">{activeRoom.description}</p>
               <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-cream rounded-lg p-3">
-                  <div className="text-[10px] uppercase tracking-wide text-stone">Config</div>
+                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Config</div>
                   <div className="text-ink text-sm font-medium mt-1">{activeRoom.config}</div>
                 </div>
-                <div className="bg-cream rounded-lg p-3">
-                  <div className="text-[10px] uppercase tracking-wide text-stone">Bathroom</div>
+                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Bathroom</div>
                   <div className="text-ink text-sm font-medium mt-1">{activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
                 </div>
-                <div className="bg-cream rounded-lg p-3">
-                  <div className="text-[10px] uppercase tracking-wide text-stone">Guests</div>
+                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Guests</div>
                   <div className="text-ink text-sm font-medium mt-1">Up to 2</div>
                 </div>
-                <div className="bg-cream rounded-lg p-3">
-                  <div className="text-[10px] uppercase tracking-wide text-stone">Room</div>
+                <div className="bg-cream rounded-lg p-3 border border-walnut/5">
+                  <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Room</div>
                   <div className="text-ink text-sm font-medium mt-1">Room {activeRoom.id} of 9</div>
                 </div>
               </div>
@@ -226,8 +251,8 @@ export function RoomsExplorer({
                 </div>
               )}
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <Link href={`/book?room=${activeRoom.id}${suffix}`} className="flex-1 text-center btn-primary px-4 py-3 rounded-lg font-semibold">Book this room</Link>
-                <button onClick={() => setActiveRoom(null)} className="flex-1 btn-outline px-4 py-3 rounded-lg font-semibold">Close</button>
+                <Link href={`/book?room=${activeRoom.id}${suffix}`} className="flex-1 text-center btn-primary px-4 py-3 rounded-lg font-semibold btn-press ripple">Book this room</Link>
+                <button onClick={() => setActiveRoom(null)} className="flex-1 btn-outline px-4 py-3 rounded-lg font-semibold btn-press">Close</button>
               </div>
             </div>
           </div>
