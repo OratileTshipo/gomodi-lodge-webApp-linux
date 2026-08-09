@@ -26,6 +26,12 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 ]);
 export const addOnTypeEnum = pgEnum("addon_type", ["breakfast", "dinner"]);
 export const clockActionEnum = pgEnum("clock_action", ["clock_in", "clock_out"]);
+export const quoteStatusEnum = pgEnum("quote_status", [
+  "draft",
+  "sent",
+  "accepted",
+  "declined",
+]);
 
 // ---------- Users (Owner / Assistant / Staff) ----------
 export const users = pgTable("users", {
@@ -140,6 +146,52 @@ export const authOtps = pgTable("auth_otps", {
   attempts: integer("attempts").notNull().default(0),
   consumed: boolean("consumed").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ---------- Quotations & Invoices ----------
+// One quote per booking request. Auto-created (draft) when a request comes in,
+// edited by the owner in the admin quote editor, then marked "sent" when the
+// PDF + public link are delivered to the requester. Line items carry the
+// per-night / per-guest pricing so the owner can adjust fees before sending.
+export const quotes = pgTable("quotes", {
+  id: serial("id").primaryKey(),
+  bookingRequestId: integer("booking_request_id")
+    .notNull()
+    .references(() => bookingRequests.id, { onDelete: "cascade" })
+    .unique(),
+  quoteNumber: varchar("quote_number", { length: 30 }).notNull().unique(),
+  status: quoteStatusEnum("status").notNull().default("draft"),
+  // Publicly shareable access token — the requester's link uses this, so the
+  // quote can be viewed/downloaded without any login.
+  publicToken: varchar("public_token", { length: 64 }).notNull().unique(),
+  validUntil: date("valid_until"),
+  // VAT rate in percent (0 disables VAT). Corporate clients reclaim VAT, so
+  // the quote shows subtotal + VAT + total. 15% is the SA standard.
+  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).notNull().default("15.00"),
+  // Free-text notes shown to the requester on the quote/invoice (e.g. deposit
+  // terms, payment details, cancellation policy).
+  notes: text("notes"),
+  // Server-computed totals — never trust client-side math. Decimals stored as
+  // strings; cents math happens in lib/quotes.ts.
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  vatAmount: decimal("vat_amount", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull().default("0.00"),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const quoteLineItems = pgTable("quote_line_items", {
+  id: serial("id").primaryKey(),
+  quoteId: integer("quote_id")
+    .notNull()
+    .references(() => quotes.id, { onDelete: "cascade" }),
+  description: varchar("description", { length: 255 }).notNull(),
+  // Quantity is a decimal so part-days / per-guest units work (e.g. 2.5 nights).
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull().default("1"),
+  unit: varchar("unit", { length: 30 }).notNull().default("night"),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 // ---------- Proof of Payments ----------

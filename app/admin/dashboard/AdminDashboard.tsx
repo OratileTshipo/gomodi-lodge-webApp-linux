@@ -48,6 +48,12 @@ interface BookingRequest {
   corporateDetails?: CorporateDetails | null;
   eventDetails?: EventDetails | null;
   proofOfPaymentUploaded: boolean;
+  quote?: {
+    id: number;
+    quoteNumber: string;
+    status: "draft" | "sent" | "accepted" | "declined";
+    total: string;
+  } | null;
 }
 
 interface User {
@@ -227,6 +233,14 @@ export function AdminDashboard() {
           
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button onClick={() => router.push("/")} className="text-stone hover:text-ink text-sm">← Site</button>
+            {isManager && (
+              <button
+                onClick={() => router.push("/admin/quotes")}
+                className="px-3 py-2 rounded-lg border border-walnut/20 text-walnut text-sm font-medium hover:bg-walnut-tint/40 transition-colors"
+              >
+                Quotations
+              </button>
+            )}
             <button onClick={handleLogout} className="text-red-600 text-sm font-medium">Logout</button>
             
             {/* TIME CLOCK */}
@@ -312,6 +326,18 @@ export function AdminDashboard() {
                   }`}>
                     Proof of Payment: {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
                   </span>
+                  {/* Quotation badge */}
+                  {req.quote && (
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      req.quote.status === "sent"
+                        ? "bg-green-100 text-green-800"
+                        : req.quote.status === "accepted"
+                        ? "bg-green-600 text-white"
+                        : "bg-gold-tint text-gold-dark"
+                    }`}>
+                      Quote: {req.quote.quoteNumber} · {req.quote.status === "draft" ? "Draft" : req.quote.status}
+                    </span>
+                  )}
                   <h3 className="font-semibold text-lg text-ink">{req.guestName}</h3>
                 </div>
 
@@ -425,6 +451,18 @@ export function AdminDashboard() {
                     </div>
                   )}
                 </div>
+
+                {/* Quote review link for managers */}
+                {isManager && req.quote && (
+                  <div className="pt-3 pb-1">
+                    <button
+                      onClick={() => router.push(`/admin/quotes/${req.quote!.id}`)}
+                      className="text-terracotta-dark text-sm font-semibold hover:underline"
+                    >
+                      Review &amp; send quotation →
+                    </button>
+                  </div>
+                )}
 
                 {/* RBAC: Staff cannot approve/decline corporate or event requests */}
                 {!isManager && (req.category === "corporate" || req.category === "event") ? (

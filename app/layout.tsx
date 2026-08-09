@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -30,11 +31,15 @@ export const metadata: Metadata = {
     "9 recently renovated en-suite rooms in Mahikeng. Book direct for the best rates — leisure stays, corporate & government bookings, and events.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Per-request CSP nonce set by middleware.ts (x-nonce header). Next.js
+  // auto-applies it to its own inline scripts; we apply it to ours so the
+  // strict nonce-based Content-Security-Policy never blocks first-paint JS.
+  const nonce = (await headers()).get("x-nonce") || undefined;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LodgingBusiness",
@@ -74,13 +79,21 @@ export default function RootLayout({
        hydration mismatch. The script itself makes no-other DOM changes. */
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
       <head>
+        {/* suppressHydrationWarning: after a nonce'd script executes, the
+            browser clears its nonce attribute (CSP spec), so React's hydration
+            comparison always sees a mismatch on these elements. The DOM keeps
+            the correct nonce and execution is unaffected. */}
         <script
+          nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `try{document.documentElement.classList.add("motion-armed")}catch(e){}`,
           }}
         />
         <script
           type="application/ld+json"
+          nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>

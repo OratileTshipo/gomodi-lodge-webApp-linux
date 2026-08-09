@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { db } from "@/lib/db";
-import { authOtps } from "@/lib/db/schema";
+import { authOtps, users } from "@/lib/db/schema";
+import { sendOtp } from "@/lib/whatsapp";
 import { lt, and, eq } from "drizzle-orm";
 
 /**
@@ -38,7 +39,11 @@ export async function POST(request: Request) {
   try {
     const { phone } = await request.json();
 
-    if (!phone || typeof phone !== "string" || !/^\+?[0-9]{7,15}$/.test(phone.trim())) {
+    if (
+      typeof phone !== "string" ||
+      phone.length > 30 ||
+      !/^\+?[0-9]{7,15}$/.test(phone.trim())
+    ) {
       return NextResponse.json({ error: "Valid phone number required" }, { status: 400 });
     }
     const cleanPhone = phone.trim();
@@ -48,6 +53,23 @@ export async function POST(request: Request) {
         { error: "Too many OTP requests. Please wait about 10 minutes and try again." },
         { status: 429 }
       );
+    }
+
+    // Hardening: only registered staff/owner numbers may request an OTP.
+    // Unregistered numbers get the same generic response (no account
+    // enumeration) but never generate/store/send a code. WhatsApp stays
+    // fail-open (log-only) until the business number is set up.
+    const [registered] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.phone, cleanPhone))
+      .limit(1);
+
+    if (!registered) {
+      return NextResponse.json({
+        success: true,
+        message: "If this number is registered, an OTP has been sent.",
+      });
     }
 
     // Generate a 6-digit OTP, store only its SHA-256 hash (never the plaintext).
@@ -60,8 +82,10 @@ export async function POST(request: Request) {
 
     await db.insert(authOtps).values({ phone: cleanPhone, codeHash, expiresAt });
 
-    // WhatsApp Cloud API would send the code here. Until it's wired, log it
-    // (server-side only) and, in dev, return it for the on-screen dev box.
+    // Deliver the code by WhatsApp when configured (the production path).
+    // Until then the code is only visible in server logs — see knowledge.md.
+    await sendOtp(cleanPhone, otp);
+
     console.log(`\n========================================`);
     console.log(`OTP for ${cleanPhone}: ${otp}`);
     console.log(`========================================\n`);

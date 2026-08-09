@@ -1,16 +1,13 @@
 /**
- * WhatsApp Business Cloud API integration (Meta, direct) — per Phase 2
- * Architecture Document, Section 1.3 (Platform-Specific Constraints).
+ * WhatsApp notification helpers for the booking pipeline.
  *
- * STUB: this cannot be wired to the real Meta Cloud API from a build sandbox —
- * it requires a verified Meta Business account, a registered WhatsApp Business
- * phone number, and live API credentials, none of which exist yet (Meta
- * Business verification is a flagged Changelog item, not started). This
- * function currently logs the notification instead of sending it, so the
- * booking flow can be built and tested end-to-end now. Swapping in the real
- * API call later is a small, contained change — everywhere else in the app
- * calls this same function.
+ * These are the single entry point every feature uses to alert the lodge
+ * (new requests) and the guest (approve/decline). Delivery goes through the
+ * Meta WhatsApp Cloud API client (lib/whatsapp.ts); until credentials are set
+ * the sends fail open and log visibly, so the booking flow keeps working.
  */
+import { sendBookingAlert, sendBookingStatus } from "./whatsapp";
+
 export async function notifyOwnerOfNewRequest(details: {
   guestName: string;
   contactPhone: string;
@@ -19,12 +16,20 @@ export async function notifyOwnerOfNewRequest(details: {
   checkOut: string;
   guestCount: number;
 }): Promise<void> {
-  console.log("[WhatsApp notification — STUBBED, not yet sent]", {
-    to: "OWNER_WHATSAPP_NUMBER",
-    template: "new_leisure_request",
-    ...details,
-  });
-  // TODO (Phase 5 / go-live): replace with a real call to the Meta WhatsApp
-  // Business Cloud API, using an approved message template per the 24-hour
-  // session window constraint already documented in the Architecture Doc.
+  const result = await sendBookingAlert(details);
+  if (!result.sent) {
+    // Visible record so nothing is silently lost while WhatsApp is unset.
+    console.log("[WhatsApp notification not sent]", { reason: result.reason, ...details });
+  }
+}
+
+export async function notifyGuestOfBookingDecision(details: {
+  phone: string;
+  guestName: string;
+  status: "approved" | "declined";
+}): Promise<void> {
+  const result = await sendBookingStatus(details.phone, details.guestName, details.status);
+  if (!result.sent) {
+    console.log("[WhatsApp guest status not sent]", { reason: result.reason, ...details });
+  }
 }

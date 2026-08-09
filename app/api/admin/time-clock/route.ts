@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     if (action !== "clock_in" && action !== "clock_out") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
+    // Notes are free text: trim + cap so the column can never be abused.
+    const cleanNotes = typeof notes === "string" ? notes.trim().slice(0, 500) : null;
 
     // The clock entry's user comes from the signed session, never from the
     // request body — otherwise any logged-in staff could clock in/out as
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
       .values({
         userId,
         action,
-        notes: notes || null,
+        notes: cleanNotes,
         timestamp: new Date(),
       })
       .returning();

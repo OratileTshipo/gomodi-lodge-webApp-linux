@@ -5,6 +5,19 @@ import { bookingRequests, bookingRoomLines, addOnSelections, rooms, proofOfPayme
 import { eq } from "drizzle-orm";
 import { isRoomAvailable } from "@/lib/db/availability";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
+import { createDraftQuote } from "@/lib/quotes";
+import {
+  safeText,
+  normalizePhone,
+  isValidEmail,
+  isValidStay,
+  isNotInPast,
+  intInRange,
+  isSafeProofOfPaymentUrl,
+  MAX_NAME,
+  MAX_TEXT,
+  MAX_GUESTS_LEISURE,
+} from "@/lib/validate";
 
 export type LeisureBookingInput = {
   roomId: number;
@@ -39,19 +52,50 @@ function nightsBetween(checkIn: string, checkOut: string): string[] {
 
 export async function submitLeisureBooking(
   input: LeisureBookingInput
-): Promise<LeisureBookingResult> {  
-  // ---- Validation ----
-  if (!input.guestName?.trim()) return { ok: false, error: "Please enter your name." };
-  if (!input.contactPhone?.trim()) return { ok: false, error: "Please enter a contact phone number." };
-  if (!input.checkIn || !input.checkOut) return { ok: false, error: "Please select your check-in and check-out dates." };
-  if (new Date(input.checkOut) <= new Date(input.checkIn)) {
-    return { ok: false, error: "Check-out date must be after check-in date." };
-  }
-  if (!input.guestCount || input.guestCount < 1) {
-    return { ok: false, error: "Please enter at least 1 guest." };
+): Promise<LeisureBookingResult> {
+  // ---- Strict server-side validation (never trust the client) ----
+  const guestName = safeText(input.guestName, MAX_NAME);
+  if (!guestName) return { ok: false, error: "Please enter your name." };
+
+  const contactPhone = normalizePhone(input.contactPhone);
+  if (!contactPhone) return { ok: false, error: "Please enter a valid contact phone number." };
+
+  const contactEmail =
+    input.contactEmail && input.contactEmail.trim() !== ""
+      ? input.contactEmail.trim()
+      : null;
+  if (contactEmail && !isValidEmail(contactEmail)) {
+    return { ok: false, error: "Please enter a valid email address." };
   }
 
-  const [room] = await db.select().from(rooms).where(eq(rooms.id, input.roomId));
+  if (!isValidStay(input.checkIn, input.checkOut)) {
+    return {
+      ok: false,
+      error: "Please select valid dates — check-out must be after check-in (max 60 nights).",
+    };
+  }
+  if (!isNotInPast(input.checkIn)) {
+    return { ok: false, error: "Check-in date can't be in the past." };
+  }
+
+  const guestCount = intInRange(input.guestCount, 1, MAX_GUESTS_LEISURE);
+  if (!guestCount) {
+    return { ok: false, error: `Please enter between 1 and ${MAX_GUESTS_LEISURE} guests.` };
+  }
+
+  const roomId = intInRange(input.roomId, 1, 1_000_000);
+  if (!roomId) return { ok: false, error: "Please choose a room." };
+
+  const specialRequests = safeText(input.specialRequests, MAX_TEXT);
+
+  // Proof of payment must be a real blob URL from our own store — never an
+  // arbitrary string that could plant a foreign link into the admin panel.
+  if (input.proofOfPaymentUrl && !isSafeProofOfPaymentUrl(input.proofOfPaymentUrl)) {
+    return { ok: false, error: "Proof-of-payment upload looks invalid. Please upload again." };
+  }
+  const proofOfPaymentUrl = input.proofOfPaymentUrl || null;
+
+  const [room] = await db.select().from(rooms).where(eq(rooms.id, roomId));
   if (!room) return { ok: false, error: "That room could not be found — please choose again." };
 
   const available = await isRoomAvailable(input.roomId, input.checkIn, input.checkOut);
@@ -68,20 +112,20 @@ export async function submitLeisureBooking(
       .values({
         category: "leisure",
         status: "pending",
-        guestName: input.guestName.trim(),
-        contactPhone: input.contactPhone.trim(),
-        contactEmail: input.contactEmail?.trim() || null,
-        specialRequests: input.specialRequests?.trim() || null, // <--- ADDED HERE
+        guestName,
+        contactPhone,
+        contactEmail,
+        specialRequests: specialRequests || null,
         sourceChannel: "website",
       })
       .returning();
 
     await db.insert(bookingRoomLines).values({
       bookingRequestId: request.id,
-      roomId: input.roomId,
+      roomId,
       checkIn: input.checkIn,
       checkOut: input.checkOut,
-      guestCount: input.guestCount,
+      guestCount,
     });
 
     const nights = nightsBetween(input.checkIn, input.checkOut);
@@ -91,7 +135,7 @@ export async function submitLeisureBooking(
         addOnRows.push({
           bookingRequestId: request.id,
           type: "breakfast",
-          persons: input.guestCount,
+          persons: guestCount,
           date: night,
           unitPrice: BREAKFAST_PRICE,
         });
@@ -102,7 +146,7 @@ export async function submitLeisureBooking(
         addOnRows.push({
           bookingRequestId: request.id,
           type: "dinner",
-          persons: input.guestCount,
+          persons: guestCount,
           date: night,
           unitPrice: DINNER_PRICE,
         });
@@ -112,20 +156,23 @@ export async function submitLeisureBooking(
       await db.insert(addOnSelections).values(addOnRows);
     }
 
+    // Auto-generate a draft quotation for the owner to review before sending.
+    await createDraftQuote(request.id);
+
     await notifyOwnerOfNewRequest({
-      guestName: input.guestName,
-      contactPhone: input.contactPhone,
+      guestName,
+      contactPhone,
       roomName: room.name,
       checkIn: input.checkIn,
       checkOut: input.checkOut,
-      guestCount: input.guestCount,
+      guestCount,
     });
 
-    // Store proof of payment if provided
-    if (input.proofOfPaymentUrl) {
+    // Store proof of payment if provided (already validated as our blob URL)
+    if (proofOfPaymentUrl) {
       await db.insert(proofOfPayments).values({
         bookingRequestId: request.id,
-        fileUrl: input.proofOfPaymentUrl,
+        fileUrl: proofOfPaymentUrl,
         fileName: "proof-of-payment",
         uploadedAt: new Date(),
       });
@@ -145,7 +192,8 @@ export async function getUnavailableRoomIds(
   checkIn: string,
   checkOut: string
 ): Promise<number[]> {
-  if (!checkIn || !checkOut) return [];
+  // Only ever run the availability query with validated calendar dates.
+  if (!isValidStay(checkIn, checkOut)) return [];
   const allRooms = await db.select({ id: rooms.id }).from(rooms);
   const unavailable: number[] = [];
   for (const room of allRooms) {

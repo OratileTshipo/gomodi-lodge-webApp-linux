@@ -9,6 +9,7 @@ import {
   eventDetails,
   corporateDetails,
   proofOfPayments,
+  quotes,
 } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
@@ -230,6 +231,20 @@ export async function GET() {
       .where(inArray(proofOfPayments.bookingRequestId, requestIds));
     for (const p of popData) popMap[p.bookingRequestId] = true;
 
+    // 6. Quote per request (draft quote auto-generated at submission time)
+    const quotesMap: Record<number, unknown> = {};
+    const quoteData = await db
+      .select({
+        bookingRequestId: quotes.bookingRequestId,
+        id: quotes.id,
+        quoteNumber: quotes.quoteNumber,
+        status: quotes.status,
+        total: quotes.total,
+      })
+      .from(quotes)
+      .where(inArray(quotes.bookingRequestId, requestIds));
+    for (const q of quoteData) quotesMap[q.bookingRequestId] = q;
+
     const enriched = enrichRequests(
       pending,
       linesByRequest,
@@ -240,12 +255,16 @@ export async function GET() {
       popMap
     );
 
+    // Attach quote summary to each request card (for the dashboard badge).
+    for (const row of enriched) {
+      (row as Record<string, unknown>).quote = quotesMap[row.id] || null;
+    }
+
     return NextResponse.json(enriched);
   } catch (error) {
+    // Never leak internal error details (DB internals, driver messages) to
+    // the client — log them server-side and return a generic message.
     console.error("❌ [API ERROR] Failed to fetch admin requests:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to load requests" }, { status: 500 });
   }
 }

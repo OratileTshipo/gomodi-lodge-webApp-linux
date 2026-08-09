@@ -10,6 +10,25 @@ import {
 } from "@/lib/db/schema";
 import { and, eq, lt, gt } from "drizzle-orm";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
+import { createDraftQuote } from "@/lib/quotes";
+import {
+  safeText,
+  normalizePhone,
+  isValidEmail,
+  isValidStay,
+  isNotInPast,
+  intInRange,
+  oneOf,
+  MAX_NAME,
+  MAX_EMAIL,
+  MAX_COMPANY,
+  MAX_JOB_TITLE,
+  MAX_REFERENCE,
+  MAX_LONG_NOTES,
+  MAX_ROOM_LINES,
+  MAX_ROOM_COUNT,
+  MAX_GUESTS_PER_ROOM,
+} from "@/lib/validate";
 
 export type RoomLineInput = {
   roomType: "double" | "flexible";
@@ -87,16 +106,58 @@ async function findAvailableRoomIds(
 export async function submitCorporateQuote(
   input: CorporateQuoteInput
 ): Promise<CorporateQuoteResult> {
-  if (!input.fullName?.trim()) return { ok: false, error: "Please enter your full name." };
-  if (!input.company?.trim()) return { ok: false, error: "Please enter your company or department." };
-  if (!input.phone?.trim()) return { ok: false, error: "Please enter a contact number." };
-  if (!input.email?.trim()) return { ok: false, error: "Please enter an email address." };
-  if (!input.checkIn || !input.checkOut) return { ok: false, error: "Please select check-in and check-out dates." };
-  if (new Date(input.checkOut) <= new Date(input.checkIn)) {
-    return { ok: false, error: "Check-out must be after check-in." };
+  // ---- Strict server-side validation ----
+  const fullName = safeText(input.fullName, MAX_NAME);
+  if (!fullName) return { ok: false, error: "Please enter your full name." };
+
+  const company = safeText(input.company, MAX_COMPANY);
+  if (!company) return { ok: false, error: "Please enter your company or department." };
+
+  const phone = normalizePhone(input.phone);
+  if (!phone) return { ok: false, error: "Please enter a valid contact number." };
+
+  const email = safeText(input.email, MAX_EMAIL);
+  if (!isValidEmail(email)) return { ok: false, error: "Please enter a valid email address." };
+
+  const billingEmail =
+    input.billingEmail && input.billingEmail.trim() !== ""
+      ? input.billingEmail.trim()
+      : null;
+  if (billingEmail && !isValidEmail(billingEmail)) {
+    return { ok: false, error: "Please enter a valid billing email address." };
   }
-  const validLines = input.roomLines.filter((l) => l.count > 0);
-  if (validLines.length === 0) return { ok: false, error: "Please add at least one room." };
+
+  if (!isValidStay(input.checkIn, input.checkOut)) {
+    return {
+      ok: false,
+      error: "Please select valid dates — check-out must be after check-in (max 60 nights).",
+    };
+  }
+  if (!isNotInPast(input.checkIn)) {
+    return { ok: false, error: "Check-in date can't be in the past." };
+  }
+
+  // Validate every room line: type must be from the allowlist, counts capped.
+  const rawLines = Array.isArray(input.roomLines) ? input.roomLines : [];
+  if (rawLines.length === 0 || rawLines.length > MAX_ROOM_LINES) {
+    return { ok: false, error: `Please add between 1 and ${MAX_ROOM_LINES} room lines.` };
+  }
+  const validLines: RoomLineInput[] = [];
+  for (const line of rawLines) {
+    const roomType = oneOf(line.roomType, ["double", "flexible"] as const);
+    const count = intInRange(line.count, 1, MAX_ROOM_COUNT);
+    const guestsPerRoom = intInRange(line.guestsPerRoom, 1, MAX_GUESTS_PER_ROOM);
+    if (!roomType || !count || !guestsPerRoom) {
+      return { ok: false, error: "Invalid room line — check room type and counts." };
+    }
+    validLines.push({ roomType, count, guestsPerRoom });
+  }
+
+  const jobTitle = safeText(input.jobTitle, MAX_JOB_TITLE);
+  const poNumber = safeText(input.poNumber, MAX_REFERENCE);
+  const vatNumber = safeText(input.vatNumber, MAX_REFERENCE);
+  const clientRef = safeText(input.clientRef, MAX_REFERENCE);
+  const notes = safeText(input.notes, MAX_LONG_NOTES);
 
   try {
     const [request] = await db
@@ -104,9 +165,9 @@ export async function submitCorporateQuote(
       .values({
         category: "corporate",
         status: "pending",
-        guestName: input.fullName.trim(),
-        contactPhone: input.phone.trim(),
-        contactEmail: input.email.trim(),
+        guestName: fullName,
+        contactPhone: phone,
+        contactEmail: email,
         sourceChannel: "website",
       })
       .returning();
@@ -150,18 +211,21 @@ export async function submitCorporateQuote(
 
     await db.insert(corporateDetails).values({
       bookingRequestId: request.id,
-      jobTitle: input.jobTitle?.trim() || null,
-      companyName: input.company.trim(),
-      billingEmail: input.billingEmail?.trim() || null,
-      poNumber: input.poNumber?.trim() || null,
-      vatNumber: input.vatNumber?.trim() || null,
-      clientRef: input.clientRef?.trim() || null,
-      notes: (input.notes?.trim() || "") + shortfallNote,
+      jobTitle: jobTitle || null,
+      companyName: company,
+      billingEmail: billingEmail || null,
+      poNumber: poNumber || null,
+      vatNumber: vatNumber || null,
+      clientRef: clientRef || null,
+      notes: notes + shortfallNote,
     });
 
+    // Auto-generate a draft quotation from the room lines + meals booked.
+    await createDraftQuote(request.id);
+
     await notifyOwnerOfNewRequest({
-      guestName: `${input.fullName} (${input.company})`,
-      contactPhone: input.phone,
+      guestName: `${fullName} (${company})`,
+      contactPhone: phone,
       roomName: validLines.map((l) => `${l.count}x ${l.roomType}`).join(", "),
       checkIn: input.checkIn,
       checkOut: input.checkOut,

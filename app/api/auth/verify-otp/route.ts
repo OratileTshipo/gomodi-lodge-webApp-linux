@@ -12,10 +12,17 @@ export async function POST(request: Request) {
   try {
     const { phone, otp } = await request.json();
 
-    if (!phone || !otp || typeof otp !== "string" || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+    if (!otp || typeof otp !== "string" || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
       return NextResponse.json({ error: "Invalid OTP format" }, { status: 401 });
     }
-    const cleanPhone = String(phone).trim();
+    if (
+      typeof phone !== "string" ||
+      phone.length > 30 ||
+      !/^\+?[0-9]{7,15}$/.test(phone.trim())
+    ) {
+      return NextResponse.json({ error: "Phone number not registered." }, { status: 401 });
+    }
+    const cleanPhone = phone.trim();
 
     // 1. User must exist in the DB.
     const [user] = await db.select().from(users).where(eq(users.phone, cleanPhone));

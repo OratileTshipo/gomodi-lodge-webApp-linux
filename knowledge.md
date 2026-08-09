@@ -10,7 +10,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - Lint: `npm run lint` — ~20 pre-existing errors
 - DB schema: `npx drizzle-kit push`
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
-- Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` and `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic)
+- Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts`, `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
 
 ## Key code locations
 
@@ -46,6 +46,34 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - `tsconfig.tsbuildinfo` is committed to git — avoid committing incidental changes to it.
 - Backup tag `backup/main-2026-08-05` (local + origin) marks the pre-fix state of main at commit `30ae2b9`. Restore: `git reset --hard backup/main-2026-08-05`.
 - Branch `high-performance-motion-design-b72b3` is **behind** main (missing main's globals.css fix; package-lock.json deleted). Its feature work is already merged into main.
+
+## Quotations & invoices (auto-generated quotes)
+
+Every booking request (leisure / corporate / event) auto-creates a **draft quote** at submission time — the owner no longer builds quotes manually.
+
+- **Lifecycle**: request → `createDraftQuote()` (draft, in `lib/quotes.ts`) → owner edits fees in `/admin/quotes/[id]` → **Send** marks it `sent` → requester gets the public link `/quote/[token]` + PDF `/quote/[token]/pdf`.
+- **Pricing seeds**: room nights at `rooms.baseRate` (threaded through `buildDraftLines`, never matched by name) + meal add-ons from `addOnSelections` (breakfast R175 / dinner R300 pp-night, aggregated as person-nights). Events get one placeholder line ("price to be confirmed") the owner prices.
+- **Totals math**: shared pure module `lib/quote-math.ts` (integer cents, VAT clamped 0–100%) imported by both the server engine AND the client editor — one source of truth, covered by `scripts/test-quotes.ts`. Client inputs are sanitized server-side; negative totals are impossible.
+- **Admin UI**: `/admin/quotes` (list + status filter) and `/admin/quotes/[id]` (line-item editor: add/remove rows, qty/unit/rate, VAT %, valid-until, notes, live totals, Save draft / Send). Dashboard cards show a quote badge + "Review & send quotation" link.
+- **Delivery**: Send calls `sendQuoteLink()` (WhatsApp template `gomodi_quote_link`, params guest/quote#/link) — **fails open** while WhatsApp is unconfigured (logs the link, editor tells the owner to copy it manually). Public link is token-based (18 random bytes, unguessable, no enumeration); page + PDF are force-dynamic.
+- **DB**: `quotes` (1:1 with `booking_requests`, unique quote number + public token, status draft/sent/accepted/declined, server-computed subtotal/vatAmount/total) and `quote_line_items` (cascade delete). Pushed via `npx drizzle-kit push`.
+- Env var used by send route: `NEXT_PUBLIC_APP_URL` (falls back to `http://localhost:3000`; the admin editor rebuilds the link from `window.location.origin` regardless).
+
+## OTP hardening (registered-only, not live)
+
+`request-otp` now only generates/stores/sends codes for **numbers in the `users` table**; unregistered numbers get a generic "If this number is registered…" response with **no `devOtp`** (no account enumeration). Rate limit (3/10 min per phone) still applies. In dev, `devOtp` still shows for registered seed numbers (`+27820000001`–`06`) on the admin login page. WhatsApp delivery remains fail-open (log-only) until the business number is set up.
+
+## WhatsApp notifications (Meta Cloud API)
+
+Outbound WhatsApp is wired and **fails open**: until credentials are set, sends log visibly (`[WhatsApp notification not sent]`) and nothing breaks. Three message types:
+
+- **OTP codes** — `lib/whatsapp.ts` `sendOtp()`, called from `app/api/auth/request-otp/route.ts`. Uses AUTHENTICATION template `gomodi_otp`. Until configured, codes are only visible in server logs (console.log in the route / Vercel function logs).
+- **Booking alerts to the lodge** — `lib/notifications.ts` `notifyOwnerOfNewRequest()`, called from `app/book`, `app/corporate`, and `app/events` actions. UTILITY template `gomodi_booking_alert`, sent to `WHATSAPP_RECIPIENT`.
+- **Guest status updates** — `lib/notifications.ts` `notifyGuestOfBookingDecision()`, called from `app/api/admin/requests/[id]/route.ts` on approve/decline. UTILITY template `gomodi_booking_status`.
+
+Env vars (placeholders are in `.env` / `.env.local`; must be set in Vercel for production): `WHATSAPP_TOKEN` (permanent access token), `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` (E.164 lodge number for alerts). Optional: `WHATSAPP_OTP_TEMPLATE`, `WHATSAPP_ALERT_TEMPLATE`, `WHATSAPP_STATUS_TEMPLATE`, `WHATSAPP_LANGUAGE` (default `en`).
+
+Setup requires a Meta Business account, a registered WhatsApp Business phone number (a line not in the consumer app), and approved templates matching the defaults above. Graph endpoint: `https://graph.facebook.com/v23.0/{phone_number_id}/messages`.
 
 ## Browser testing (this machine)
 
