@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { BookNowHeroButtonClient } from "@/components/BookNowHeroButtonClient";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
@@ -134,12 +135,14 @@ export default async function HomePage() {
                 className="branch-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready"
                 data-stagger={i + 1}
               >
-                <div className="aspect-[4/3] overflow-hidden image-zoom">
+                <div className="relative aspect-[4/3] overflow-hidden image-zoom">
                   {item.img.startsWith("/") ? (
-                    <img
+                    <Image
                       src={item.img}
                       alt={item.heading}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover"
                       loading="lazy"
                     />
                   ) : (
@@ -226,11 +229,13 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="motion-fade-right motion-ready image-zoom">
-            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <img
+            <div className="relative rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
+              <Image
                 src="/images/reception/reception-3.jpeg"
                 alt="Gomodi Guest Lodge reception"
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
                 loading="lazy"
               />
             </div>
@@ -278,12 +283,14 @@ export default async function HomePage() {
                 className="card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 motion-scale-in motion-ready"
                 data-stagger={i + 1}
               >
-                <div className="aspect-[4/3] bg-cream overflow-hidden image-zoom">
+                <div className="relative aspect-[4/3] bg-cream overflow-hidden image-zoom">
                   {room.id === 1 ? (
-                    <img
+                    <Image
                       src="/images/rooms/room1.jpeg"
                       alt={room.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover"
                       loading="lazy"
                     />
                   ) : (
@@ -427,11 +434,13 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="order-1 md:order-2 motion-fade-right motion-ready image-zoom">
-            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <img
+            <div className="relative rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
+              <Image
                 src="/images/events/baby-shower.jpeg"
                 alt="Baby shower celebration at Gomodi"
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
                 loading="lazy"
               />
             </div>
@@ -443,11 +452,13 @@ export default async function HomePage() {
       <section id="corporate" className="py-16 md:py-24 bg-cream">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready image-zoom">
-            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <img
+            <div className="relative rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
+              <Image
                 src="/images/rooms/room1-view3.jpeg"
                 alt="Corporate accommodation room"
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
                 loading="lazy"
               />
             </div>

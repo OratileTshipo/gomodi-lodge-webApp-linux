@@ -105,6 +105,15 @@ No system-level browsers (no sudo), but all three are installed user-space and o
 
 ## Changelog
 
+### 2026-08-10 — 3G mobile performance pass (AVIF/WebP, lazy hero slides, compressed images, DB timeouts)
+
+- **Hero slides now lazy-mount (Aug 10):** `components/HeroSlideshow.tsx` previously rendered **every** slide as an `<Image>` up front — the home hero alone fetched 7 full JPEGs on load. Rewritten to mount only the active slide (priority) plus the one fading out during the 500ms crossfade; other slides fetch on demand when they rotate in. Measured under emulated 3G (200KB/s, 390px viewport): hero `<img>` count 7 → **1**, total page image requests 7 JPEGs (~800KB+) → **4 requests / 49.4KB**, TTFB 479ms, DOMContentLoaded 1182ms, zero page errors. Crossfade verified (2 mounted mid-fade → 1 after). WCAG pause/hover/reduced-motion gates unchanged.
+- **AVIF/WebP enabled (Aug 10):** `next.config.ts` now sets `images.formats: ["image/avif", "image/webp"]` — `next/image` serves AVIF (50-70% smaller than JPEG) on every modern phone; verified `image/avif` responses in the browser.
+- **Raw `<img>` → `next/image` on home (Aug 10):** all 5 raw `<img loading="lazy">` tags in `app/page.tsx` (three-ways cards, about, rooms preview, events teaser, corporate teaser) converted to `next/image` with `fill` + `sizes` — they now get AVIF/WebP + responsive sizing instead of full-size JPEGs.
+- **All 18 source JPEGs compressed (Aug 10):** `scripts/compress-images.mjs` (sharp, quality 72, mozjpeg, metadata stripped, 1600px cap) — 1.59MB → 1.31MB total (−18%) on top of the AVIF gain. Re-runnable.
+- **DB hang protection (Aug 10):** `lib/db/index.ts` pool gains `statement_timeout: 10_000` — a stuck remote-Neon query fails fast for the guest instead of spinning until the platform kills the request. (Pool already had `connectionTimeoutMillis`/`idleTimeoutMillis`/`max`/idle-error handler from the earlier pass; `db.transaction` is used in 2 places so the `pg` Pool stays — Neon's HTTP driver can't do transactions.)
+- Validation: `tsc` exit 0, `npm run build` exit 0, rooms/book flows verified headless under 3G emulation with zero page errors.
+
 ### 2026-08-10 — Book-Now routing fix, compact rooms hero, 60s room-list caching, DB pool hardening
 
 - **Book Now routing bug (Aug 10):** home/nav "Book Now" → BranchModal → "Request a Stay" routed to `/rooms` (the browsing listing), never the booking form — so clicking Book Now appeared to "do nothing". The modal's own description ("Dates, room, breakfast/dinner add-ons") is the booking form's; Corporate and Events options already went straight to their forms. Fix: `components/BranchModal.tsx` option path `/rooms` → `/book`. Browser-verified: modal → Request a Stay lands on `/book` with the form h1.

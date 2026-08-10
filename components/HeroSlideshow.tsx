@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 
 interface HeroSlideshowProps {
@@ -14,8 +14,16 @@ export default function HeroSlideshow({
   interval = 5000,
   className = "",
 }: HeroSlideshowProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  // Only the currently-shown slide (plus the one fading out during a
+  // transition) is ever mounted. Previously ALL slides rendered <Image>
+  // elements up front — the home hero alone fetched 7 full JPEGs on load,
+  // which is brutal on 3G. Now only the active slide's image is requested
+  // (priority), and later slides are fetched on demand when they rotate in.
+  const [displayedIndex, setDisplayedIndex] = useState(0);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const displayedRef = useRef(0);
+  displayedRef.current = displayedIndex;
+
   // Pause sources: hovering the slideshow, focusing its controls, or the
   // user pressing the pause/play button all stop the auto-advance
   // (WCAG 2.2.2). Tracked separately so leaving with the mouse never resumes
@@ -42,29 +50,31 @@ export default function HeroSlideshow({
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  const goTo = useCallback(
+    (index: number) => {
+      if (index === displayedRef.current || index < 0 || index >= images.length)
+        return;
+      // Keep the outgoing slide mounted (opacity-0) so the CSS crossfade
+      // plays, then drop it once the 500ms transition has finished.
+      setPrevIndex(displayedRef.current);
+      setDisplayedIndex(index);
+      setTimeout(() => setPrevIndex(null), 600);
+    },
+    [images.length]
+  );
+
   const goToNext = useCallback(() => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 300);
-  }, [images.length]);
+    goTo((displayedRef.current + 1) % images.length);
+  }, [goTo, images.length]);
 
   const goToPrev = useCallback(() => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 300);
-  }, [images.length]);
+    goTo((displayedRef.current - 1 + images.length) % images.length);
+  }, [goTo, images.length]);
 
-  const goToSlide = useCallback((index: number) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentIndex(index);
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 300);
-  }, []);
+  const goToSlide = useCallback(
+    (index: number) => goTo(index),
+    [goTo]
+  );
 
   useEffect(() => {
     // No autoplay while hovered, keyboard-focused, user-paused, or under
@@ -90,23 +100,29 @@ export default function HeroSlideshow({
     >
       {/* Image container */}
       <div className="relative w-full h-full">
-        {images.map((image, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-              index === currentIndex ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <Image
-              src={image.src}
-              alt={image.alt}
-              fill
-              className="object-cover"
-              priority={index === 0}
-              sizes="100vw"
-            />
-          </div>
-        ))}
+        {images.map((image, index) => {
+          const isShown = index === displayedIndex || index === prevIndex;
+          if (!isShown) return null;
+          return (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
+                index === displayedIndex ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                className="object-cover"
+                // Only the very first slide is high-priority (LCP); every
+                // other slide is fetched lazily when it becomes the active one.
+                priority={index === 0}
+                sizes="100vw"
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Gradient overlay */}
@@ -139,7 +155,7 @@ export default function HeroSlideshow({
             key={index}
             onClick={() => goToSlide(index)}
             className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${
-              index === currentIndex
+              index === displayedIndex
                 ? "bg-white scale-125"
                 : "bg-white/50 hover:bg-white/75"
             }`}
