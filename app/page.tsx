@@ -1,21 +1,16 @@
 import Link from "next/link";
-import { db } from "@/lib/db";
-import { rooms } from "@/lib/db/schema";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { BookNowHeroButtonClient } from "@/components/BookNowHeroButtonClient";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 import HeroSlideshow from "@/components/HeroSlideshow";
-
-export const dynamic = "force-dynamic";
+import { getRooms } from "@/lib/rooms-cache";
 
 export default async function HomePage() {
   // Real sample rooms for the "Rooms Preview" teaser (3 of the 9), replacing
-  // the original design's fictional room-type pricing with our actual flat-rate data.
-  const previewRooms = await db
-    .select()
-    .from(rooms)
-    .orderBy(rooms.id)
-    .limit(3);
+  // the original design's fictional room-type pricing with our actual flat-rate
+  // data. Room list is 60s-cached (lib/rooms-cache) so repeat visits skip the
+  // remote-Neon round-trip; availability is always re-checked live on submit.
+  const previewRooms = (await getRooms()).slice(0, 3);
 
   return (
     <main className="page-transition">
