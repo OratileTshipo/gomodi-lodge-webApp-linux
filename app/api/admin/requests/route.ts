@@ -11,7 +11,7 @@ import {
   proofOfPayments,
   quotes,
 } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +23,8 @@ type PendingRequest = {
   contactEmail: string | null;
   specialRequests: string | null;
   status: string;
+  notifiedPartnerAt: Date | null;
+  contactedAt: Date | null;
 };
 
 type RoomLine = {
@@ -131,16 +133,26 @@ export function enrichRequests(
 
 export async function GET() {
   try {
-    // Server-side auth: any logged-in staff may READ the queue (the client
-    // gates approve/decline to managers); writes are manager-only in [id]/route.
+    // Server-side auth: any logged-in user may READ the queue, but the role
+    // determines WHICH categories they may see (enforced here, not just in the
+    // client): owner/assistant see everything, staff see leisure only, and the
+    // Lelz partner sees event/catering requests only.
     const staff = await requireStaff();
     if (!staff) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1. All pending requests across every category. Events are NOT joined
+    // 1. Pending requests, role-scoped by category. Events are NOT joined
     //    against booking_room_lines (they have none) — inner-joining that
     //    table used to silently drop event requests from the queue.
+    const whereConditions = [eq(bookingRequests.status, "pending")];
+    if (staff.role === "staff") {
+      // Staff must NEVER see event/catering data — leisure only.
+      whereConditions.push(eq(bookingRequests.category, "leisure"));
+    } else if (staff.role === "partner") {
+      // Partner (Lelz): event/catering queue only; no room-booking history.
+      whereConditions.push(eq(bookingRequests.category, "event"));
+    }
     const pending: PendingRequest[] = await db
       .select({
         id: bookingRequests.id,
@@ -150,9 +162,11 @@ export async function GET() {
         contactEmail: bookingRequests.contactEmail,
         specialRequests: bookingRequests.specialRequests,
         status: bookingRequests.status,
+        notifiedPartnerAt: bookingRequests.notifiedPartnerAt,
+        contactedAt: bookingRequests.contactedAt,
       })
       .from(bookingRequests)
-      .where(eq(bookingRequests.status, "pending"));
+      .where(and(...whereConditions));
 
     if (pending.length === 0) return NextResponse.json([]);
 

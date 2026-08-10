@@ -33,7 +33,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours (shift length)
 
 export type SessionUser = {
   userId: number;
-  role: "owner" | "assistant" | "staff";
+  role: "owner" | "assistant" | "staff" | "partner";
   name: string;
 };
 
@@ -107,6 +107,11 @@ export function isManagerRole(role: string): boolean {
   return role === "owner" || role === "assistant";
 }
 
+/** True for the Lelz Business Enterprise partner role. */
+export function isPartnerRole(role: string): boolean {
+  return role === "partner";
+}
+
 /**
  * Server-side guard for booking-management APIs. Returns the user on success
  * or null — the route should respond 401 when null.
@@ -120,6 +125,16 @@ export async function requireManager(): Promise<SessionUser | null> {
 /** Server-side guard for staff-facing APIs (time clock): any logged-in user. */
 export async function requireStaff(): Promise<SessionUser | null> {
   return getCurrentUser();
+}
+
+/**
+ * Server-side guard for partner-only APIs (Lelz Business Enterprise). Same
+ * signed-session pattern as the other guards — no new auth mechanism.
+ */
+export async function requirePartner(): Promise<SessionUser | null> {
+  const user = await getCurrentUser();
+  if (!user || !isPartnerRole(user.role)) return null;
+  return user;
 }
 
 export { SESSION_COOKIE, SESSION_TTL_SECONDS };
