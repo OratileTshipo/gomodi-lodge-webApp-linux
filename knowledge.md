@@ -22,6 +22,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - `app/admin/` — `AdminLogin.tsx` (OTP) + `AdminDashboard.tsx` (approve/decline, RBAC, time clock)
 - `app/api/` — auth (`request-otp`, `verify-otp`, `me`), `admin/requests`, `admin/time-clock`, `upload` (Vercel Blob)
 - `lib/db/schema.ts` — all tables; `lib/db/availability.ts` — overlap check; `lib/db/seed.ts`
+- `lib/rooms-cache.ts` — **60s-cached shared room-list query** (`unstable_cache`), used by home / rooms / book pages
 - `lib/notifications.ts` — WhatsApp notifier (**stubbed**: console.log only)
 - `lib/motion.tsx` — custom scroll-reveal/parallax hooks + `MotionObserver` (adds `motion-visible` to `.motion-ready` elements; mounted in layout). No animation library.
 - `components/` — `Nav` (fixed header, ~73px), `Footer` (prominent "Iphe Lerato" motto), `BranchModal` ("how are you visiting?" chooser), `PhotoPlaceholder`, `HeroSlideshow` (photo hero on home/rooms/events/corporate), `FadeInObserver`
@@ -30,7 +31,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## Conventions
 
 - **Page pattern**: server component fetches from DB → renders a client component → forms submit via Server Actions (`"use client"` pages + `"use server"` actions per feature folder). Actions validate, insert, and return `{ ok: true } | { ok: false; error }`.
-- Public pages use `export const dynamic = "force-dynamic"` (live reads, no caching).
+- Home / rooms / book pages read the room list via `getRooms()` in `lib/rooms-cache.ts` — a 60s `unstable_cache` (user-approved Aug 10) so repeat visits skip the remote-Neon round-trip. Availability is always re-checked live on submit, so caching the list never blocks a real booking. Other public pages remain `force-dynamic`.
 - Booking requests start `pending`; only **approved** bookings lock a room. Availability blocks overlap with approved bookings only; the admin dashboard flags conflicts (red = approved overlap, amber = pending overlap) and the approve endpoint re-checks server-side (409).
 - Meal prices live in `lib/pricing.ts` (breakfast R175, dinner R300 pp/night) — forms and marketing copy read from there; don't hardcode new copies.
 - Brand palette (globals.css `@theme`): terracotta / walnut / cream / gold / ink. Reusable classes: `.pill-*`, `.btn-primary`, `.card-shadow`.
@@ -103,6 +104,13 @@ No system-level browsers (no sudo), but all three are installed user-space and o
 - The symlinks are tied to the current nvm Node version dir — re-create them if Node is upgraded. Raw binaries live in `~/.cache/ms-playwright/` and `~/edge-pkg/` (survive node changes).
 
 ## Changelog
+
+### 2026-08-10 — Book-Now routing fix, compact rooms hero, 60s room-list caching, DB pool hardening
+
+- **Book Now routing bug (Aug 10):** home/nav "Book Now" → BranchModal → "Request a Stay" routed to `/rooms` (the browsing listing), never the booking form — so clicking Book Now appeared to "do nothing". The modal's own description ("Dates, room, breakfast/dinner add-ons") is the booking form's; Corporate and Events options already went straight to their forms. Fix: `components/BranchModal.tsx` option path `/rooms` → `/book`. Browser-verified: modal → Request a Stay lands on `/book` with the form h1.
+- **Rooms hero was pushing the grid off-screen (Aug 10):** the hero built in the previous change was 520px tall; at 1280×800 the breadcrumb + hero + duplicate intro paragraph pushed `#rooms-grid` to y=942 — entirely below the fold (cards only peeked in on scroll). Fix in `app/rooms/RoomsExplorer.tsx`: hero trimmed to `h-[38vh] min-h-[min(360px,calc(100svh_-_var(--header-h)))] max-h-[440px]` (same `hero-outer`/`hero-content` template, spacing, stagger and CTA — only height differs), the intro `<section>` that repeated the hero subtitle verbatim was removed, and the slideshow cut from 7 images to 4 (matches corporate/events weight). Browser-verified: hero now 360px, grid starts at y=624 → **176px of cards visible above the fold**.
+- **Page-load delay diagnosed as code, not the user's machine (Aug 10):** every public page was `force-dynamic`, opening a fresh pooled connection to the **remote Neon DB (eu-central-1)** per request; the log caught a live `AggregateError: [6 errors]` on the first `/book` hit (2.59s). Same on Vercel because each cold serverless invocation pays that handshake. Fix (user-approved "60s caching"): new `lib/rooms-cache.ts` exposes `getRooms()` = `unstable_cache` around the rooms query, `revalidate: 60`; home (`previewRooms = (await getRooms()).slice(0, 3)`), rooms and book pages now use it. Page-level `export const revalidate` would NOT have worked on `/rooms` and `/book` (they read `searchParams` → dynamic per request), hence the shared `unstable_cache`. `lib/db/index.ts` pool hardened: `max: 10`, `connectionTimeoutMillis: 15_000`, `idleTimeoutMillis: 30_000`, `keepAlive: true`, plus an idle-client `error` handler so a transient Neon blip logs instead of crashing the process.
+- Validation: `npx tsc --noEmit` exit 0, `npm run build` exit 0 (all routes), all pages 200 locally, zero console errors in the headless browser flow.
 
 ### 2026-08-10 — HeroSlideshow pause + reduced-motion gate (WCAG 2.2.2)
 
