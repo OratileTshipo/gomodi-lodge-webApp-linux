@@ -59,11 +59,22 @@ jobs:
       # Note: GitHub Actions blanks action outputs that look like secrets
       # (e.g. connection strings), so we fetch the pooled URL with neonctl
       # instead of relying on steps.create_neon_branch.outputs.*.
+      # If the PR was opened and closed within seconds, the delete job may
+      # have already removed the preview branch before migrations run — in
+      # that case there is nothing to migrate, so skip with a warning.
+      # Any other neonctl failure still fails the job.
       - name: Run Migrations
         run: |
           npm i -g neonctl@v2
-          DATABASE_URL="$(neonctl connection-string "$NEON_BRANCH" --pooled --project-id "$NEON_PROJECT_ID")" \
-            npx drizzle-kit push
+          if ! URL="$(neonctl connection-string "$NEON_BRANCH" --pooled --project-id "$NEON_PROJECT_ID" 2>/tmp/neonctl-err.txt)"; then
+            if grep -q 'not found' /tmp/neonctl-err.txt; then
+              echo "::warning::Preview branch $NEON_BRANCH was already removed (PR closed before migrations ran); skipping."
+              exit 0
+            fi
+            cat /tmp/neonctl-err.txt >&2
+            exit 1
+          fi
+          DATABASE_URL="$URL" npx drizzle-kit push
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_BRANCH: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
