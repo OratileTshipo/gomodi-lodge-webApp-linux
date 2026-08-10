@@ -165,6 +165,8 @@ async function runE2ETests() {
       contactEmail: bookingRequests.contactEmail,
       specialRequests: bookingRequests.specialRequests,
       status: bookingRequests.status,
+      notifiedPartnerAt: bookingRequests.notifiedPartnerAt,
+      contactedAt: bookingRequests.contactedAt,
     })
     .from(bookingRequests)
     .where(eq(bookingRequests.status, "pending"));

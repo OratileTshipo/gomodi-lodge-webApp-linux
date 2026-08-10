@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireManager } from "@/lib/auth";
+import {
+  getCurrentUser,
+  isManagerRole,
+  isPartnerRole,
+} from "@/lib/auth";
 import { bookingRequests, bookingRoomLines, rooms } from "@/lib/db/schema";
 import { notifyGuestOfBookingDecision } from "@/lib/notifications";
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -10,9 +14,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Server-side auth: only owner/assistant may approve/decline bookings.
-    const manager = await requireManager();
-    if (!manager) {
+    // Server-side auth. Owner/assistant may manage any booking. The Lelz
+    // partner may approve/decline/contact EVENT requests only (never room
+    // bookings). Staff get no write access at all.
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const manager = isManagerRole(user.role) ? user : null;
+    const partner = isPartnerRole(user.role) ? user : null;
+    if (!manager && !partner) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -27,10 +38,45 @@ export async function POST(
       return NextResponse.json({ error: "Invalid request id" }, { status: 400 });
     }
 
+    // Fetch the request's category — needed to gate the partner role and to
+    // validate the "contact" action (event requests only).
+    const [reqRow] = await db
+      .select({ category: bookingRequests.category })
+      .from(bookingRequests)
+      .where(eq(bookingRequests.id, requestId));
+    if (!reqRow) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    // Partner scope is strictly event/catering requests.
+    if (partner && reqRow.category !== "event") {
+      return NextResponse.json(
+        { error: "Partners may only manage event requests" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const action = body?.action;
-    if (action !== "approve" && action !== "decline") {
+    if (action !== "approve" && action !== "decline" && action !== "contact") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+
+    // "Contacted" is the Lelz-side status marker on event requests — a status
+    // update only, distinct from approve/decline (it never drives room
+    // conflicts). Available to owner/assistant and partner on events.
+    if (action === "contact") {
+      if (reqRow.category !== "event") {
+        return NextResponse.json(
+          { error: "Only event requests can be marked contacted" },
+          { status: 400 }
+        );
+      }
+      await db
+        .update(bookingRequests)
+        .set({ contactedAt: new Date() })
+        .where(eq(bookingRequests.id, requestId));
+      return NextResponse.json({ success: true, contacted: true });
     }
 
     if (action === "approve") {
@@ -107,7 +153,7 @@ export async function POST(
           .set({
             status: "approved",
             approvedAt: new Date(),
-            approvedById: manager.userId,
+            approvedById: user.userId,
           })
           .where(eq(bookingRequests.id, requestId));
 
@@ -118,12 +164,13 @@ export async function POST(
         return NextResponse.json({ error: outcome.error }, { status: outcome.status });
       }
     } else {
+      // Decline: notify the guest via WhatsApp below, same as approve.
       await db
         .update(bookingRequests)
         .set({
           status: "declined",
           approvedAt: new Date(),
-          approvedById: manager.userId,
+          approvedById: user.userId,
         })
         .where(eq(bookingRequests.id, requestId));
     }
