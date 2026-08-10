@@ -70,3 +70,5 @@ below) — but if you want to run it on your own computer first:
 Per the Backlog Tracker, the next feature slices are the Corporate Quote
 Request Form and the Admin Approval Screen (needed before any request can
 actually be confirmed).
+
+<!-- TEST-MARKER: temporary change to exercise the Neon PR preview workflow (2026-08-10). This PR is closed without merging. -->
