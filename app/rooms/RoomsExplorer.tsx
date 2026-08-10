@@ -113,19 +113,18 @@ export function RoomsExplorer({
         </ol>
       </nav>
 
-      {/* HERO — same template as home/corporate/events (hero-outer + hero-content,
-          identical spacing, stagger and interval; only text and images differ) */}
+      {/* HERO — same template as corporate/events (hero-outer + hero-content,
+          identical spacing, stagger and interval; only text, images and height
+          differ). Height is trimmed (~38vh) so the room grid sits above the
+          fold on laptops instead of being pushed off-screen. */}
       <section className="relative">
-        <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
+        <div className="hero-outer relative h-[38vh] min-h-[min(360px,calc(100svh_-_var(--header-h)))] max-h-[440px] overflow-hidden parallax-container">
           <HeroSlideshow
             images={[
               { src: "/images/rooms/room1.jpeg", alt: "Room 1 — main view" },
               { src: "/images/rooms/room1-view1.jpeg", alt: "Room 1 — second view" },
               { src: "/images/rooms/room1-view2.jpeg", alt: "Room 1 — third view" },
               { src: "/images/rooms/room1-view3.jpeg", alt: "Room 1 — fourth view" },
-              { src: "/images/rooms/room1-view4.jpeg", alt: "Room 1 — fifth view" },
-              { src: "/images/rooms/room1-bed-tv.jpeg", alt: "Room 1 — bed and TV" },
-              { src: "/images/rooms/room1-bathroom.jpeg", alt: "Room 1 — bathroom" },
             ]}
             interval={5500}
             className="absolute inset-0"
@@ -154,12 +153,6 @@ export function RoomsExplorer({
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 pb-12 pt-8">
-        <p className="text-stone max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="2">
-          Terracotta walls, walnut wood, and cream textiles throughout. Every room has a Smart TV, WiFi, air conditioning with fan and heater backup, and a shower or bath. One room can be set up as two singles or one double — tell us which you prefer when you book.
-        </p>
       </section>
 
       {/* FILTER & SORT BAR */}
