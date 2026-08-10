@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ---------- Enums ----------
-export const roleEnum = pgEnum("role", ["owner", "assistant", "staff"]);
+export const roleEnum = pgEnum("role", ["owner", "assistant", "staff", "partner"]);
 export const bookingCategoryEnum = pgEnum("booking_category", [
   "leisure",
   "corporate",
@@ -24,7 +24,7 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "declined",
   "cancelled",
 ]);
-export const addOnTypeEnum = pgEnum("addon_type", ["breakfast", "dinner"]);
+export const addOnTypeEnum = pgEnum("addon_type", ["breakfast", "lunch", "dinner"]);
 export const clockActionEnum = pgEnum("clock_action", ["clock_in", "clock_out"]);
 export const quoteStatusEnum = pgEnum("quote_status", [
   "draft",
@@ -68,6 +68,13 @@ export const bookingRequests = pgTable("booking_requests", {
   submittedAt: timestamp("submitted_at").defaultNow().notNull(),
   approvedById: integer("approved_by_id").references(() => users.id),
   approvedAt: timestamp("approved_at"),
+  // Set when a category = "event" request triggers the Lelz WhatsApp
+  // notification stub — the Owner's assistant's audit trail of what Lelz
+  // has/hasn't been notified about, independent of Lelz's own logging.
+  notifiedPartnerAt: timestamp("notified_partner_at"),
+  // Set when a manager/partner marks an event request "Contacted" (Lelz-side
+  // status). Distinct from approved/declined — does not affect room conflicts.
+  contactedAt: timestamp("contacted_at"),
 });
 
 // ---------- Booking Room Lines ----------
