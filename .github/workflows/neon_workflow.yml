@@ -21,9 +21,6 @@ jobs:
 
   create_neon_branch:
     name: Create Neon Branch
-    outputs:
-      db_url: ${{ steps.create_neon_branch.outputs.db_url }}
-      db_url_with_pooler: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
     needs: setup
     if: |
       github.event_name == 'pull_request' && (
@@ -59,10 +56,18 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ env.EXPIRES_AT }}
 
+      # Note: GitHub Actions blanks action outputs that look like secrets
+      # (e.g. connection strings), so we fetch the pooled URL with neonctl
+      # instead of relying on steps.create_neon_branch.outputs.*.
       - name: Run Migrations
-        run: npx drizzle-kit push
+        run: |
+          npm i -g neonctl@v2
+          DATABASE_URL="$(neonctl connection-string "$NEON_BRANCH" --pooled --project-id "$NEON_PROJECT_ID")" \
+            npx drizzle-kit push
         env:
-          DATABASE_URL: "${{ steps.create_neon_branch.outputs.db_url_with_pooler }}"
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_BRANCH: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
 
       - name: Post Schema Diff Comment to PR
         uses: neondatabase/schema-diff-action@v1
