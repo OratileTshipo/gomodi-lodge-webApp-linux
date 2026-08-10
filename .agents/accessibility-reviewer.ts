@@ -7,7 +7,7 @@ const definition: AgentDefinition = {
   model: 'deepseek/deepseek-v4-flash',
   outputMode: 'last_message',
   includeMessageHistory: false,
-  toolNames: ['read_files'],
+  toolNames: ['read_files', 'spawn_agents'],
   spawnableAgents: ['file-picker'],
   spawnerPrompt:
     'Spawn this agent to check new or changed guest-facing UI against the WCAG AA baseline in knowledge.md. It reports issues only — it does not fix them.',

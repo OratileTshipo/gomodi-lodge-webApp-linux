@@ -7,7 +7,7 @@ const definition: AgentDefinition = {
   model: 'deepseek/deepseek-v4-flash',
   outputMode: 'last_message',
   includeMessageHistory: false,
-  toolNames: ['read_files'],
+  toolNames: ['read_files', 'spawn_agents'],
   spawnableAgents: ['file-picker'],
   spawnerPrompt:
     'Spawn this agent to check new or changed UI against the confirmed design tokens (terracotta / walnut / cream / gold / ink). It only reports issues — never spawn it expecting it to repaint the legacy orange booking/admin UI itself.',
