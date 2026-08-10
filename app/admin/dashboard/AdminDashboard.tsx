@@ -47,12 +47,14 @@ interface BookingRequest {
   corporateDetails?: CorporateDetails | null;
   eventDetails?: EventDetails | null;
   proofOfPaymentUploaded: boolean;
+  notifiedPartnerAt?: string | null;
+  contactedAt?: string | null;
 }
 
 interface User {
   userId: number;
   name: string;
-  role: "owner" | "assistant" | "staff";
+  role: "owner" | "assistant" | "staff" | "partner";
 }
 
 export function AdminDashboard() {
@@ -65,6 +67,7 @@ export function AdminDashboard() {
   const router = useRouter();
 
   const isManager = user?.role === "owner" || user?.role === "assistant";
+  const isPartner = user?.role === "partner";
 
   useEffect(() => {
     void (async () => {
@@ -83,17 +86,14 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    const manager = user.role === "owner" || user.role === "assistant";
     void (async () => {
       setLoading(true);
       try {
         const res = await fetch("/api/admin/requests");
         if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        const filtered = !manager
-          ? data.filter((r: BookingRequest) => r.category === "leisure")
-          : data;
-        setRequests(filtered);
+        // Role scoping is enforced server-side: owner/assistant see all,
+        // staff see leisure only, partner (Lelz) sees events only.
+        setRequests(await res.json());
       } catch (err) {
         console.error("Failed to load requests:", err);
       } finally {
@@ -134,6 +134,24 @@ export function AdminDashboard() {
       alert("Failed to log time. Please try again.");
     } finally {
       setClockLoading(false);
+    }
+  }
+
+  async function handleContactAction(id: number) {
+    try {
+      const res = await fetch(`/api/admin/requests/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "contact" }),
+      });
+      if (!res.ok) throw new Error("Failed to mark contacted");
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === id ? { ...r, contactedAt: new Date().toISOString() } : r
+        )
+      );
+    } catch {
+      alert("Failed to mark as contacted. Please try again.");
     }
   }
 
@@ -245,7 +263,11 @@ export function AdminDashboard() {
             </div>
             <div>
               <h1 className="font-display text-lg font-semibold text-ink leading-tight">
-                {isManager ? "Operations Dashboard" : "Staff Dashboard"}
+                {isManager
+                  ? "Operations Dashboard"
+                  : isPartner
+                    ? "Partner Dashboard"
+                    : "Staff Dashboard"}
               </h1>
               <p className="text-xs text-stone">
                 {user.name} · {user.role}
@@ -267,41 +289,43 @@ export function AdminDashboard() {
               Logout
             </button>
 
-            {/* TIME CLOCK */}
-            <div className="ml-2 pl-2 border-l border-walnut/10">
-              <button
-                onClick={handleClockAction}
-                disabled={clockLoading}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 transition-all btn-press ${
-                  clockStatus === "clock_in"
-                    ? "bg-terracotta-dark hover:bg-[#74301f] shadow-sm shadow-terracotta-dark/20"
-                    : "bg-walnut hover:bg-walnut-dark shadow-sm shadow-walnut/20"
-                } disabled:opacity-50`}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
+            {/* TIME CLOCK (not shown to the Lelz partner — she isn't lodge staff) */}
+            {!isPartner && (
+              <div className="ml-2 pl-2 border-l border-walnut/10">
+                <button
+                  onClick={handleClockAction}
+                  disabled={clockLoading}
+                  className={`px-4 py-2 rounded-lg font-semibold text-sm text-white flex items-center gap-2 transition-all btn-press ${
+                    clockStatus === "clock_in"
+                      ? "bg-terracotta-dark hover:bg-[#74301f] shadow-sm shadow-terracotta-dark/20"
+                      : "bg-walnut hover:bg-walnut-dark shadow-sm shadow-walnut/20"
+                  } disabled:opacity-50`}
                 >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                {clockLoading
-                  ? "Logging..."
-                  : clockStatus === "clock_in"
-                    ? "Clock Out"
-                    : "Clock In"}
-              </button>
-              {clockTimestamp && clockStatus && (
-                <span className="block text-[10px] text-stone text-right mt-1">
-                  {clockStatus === "clock_in" ? "Clocked in" : "Clocked out"} ·{" "}
-                  {fmtClockTime(clockTimestamp)}
-                </span>
-              )}
-            </div>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  {clockLoading
+                    ? "Logging..."
+                    : clockStatus === "clock_in"
+                      ? "Clock Out"
+                      : "Clock In"}
+                </button>
+                {clockTimestamp && clockStatus && (
+                  <span className="block text-[10px] text-stone text-right mt-1">
+                    {clockStatus === "clock_in" ? "Clocked in" : "Clocked out"} ·{" "}
+                    {fmtClockTime(clockTimestamp)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -418,6 +442,28 @@ export function AdminDashboard() {
                   />
                   POP {req.proofOfPaymentUploaded ? "Uploaded" : "Not Yet"}
                 </span>
+                {req.category === "event" && req.contactedAt && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-walnut-tint text-walnut">
+                    <span className="w-1.5 h-1.5 rounded-full bg-walnut" />
+                    Contacted
+                  </span>
+                )}
+                {req.category === "event" && isManager && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      req.notifiedPartnerAt
+                        ? "bg-walnut-tint text-walnut"
+                        : "bg-gold-tint text-gold-dark border border-gold/30"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        req.notifiedPartnerAt ? "bg-walnut" : "bg-gold-dark"
+                      }`}
+                    />
+                    Lelz {req.notifiedPartnerAt ? "Notified" : "Not Alerted"}
+                  </span>
+                )}
                 <h3 className="font-semibold text-ink text-base ml-auto">
                   {req.guestName}
                 </h3>
@@ -601,15 +647,34 @@ export function AdminDashboard() {
               </div>
 
               {/* Actions */}
-              {!isManager &&
-              (req.category === "corporate" || req.category === "event") ? (
-                <div className="pt-3 border-t border-walnut/10">
-                  <div className="bg-cream text-stone px-4 py-2.5 rounded-lg text-sm text-center font-medium">
-                    Manager Approval Required
-                  </div>
-                </div>
-              ) : (
+              {isManager ||
+              (isPartner && req.category === "event") ||
+              (!isManager && !isPartner && req.category === "leisure") ? (
                 <div className="flex gap-3 pt-3 border-t border-walnut/10">
+                  {/* Partner (Lelz) can also mark event requests "Contacted" */}
+                  {isPartner && req.category === "event" &&
+                    (req.contactedAt ? (
+                      <div className="flex-1 flex items-center justify-center gap-1.5 bg-walnut-tint text-walnut px-4 py-2.5 rounded-lg text-sm font-semibold">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        Contacted
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleContactAction(req.id)}
+                        className="flex-1 bg-gold-tint text-gold-dark border border-gold/40 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gold/20 transition-colors btn-press"
+                      >
+                        Mark Contacted
+                      </button>
+                    ))}
                   <button
                     onClick={() => handleBookingAction(req.id, "approve")}
                     className="flex-1 bg-walnut text-cream-light px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-walnut-dark transition-colors btn-press shadow-sm shadow-walnut/20"
@@ -622,6 +687,12 @@ export function AdminDashboard() {
                   >
                     Decline
                   </button>
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-walnut/10">
+                  <div className="bg-cream text-stone px-4 py-2.5 rounded-lg text-sm text-center font-medium">
+                    Manager Approval Required
+                  </div>
                 </div>
               )}
             </div>
