@@ -6,11 +6,11 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 - Install: `npm install` (needs `DATABASE_URL` in `.env`)
 - Dev: `npm run dev` → http://localhost:3000
-- Build: `npm run build` — ⚠️ **currently fails on main** (see Gotchas)
+- Build: `npm run build` — **passes locally** (~30s; script forces `NODE_ENV=production`)
 - Lint: `npm run lint` — ~20 pre-existing errors
 - DB schema: `npx drizzle-kit push`
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
-- Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts`, `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
+- Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` (needs live DB), `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
 
 ## Key code locations
 
@@ -24,18 +24,19 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - `lib/db/schema.ts` — all tables; `lib/db/availability.ts` — overlap check; `lib/db/seed.ts`
 - `lib/notifications.ts` — WhatsApp notifier (**stubbed**: console.log only)
 - `lib/motion.tsx` — custom scroll-reveal/parallax hooks + `MotionObserver` (adds `motion-visible` to `.motion-ready` elements; mounted in layout). No animation library.
-- `components/` — `Nav` (fixed header, ~73px), `Footer` (prominent "Iphe Lerato" motto), `BranchModal` ("how are you visiting?" chooser), `PhotoPlaceholder` (colored div, no real photos), `FadeInObserver`
+- `components/` — `Nav` (fixed header, ~73px), `Footer` (prominent "Iphe Lerato" motto), `BranchModal` ("how are you visiting?" chooser), `PhotoPlaceholder`, `HeroSlideshow` (photo hero on home/rooms/events/corporate), `FadeInObserver`
+- Real photos live in `public/images/` (rooms, reception, events, logos) — used by `HeroSlideshow` and `next/image`
 
 ## Conventions
 
 - **Page pattern**: server component fetches from DB → renders a client component → forms submit via Server Actions (`"use client"` pages + `"use server"` actions per feature folder). Actions validate, insert, and return `{ ok: true } | { ok: false; error }`.
 - Public pages use `export const dynamic = "force-dynamic"` (live reads, no caching).
 - Booking requests start `pending`; only **approved** bookings lock a room. Availability blocks overlap with approved bookings only; the admin dashboard flags conflicts (red = approved overlap, amber = pending overlap) and the approve endpoint re-checks server-side (409).
-- Meal prices hardcoded: breakfast R175, dinner R300 pp/night (actions + forms).
+- Meal prices live in `lib/pricing.ts` (breakfast R175, dinner R300 pp/night) — forms and marketing copy read from there; don't hardcode new copies.
 - Brand palette (globals.css `@theme`): terracotta / walnut / cream / gold / ink. Reusable classes: `.pill-*`, `.btn-primary`, `.card-shadow`.
 - **Motion system** (replicated across all public pages): `.page-transition` on `<main>`; hero zoom (`motion-zoom-out motion-ready`) + staggered `motion-fade-up motion-ready` hero text; cards `motion-scale-in motion-ready` with `data-stagger="1..8"`; split sections `motion-fade-left/right`. `MotionObserver` (in layout) reveals `.motion-ready` on scroll. Elements that mount **after** load (success screens, filtered grids) must use **`.motion-pop`** — a mount-safe CSS animation (no observer) — never bare `motion-scale-in`/`motion-ready` (they stay `opacity: 0`).
 - **Header**: `Nav` is a **fixed** top bar (~73px). `app/layout.tsx` wraps page content in `pt-[73px]` so every hero starts below it. Rooms filter bar sticks at `top-[73px]` to match.
-- Admin UI still uses a legacy **orange** palette; booking form was unified to brand colors (Aug 2026).
+- Admin UI uses the **brand palette**; only semantic status colors remain (green approve / red decline / amber pending-conflict).
 
 ## Gotchas
 
@@ -46,6 +47,9 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - `tsconfig.tsbuildinfo` is committed to git — avoid committing incidental changes to it.
 - Backup tag `backup/main-2026-08-05` (local + origin) marks the pre-fix state of main at commit `30ae2b9`. Restore: `git reset --hard backup/main-2026-08-05`.
 - Branch `high-performance-motion-design-b72b3` is **behind** main (missing main's globals.css fix; package-lock.json deleted). Its feature work is already merged into main.
+- **Hero slideshow fix (Aug 10, `2a343d3`):** `HeroSlideshow` root div used `className="relative overflow-hidden ${className}"` while every caller passes `absolute inset-0` — the duplicate `relative`/`absolute` made the slideshow collapse to **height 0**, blanking the heroes on home/rooms/events/corporate. Fixed by dropping `relative` from the component root. Do NOT re-add `relative` or `position` classes that conflict with the caller's `absolute inset-0`.
+- **Branch note (Aug 10):** `main` is the active branch. The `.agents/` suite (8 custom agents + skill packs) was originally authored for **Codebuff** and crashed Freebuff on load; all 8 agents were converted to Freebuff's format (`model: 'deepseek/deepseek-v4-flash'`, tools limited to Freebuff's set, spawnable agents use Freebuff names) and committed on main (`92aa331`) and on `good-commit` (`1eb1584`). Codebuff-only tools (`code_search`, `run_terminal_command`, `end_turn`) and store agents (`codebuff/*`) do NOT exist in Freebuff — spawn the `basher` / `code-searcher` / `file-picker` / `code-reviewer-deepseek-flash` / `researcher-web` agents instead. The type file `.agents/types/tools.ts` documents the supported tool set.
+- **Middleware:** `main` has `middleware.ts` (CSP nonce, rate limiting, host validation) — Next 16 warns it should be renamed `proxy.ts`; harmless warning only. `.env`/`.env.local` are tracked on main (contains live DB + WhatsApp placeholders) — flagged as a security concern; user chose to leave for now.
 
 ## Quotations & invoices (auto-generated quotes)
 
