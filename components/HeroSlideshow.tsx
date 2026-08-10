@@ -47,7 +47,7 @@ export default function HeroSlideshow({
   }, [goToNext, interval]);
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`overflow-hidden ${className}`}>
       {/* Image container */}
       <div className="relative w-full h-full">
         {images.map((image, index) => (
