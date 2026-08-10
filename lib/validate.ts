@@ -40,10 +40,22 @@ export function safeText(value: unknown, max = MAX_TEXT): string {
   return value.trim().slice(0, max);
 }
 
-/** Normalize a phone number to a canonical E.164-ish string, or "" if invalid. */
+/**
+ * Normalize a phone number to a canonical E.164-ish string, or "" if invalid.
+ * Handles the formats guests actually type: separators (spaces, dashes,
+ * parentheses, dots) are stripped, "00" international prefixes become "+",
+ * and a bare South African local number ("082..." → "+2782...") gets the
+ * +27 country code. This makes every format resolve to the same canonical
+ * string, which matters for the admin OTP flow — the users table stores
+ * E.164 numbers, so a local-format login must still match (and get its dev
+ * OTP shown in development).
+ */
 export function normalizePhone(value: unknown): string {
   if (typeof value !== "string") return "";
-  const cleaned = value.trim().replace(/[\s().-]/g, "");
+  let cleaned = value.trim().replace(/[\s().-]/g, "");
+  if (cleaned.startsWith("00")) cleaned = "+" + cleaned.slice(2);
+  // Bare SA local number: 0XX XXX XXXX → +27XX XXX XXXX
+  else if (/^0\d{9}$/.test(cleaned)) cleaned = "+27" + cleaned.slice(1);
   // E.164-ish: optional leading +, then 7-15 digits.
   if (!/^\+?\d{7,15}$/.test(cleaned)) return "";
   return cleaned;
