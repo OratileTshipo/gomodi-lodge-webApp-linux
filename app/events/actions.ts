@@ -2,7 +2,10 @@
 
 import { db } from "@/lib/db";
 import { bookingRequests, eventDetails } from "@/lib/db/schema";
-import { notifyOwnerOfNewRequest } from "@/lib/notifications";
+import {
+  notifyLelzOfNewRequest,
+  notifyOwnerOfNewRequest,
+} from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
 import {
   safeText,
@@ -17,6 +20,7 @@ import {
   MAX_LONG_NOTES,
   MAX_GUESTS_EVENT,
 } from "@/lib/validate";
+import { eq } from "drizzle-orm";
 
 export type EventInquiryInput = {
   fullName: string;
@@ -96,6 +100,14 @@ export async function submitEventInquiry(
     // Auto-generate a draft quotation (event package line — owner prices it).
     await createDraftQuote(request.id);
 
+    // Events belong to Lelz Business Enterprise: the Owner's assistant keeps
+    // visibility (Events Manager) AND Lelz is alerted directly. Record the
+    // partner notification timestamp for the audit trail.
+    await db
+      .update(bookingRequests)
+      .set({ notifiedPartnerAt: new Date() })
+      .where(eq(bookingRequests.id, request.id));
+
     await notifyOwnerOfNewRequest({
       guestName: fullName,
       contactPhone: phone,
@@ -103,6 +115,14 @@ export async function submitEventInquiry(
       checkIn: input.eventDate,
       checkOut: input.eventDate,
       guestCount: input.guestCount,
+    });
+
+    await notifyLelzOfNewRequest({
+      guestName: fullName,
+      contactPhone: phone,
+      eventType,
+      eventDate: input.eventDate,
+      expectedGuests: guestCount,
     });
 
     return { ok: true };
