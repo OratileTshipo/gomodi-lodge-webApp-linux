@@ -23,6 +23,10 @@ export default function HeroSlideshow({
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const displayedRef = useRef(0);
   displayedRef.current = displayedIndex;
+  // Single coordinated timer for dropping the outgoing slide after the fade —
+  // clearing it on each transition prevents rapid clicks from cutting a
+  // crossfade short with a stale cleanup.
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pause sources: hovering the slideshow, focusing its controls, or the
   // user pressing the pause/play button all stop the auto-advance
@@ -56,9 +60,12 @@ export default function HeroSlideshow({
         return;
       // Keep the outgoing slide mounted (opacity-0) so the CSS crossfade
       // plays, then drop it once the 500ms transition has finished.
+      // Cancelling the previous timer keeps rapid clicks from cutting the
+      // fade short with a stale cleanup.
+      if (fadeTimer.current) clearTimeout(fadeTimer.current);
       setPrevIndex(displayedRef.current);
       setDisplayedIndex(index);
-      setTimeout(() => setPrevIndex(null), 600);
+      fadeTimer.current = setTimeout(() => setPrevIndex(null), 600);
     },
     [images.length]
   );
@@ -75,6 +82,13 @@ export default function HeroSlideshow({
     (index: number) => goTo(index),
     [goTo]
   );
+
+  // Clear the fade timer on unmount so no state update fires after teardown.
+  useEffect(() => {
+    return () => {
+      if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     // No autoplay while hovered, keyboard-focused, user-paused, or under
