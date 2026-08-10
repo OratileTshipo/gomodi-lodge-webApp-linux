@@ -4,10 +4,10 @@ const definition: AgentDefinition = {
   id: 'knowledge-md-scribe',
   version: '1.0.0',
   displayName: 'Knowledge.md Scribe',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'deepseek/deepseek-v4-flash',
   outputMode: 'last_message',
   includeMessageHistory: true,
-  toolNames: ['read_files', 'write_file', 'end_turn'],
+  toolNames: ['read_files', 'write_file'],
   spawnableAgents: [],
   spawnerPrompt:
     'Spawn this agent as the LAST step after any other agent finishes a change, to append a Changelog entry and update Known Issues / Architecture Decisions in the root knowledge.md. Never spawn it to change any file other than knowledge.md.',
@@ -30,8 +30,10 @@ Your only job is to keep the root knowledge.md file accurate and current. You ne
    - Files affected
    Use the actual current date provided in context — never invent or guess a date. If no date is available, ask for one instead of guessing.
 3. Check whether the change resolves or introduces anything in the Known Issues / Risk Register table or the Confirmed & Open Architecture Decisions table (for example: a fixed build blocker, a resolved open decision like the animation-approach question). If so, update that row's status rather than leaving it stale.
-4. Never delete or rewrite existing Changelog history — only append, and only edit other sections' status fields, not their surrounding explanatory text, unless specifically asked to.`,
-  stepPrompt: 'Confirm the entry was appended correctly and any status rows updated, then end_turn.',
+4. Never delete or rewrite existing Changelog history — only append, and only edit other sections' status fields, not their surrounding explanatory text, unless specifically asked to.
+
+When done, report what you changed via set_output.`,
+  stepPrompt: 'Confirm the entry was appended correctly and any status rows updated, then report via set_output.',
 }
 
 export default definition
