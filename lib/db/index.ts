@@ -13,6 +13,10 @@ const pool = new Pool({
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 15_000,
   keepAlive: true,
+  // Abort any single query that hangs past 10s — a stuck remote-Neon query
+  // should fail fast for the guest instead of spinning until the platform
+  // kills the request.
+  statement_timeout: 10_000,
 });
 
 // Unhandled 'error' events on an idle pooled client would otherwise crash the
