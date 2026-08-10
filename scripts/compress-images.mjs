@@ -2,7 +2,8 @@
 // Re-encodes every JPEG under public/images at quality 72 (mozjpeg),
 // strips metadata, and caps the longest edge at 1600px. Safe to re-run.
 import { readdirSync, statSync } from "fs";
-import { join, extname, dirname } from "path";
+import { writeFile } from "fs/promises";
+import { join, extname } from "path";
 import sharp from "sharp";
 
 const ROOT = new URL("..", import.meta.url).pathname;
@@ -34,7 +35,7 @@ for (const f of files) {
     let out = img;
     if (longEdge > MAX_EDGE) out = out.resize({ width: MAX_EDGE, withoutEnlargement: true });
     const buf = await out.jpeg({ quality: QUALITY, mozjpeg: true, progressive: true }).toBuffer();
-    await import("fs/promises").then((fs) => fs.writeFile(f, buf));
+    await writeFile(f, buf);
     const after = buf.length;
     totalAfter += after;
     const pct = ((1 - after / before) * 100).toFixed(0);
