@@ -6,11 +6,11 @@ import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
-import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { BREAKFAST_PRICE, DINNER_PRICE, ROOM_BASE_RATE } from "@/lib/pricing";
 
 const ROOM_TYPES: { id: "double" | "flexible"; label: string; price: number }[] = [
-  { id: "double", label: "Double Room", price: 950 },
-  { id: "flexible", label: "Flexible Twin/Double", price: 950 },
+  { id: "double", label: "Double Room", price: ROOM_BASE_RATE },
+  { id: "flexible", label: "Flexible Twin/Double", price: ROOM_BASE_RATE },
 ];
 
 const FAQS = [
