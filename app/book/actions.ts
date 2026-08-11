@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { isRoomAvailable } from "@/lib/db/availability";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
+import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 import {
   safeText,
   normalizePhone,
@@ -36,9 +37,6 @@ export type LeisureBookingInput = {
 export type LeisureBookingResult =
   | { ok: true }
   | { ok: false; error: string };
-
-const BREAKFAST_PRICE = "175.00"; 
-const DINNER_PRICE = "300.00"; 
 
 function nightsBetween(checkIn: string, checkOut: string): string[] {
   const dates: string[] = [];
@@ -137,7 +135,7 @@ export async function submitLeisureBooking(
           type: "breakfast",
           persons: guestCount,
           date: night,
-          unitPrice: BREAKFAST_PRICE,
+          unitPrice: BREAKFAST_PRICE.toFixed(2),
         });
       }
     }
@@ -148,7 +146,7 @@ export async function submitLeisureBooking(
           type: "dinner",
           persons: guestCount,
           date: night,
-          unitPrice: DINNER_PRICE,
+          unitPrice: DINNER_PRICE.toFixed(2),
         });
       }
     }
