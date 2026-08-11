@@ -97,7 +97,7 @@ export function AdminDashboard() {
       } catch (err) {
         console.error("Failed to load requests:", err);
       } finally {
-        setTimeout(() => setLoading(false), 500);
+        setLoading(false);
       }
     })();
     void (async () => {
