@@ -27,6 +27,8 @@ import {
 } from "./db/schema";
 import { eq, desc } from "drizzle-orm";
 import { computeTotals, formatZAR, clampNonNegative } from "./quote-math";
+import { nightlyRatesForStay, type SeasonalPeriod } from "./seasonal";
+import { getSeasonalPeriods } from "./db/seasonal";
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined";
 
@@ -82,24 +84,70 @@ function nightsBetween(checkIn: string, checkOut: string): number {
  * Build draft line items for a request from its room lines and meal add-ons.
  * Pure — extracted so the pricing rules are unit-testable without a DB.
  * Room rates are passed in with each room line, never looked up by name.
+ *
+ * Seasonal pricing: when `periods` is provided, every night of a stay is
+ * resolved individually. Nights inside an active window become their own line
+ * (e.g. "Room 1 (Festive Season)") at the seasonal rate; the rest stay at the
+ * base rate — so a stay straddling a festive window quotes BOTH rates exactly.
  */
 export function buildDraftLines(params: {
   roomLines: { roomName: string; checkIn: string; checkOut: string; baseRate?: string }[];
   addOns: { type: string; persons: number; unitPrice: string }[];
+  periods?: SeasonalPeriod[];
 }): QuoteLine[] {
   const lines: QuoteLine[] = [];
   let order = 0;
+  const periods = params.periods || [];
 
   for (const line of params.roomLines) {
     const nights = nightsBetween(line.checkIn, line.checkOut);
     if (nights <= 0) continue;
-    lines.push({
-      description: line.roomName,
-      quantity: String(nights),
-      unit: "night",
-      unitPrice: clampNonNegative(line.baseRate),
-      sortOrder: order++,
-    });
+    const baseRate = clampNonNegative(line.baseRate);
+
+    // Resolve per-night rates (seasonal-aware). If every night is the same
+    // rate, emit one clean line — identical output to the pre-seasonal engine.
+    const nightRates =
+      periods.length > 0
+        ? nightlyRatesForStay(baseRate, line.checkIn, line.checkOut, periods).map(
+            (n) => n.rate
+          )
+        : [];
+    const allSame =
+      nightRates.length === 0 || nightRates.every((r) => r === nightRates[0]);
+
+    if (allSame) {
+      lines.push({
+        description: line.roomName,
+        quantity: String(nights),
+        unit: "night",
+        unitPrice: nightRates[0] ?? baseRate,
+        sortOrder: order++,
+      });
+      continue;
+    }
+
+    // Mixed rates: group consecutive nights with the same rate into segments.
+    const segments: { qty: number; rate: string; label: string }[] = [];
+    for (let i = 0; i < nightRates.length; i++) {
+      const rate = nightRates[i];
+      const isSeasonal = rate !== baseRate;
+      const label = isSeasonal ? ` (${labelForRate(periods, rate)})` : "";
+      const last = segments[segments.length - 1];
+      if (last && last.rate === rate && last.label === label) {
+        last.qty += 1;
+      } else {
+        segments.push({ qty: 1, rate, label });
+      }
+    }
+    for (const seg of segments) {
+      lines.push({
+        description: `${line.roomName}${seg.label}`,
+        quantity: String(seg.qty),
+        unit: "night",
+        unitPrice: seg.rate,
+        sortOrder: order++,
+      });
+    }
   }
 
   // Aggregate meal rows into one line per meal type (per person per night).
@@ -120,6 +168,14 @@ export function buildDraftLines(params: {
   }
 
   return lines;
+}
+
+/** Pick a short label for a seasonal-rate night from the active window. */
+function labelForRate(periods: SeasonalPeriod[], rate: string): string {
+  const active = periods.filter((p) => p.active && p.ratePerNight === rate);
+  if (active.length === 0) return "Seasonal rate";
+  // Shortest label wins — "Easter Weekend" over "Festive Season 2026/27".
+  return [...active].sort((a, b) => a.label.length - b.label.length)[0].label;
 }
 
 /** Create a draft quote for a request, seeded from its room lines + meals. */
@@ -161,7 +217,11 @@ export async function createDraftQuote(bookingRequestId: number): Promise<number
       .from(addOnSelections)
       .where(eq(addOnSelections.bookingRequestId, bookingRequestId));
 
-    lines = buildDraftLines({ roomLines, addOns });
+    // Seasonal windows (e.g. festive season) adjust per-night rates; the
+    // engine resolves every night so straddling stays quote exactly.
+    const periods = await getSeasonalPeriods();
+
+    lines = buildDraftLines({ roomLines, addOns, periods });
   } else {
     // Events: no room lines; seed one placeholder line the owner prices.
     lines = [

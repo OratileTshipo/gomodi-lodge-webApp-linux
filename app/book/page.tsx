@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { rooms } from "@/lib/db/schema";
+import { getSeasonalPeriods } from "@/lib/db/seasonal";
 import { BookingForm } from "./BookingForm";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,10 @@ export default async function BookPage({
 }) {
   const params = await searchParams;
 
-  const allRooms = await db.select().from(rooms).orderBy(rooms.id);
+  const [allRooms, seasonalPeriods] = await Promise.all([
+    db.select().from(rooms).orderBy(rooms.id),
+    getSeasonalPeriods(),
+  ]);
 
   return (
     <BookingForm
@@ -27,7 +31,9 @@ export default async function BookPage({
         bathOrShower: r.bathOrShower,
         baseRate: r.baseRate,
         flexible: r.config.toLowerCase().includes("configurable"),
+        images: r.images,
       }))}
+      seasonalPeriods={seasonalPeriods}
       initialRoomId={params.room ? Number(params.room) : null}
       initialCheckIn={params.checkIn ?? ""}
       initialCheckOut={params.checkOut ?? ""}

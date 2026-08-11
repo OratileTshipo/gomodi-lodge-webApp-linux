@@ -8,8 +8,10 @@ import {
   date,
   decimal,
   boolean,
+  jsonb,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ---------- Enums ----------
 export const roleEnum = pgEnum("role", ["owner", "assistant", "staff"]);
@@ -51,6 +53,27 @@ export const rooms = pgTable("rooms", {
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
   amenities: text("amenities").notNull(),
   description: text("description").notNull().default(""),
+  // Public image paths (from /public) for this room's gallery — order matters,
+  // the first entry is the card thumbnail. Empty array = use placeholder art.
+  images: jsonb("images")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+});
+
+// ---------- Seasonal Pricing ----------
+// Date-ranged rate overrides for festive/busy periods (e.g. the December
+// festive season, Easter weekends). When a night falls inside an ACTIVE period
+// the seasonal per-night rate applies instead of the room's base rate; outside
+// those windows the base rate is used. This gives the owner the "set a higher
+// price for the busy weekend, then it resets automatically" behaviour.
+export const seasonalPricing = pgTable("seasonal_pricing", {
+  id: serial("id").primaryKey(),
+  label: varchar("label", { length: 120 }).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  ratePerNight: decimal("rate_per_night", { precision: 10, scale: 2 }).notNull(),
+  active: boolean("active").notNull().default(true),
 });
 
 // ---------- Booking Requests ----------

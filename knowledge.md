@@ -2,6 +2,10 @@
 
 Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house in Mafikeng, South Africa. Next.js 16.2 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Drizzle ORM + PostgreSQL. Three guest journeys (Leisure / Corporate / Events) feed one booking-request pipeline, with a staff admin area to review/approve.
 
+## See also (READ FIRST before UI / photography / copy / reviews work)
+
+- **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
+
 ## Commands
 
 - Install: `npm install` (needs `DATABASE_URL` in `.env`)
