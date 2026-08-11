@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
 import { BREAKFAST_PRICE, DINNER_PRICE, ROOM_BASE_RATE } from "@/lib/pricing";
@@ -120,10 +119,10 @@ export default function CorporatePage() {
           />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
             <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">
-              Corporate accommodation, with the paperwork handled.
+              Arrive the night before your big day.
             </h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">
-              Contractor deployments, government rotations, and multi-room group stays. Send one form and we&apos;ll issue the formal quotations, invoices, and consolidated statements your finance team needs.
+              A quiet room after a long drive, a desk that actually works, breakfast before the meeting — and the formal quotations, invoices, and consolidated statements your finance team needs. One form, and a person handles the rest.
             </p>
             <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="3">
               <a href="#quote-form" className="px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white transition-all shadow-lg shadow-ink/10 hover:shadow-xl btn-press">
@@ -143,9 +142,9 @@ export default function CorporatePage() {
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { title: "Contractor Deployments", text: "Week-long or month-long stays for project teams. Multi-room bookings, consolidated invoicing, and reliable WiFi.", items: ["Multi-room, multi-night in one quote", "Weekly/monthly rates on request", "Secure on-site parking"] },
-              { title: "Government Officials", text: "Rotations, inspections, and official visits — with formal quotations, PO references, and VAT-compliant invoices.", items: ["PO numbers captured upfront", "Formal quotation before commitment", "VAT-compliant invoicing"] },
-              { title: "Group & Team Stays", text: "Training groups, audit teams, or project kick-offs — book multiple rooms in a single submission.", items: ["Up to 9 rooms in one booking", "Flexible twin/double configuration", "Group rates on request"] },
+              { title: "Contractor Deployments", text: "Week-long or month-long stays for project teams — sleep well between shifts, park behind the gate, and let us handle the invoicing.", items: ["Multi-room, multi-night in one quote", "Weekly/monthly rates on request", "Secure on-site parking"] },
+              { title: "Government Officials", text: "Rotations, inspections, and official visits — a calm room, formal quotations, and VAT-compliant invoices that move through approval quickly.", items: ["PO numbers captured upfront", "Formal quotation before commitment", "VAT-compliant invoicing"] },
+              { title: "Group & Team Stays", text: "Training groups, audit teams, or project kick-offs — book the whole lodge in one submission and meet in the morning over breakfast.", items: ["Up to 9 rooms in one booking", "Flexible twin/double configuration", "Group rates on request"] },
             ].map((s, i) => (
               <article key={s.title} className="segment-card bg-white rounded-2xl p-6 border border-walnut/10 card-shadow motion-scale-in motion-ready interactive-element card-lift" data-stagger={i + 1}>
                 <div className="doc-icon bg-walnut-tint text-walnut">
@@ -164,13 +163,23 @@ export default function CorporatePage() {
         </div>
       </section>
 
-      {/* DOCUMENTATION TRAIL */}
+      {/* THE STAY + DOCUMENTATION TRAIL */}
       <section className="py-16 md:py-20 bg-cream">
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">From quotation to invoice, in order.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">The stay, not just the paperwork.</h2>
             <p className="text-stone mt-4 leading-relaxed">
-              Every document, from the first quote to the final consolidated statement, is issued by email and ready for your approval and payment process.
+              Before the documents — the reason you&apos;re here: a good
+              night&apos;s sleep. Rooms have air conditioning with a fan and
+              heater backup (Mafikeng summers are real), a desk that works
+              for a laptop, WiFi that holds a video call, and Smart TV to
+              switch off at the end of the day. Check-in is by arrangement,
+              so a late flight isn&apos;t a problem.
+            </p>
+            <p className="text-stone mt-4 leading-relaxed">
+              And the paperwork? From the first quote to the final
+              consolidated statement, every document is issued by email and
+              ready for your approval and payment process.
             </p>
             <div className="mt-6 space-y-3">
               {[
@@ -192,8 +201,14 @@ export default function CorporatePage() {
             </div>
           </div>
           <div className="motion-fade-right motion-ready image-zoom">
-            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]">
-              <PhotoPlaceholder label="Deluxe room" tone="walnut" />
+            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3] relative">
+              <Image
+                src="/images/rooms/room1-view4.jpeg"
+                alt="A quiet, freshly renovated guest room at Gomodi"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
             </div>
           </div>
         </div>

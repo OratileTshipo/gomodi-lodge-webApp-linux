@@ -23,6 +23,7 @@ export default async function RoomsPage({
         amenities: r.amenities.split(",").map((a) => a.trim()),
         description: r.description,
         flexible: r.config.toLowerCase().includes("configurable"),
+        images: r.images,
       }))}
       carryParams={{
         checkIn: params.checkIn,

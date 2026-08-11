@@ -5,6 +5,22 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## See also (READ FIRST before UI / photography / copy / reviews work)
 
 - **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
+- **Competition branches** — `dev` at `3fa6cce` carries the shared baseline (spec docs + in-flight seasonal pricing committed 2026-08-11). Each model builds on its own branch (`comp/buffy` and equivalents); winner merges to `dev`. See PROGRESS.md latest entry.
+
+## Guest reviews (built on `comp/buffy`, 2026-08-11)
+
+- **Flow**: approved booking ends → `/api/review-reminders` (cron, daily) creates one unguessable invite per booking (`review_invites.token`) and sends it via WhatsApp template `gomodi_review_request` (fails open) → guest opens `/review?token=…` → review saved `pending` → staff approve in `/admin/reviews` (`/api/admin/reviews/[id]`, manager-only) → approved reviews render on the homepage "What guests say" (3 cards, aggregate badge at ≥5).
+- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Push with `npx drizzle-kit push`.
+- **Guardrails (binding)**: no fabricated/seed reviews — every review traces to a booking via the token; pending reviews never display; no consent → shown as "Guest".
+- **Homepage resilience**: reviews query is try/caught — missing tables degrade to the empty state instead of failing the page.
+
+## Seasonal pricing (wiring now COMPLETE)
+
+- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) was committed to `dev` at `3fa6cce`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `comp/buffy` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. `npx drizzle-kit push` is still needed to create the table.
+
+## Contact surfaces
+
+- `lib/contact.ts` is the single source of truth for WhatsApp/email (`WHATSAPP_NUMBER = null` until the owner supplies it; `whatsappHref()` returns `"#"` meanwhile). Swap the number there and every CTA updates.
 
 ## Commands
 
