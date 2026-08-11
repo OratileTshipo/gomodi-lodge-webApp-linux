@@ -56,7 +56,7 @@ export default async function RootLayout({
     },
     "telephone": "+27",
     "email": "enquiries@gomodiguestlodge.co.za",
-    "priceRange": "R950-R1200",
+    "priceRange": "R750",
     "amenityFeature": [
       { "@type": "LocationFeatureSpecification", "name": "Free WiFi", "value": true },
       { "@type": "LocationFeatureSpecification", "name": "Smart TV", "value": true },

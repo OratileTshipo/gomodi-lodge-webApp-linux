@@ -65,7 +65,9 @@ const ROOM_DATA = [
     name: "Room 8",
     config: "Double",
     bathOrShower: "shower",
-    baseRate: "950.00",
+    // Confirmed flat rate — this room previously drifted to 950.00; every room
+    // shares the same R750/night standard rate (seasonal windows raise it).
+    baseRate: "750.00",
     amenities: AMENITIES,
     description: "A bright and very specious room, welcoming room with an en-suite shower, finished in the same warm terracotta and walnut palette as the rest of the lodge.",
   },
