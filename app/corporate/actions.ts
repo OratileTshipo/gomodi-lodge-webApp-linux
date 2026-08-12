@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result } from "@/lib/result";
 import { db } from "@/lib/db";
 import {
   bookingRequests,
@@ -53,7 +54,7 @@ export type CorporateQuoteInput = {
   notes?: string;
 };
 
-export type CorporateQuoteResult = { ok: true } | { ok: false; error: string };
+export type CorporateQuoteResult = Result;
 
 async function findAvailableRoomIds(
   isFlexible: boolean,

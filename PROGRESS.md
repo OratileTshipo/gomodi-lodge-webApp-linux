@@ -216,4 +216,23 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 **Flags:** `.env`/`.env.local` still tracked in git — platform blocks env-file ops from the sandbox; owner must run `git rm --cached .env .env.local` in a dedicated PR (`.gitignore` already prevents re-adding). AdminDashboard + page.tsx extraction, `Result<T>` type, Upstash limiter, and CI lint/typecheck job remain as documented follow-ups in `CODE-QUALITY-review.md`.
 
+### 2026-08-12 — Code-quality follow-ups (all remaining review items) — Buffy
+
+**Status:** ✅ Delivered — PR → `dev` from `chore/follow-up-quality-pass`.
+
+**Why:** the code-quality pass (PR #22) documented five remaining items in `CODE-QUALITY-review.md`. This pass executes every one of them: AdminDashboard split, homepage section extraction, `Result<T>` unification, Upstash Redis rate limiter (with in-memory fallback), and the CI gate.
+
+**Files changed (highlights):**
+
+- `app/admin/dashboard/` — `AdminDashboard.tsx` split 710 → 189 lines into `AdminHeader`, `ManagerStats`, `RequestCard`, `EmptyState`, `DashboardSkeleton` + pure `types.ts` / `format.ts`. Zero behavior change (verified against the original: header, partner-gated time clock, conflict banners, role-scoped approve/decline/contact all preserved).
+- `app/page.tsx` — 838 → 55 lines; the 12 homepage sections moved to `components/home/` (Hero, WaysToStay, About, RoomsPreview, Reviews, Amenities, Dining, Events, Corporate, Explore, Payment, ContactCta). All anchor ids preserved (`#stay` `#rooms` `#reviews` `#dining` `#events` `#corporate` `#explore` `#payment` `#contact`).
+- `lib/result.ts` — **new** shared `Result<T>` action contract; the four action-result unions (`LeisureBookingResult`, `CorporateQuoteResult`, `EventInquiryResult`, `SubmitReviewResult`) now alias it instead of re-declaring.
+- `lib/rate-limit.ts` — **new**; Upstash Redis sliding-window limiter (global / multi-instance / edge-runtime) with the previous in-memory window as automatic fallback — both fail open on limiter errors. `middleware.ts` is now `async` and imports it (rate-limit logic removed from the middleware file).
+- `.github/workflows/ci.yml` — **new** CI gate on every PR + push to dev/main: `npm ci` → `npx tsc --noEmit` → `npm run lint` → `npm test`.
+- `package.json` — added `@upstash/ratelimit` + `@upstash/redis`. Optional keys: `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`; absent → automatic in-memory fallback (no config required).
+
+**Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 (all routes) · ✅ lint — zero errors, 7 warnings all pre-existing (QuoteEditor, time-clock, BookingCalendar, corporate/events pages, quote-pdf).
+
+**Flags:** All review follow-ups now closed. The single remaining owner-side item is the env untrack: `git rm --cached .env .env.local` + rotate any secrets ever pushed (the platform blocks env-file ops from the sandbox). Upstash keys can be added in the Freebuff Keys UI whenever the site needs a global limiter — until then the in-memory fallback applies.
+
 <!-- New entries go above this line, newest last. -->
