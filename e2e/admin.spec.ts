@@ -24,7 +24,8 @@ test("admin OTP login reaches the dashboard; queue pages and logout work", async
   const errors = collectErrors(page);
 
   await page.goto("/admin");
-  await expect(page.locator("h1")).toContainText(/Sign in to admin/);
+  // The login screen intentionally renders a mobile + desktop h1 variant.
+  await expect(page.locator("h1").first()).toContainText(/Sign in to admin/);
   await expect(page.locator("body")).toContainText("Test credentials");
 
   // Step 1 — request the OTP

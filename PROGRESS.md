@@ -254,4 +254,27 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 **Flags:** run `npm run db:push && npm run db:seed` (dev DB only — seed truncates) before `npm run e2e`. Set `E2E_REVIEW_TOKEN` for the review-form spec. Perf budgets are strict under `E2E_SERVER=prod` only.
 
+### 2026-08-12 — CI green pass (vitest/e2e split + a11y label wiring) — Buffy
+
+**Status:** ✅ Delivered — pushed to `dev` (rides into `main` via open release PR #26).
+
+**Why:** PR #26's CI checks were red. Diagnosis: (1) the core "Typecheck · Lint · Tests" job failed because **Vitest's default glob picks up the Playwright specs** (`e2e/*.spec.ts` → "Playwright Test did not expect test() to be called here", 11 failed files); (2) the E2E a11y spec caught **real unlabelled-input bugs** on `/book`, `/events`, and `/corporate` (sibling `<label>`s with no `id`/`htmlFor`); (3) the admin E2E spec used a strict-mode `h1` locator against the intentionally dual-h1 login screen.
+
+**Files changed (6):**
+
+- `vitest.config.ts` — **new** — excludes `e2e/**` from Vitest so `npm test` runs only the unit suites (was matching the Playwright specs).
+- `app/book/DetailsStep.tsx` — `id`+`htmlFor` on full name / phone / email / notes (4 inputs).
+- `app/events/EventInquiryForm.tsx` — `id`+`htmlFor` on 8 inputs (name, phone, email, event type, guests, dates, notes).
+- `app/corporate/CorporateQuoteForm.tsx` — `id`+`htmlFor` on 12 static inputs + 3 looped room-line fields (index-suffixed ids: `corporateRoomType-${i}` etc.).
+- `e2e/admin.spec.ts` — `page.locator("h1").first()` (the login screen renders a mobile + desktop h1 by design).
+- `PROGRESS.md` — this entry.
+
+**Validation results:** ✅ `npm test` 42/42 (4 files) · ✅ `npx tsc --noEmit` clean · ✅ `npm run lint` 0 errors (8 pre-existing warnings) · ⏳ full Playwright run + remaining checks in CI (see below).
+
+**Still red / owner-side (not code):**
+
+- **E2E suite (Playwright):** the a11y + admin fixes land with this push, but the suite's long-journey tests (booking/events/corporate submits) time out (~90s per attempt) and a few assertions are flaky (rooms list/modal, mobile site-shell) — the suite has never run fully green in CI. Follow-up: stabilise the suite (timeouts, wait strategy) in a dedicated pass.
+- **Vercel deploy check** on the PR: "Deployment failed" — no vercel CLI in the sandbox to inspect; likely env config on the Vercel project dashboard (owner-side).
+- **Neon preview workflow:** 422 creating `preview/pr-26-dev` — the branch name already exists from a prior run (infra/idempotency).
+
 <!-- New entries go above this line, newest last. -->

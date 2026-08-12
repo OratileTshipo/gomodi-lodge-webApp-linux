@@ -28,20 +28,20 @@ export function DetailsStep({
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
+          <label htmlFor="detailsFullName" className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
+          <input id="detailsFullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">WhatsApp number *</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
+          <label htmlFor="detailsPhone" className="block text-sm font-medium text-ink mb-1.5">WhatsApp number *</label>
+          <input id="detailsPhone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">Email (optional)</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
+          <label htmlFor="detailsEmail" className="block text-sm font-medium text-ink mb-1.5">Email (optional)</label>
+          <input id="detailsEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none" />
         </div>
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-ink mb-1.5">Anything we should know? (optional)</label>
-          <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={3} className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none resize-none" placeholder="e.g. Late arrival, extra pillows, dietary requirements..." />
+          <label htmlFor="detailsNotes" className="block text-sm font-medium text-ink mb-1.5">Anything we should know? (optional)</label>
+          <textarea id="detailsNotes" value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={3} className="w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-terracotta/40 focus:border-terracotta outline-none resize-none" placeholder="e.g. Late arrival, extra pillows, dietary requirements..." />
         </div>
       </div>
     </div>
