@@ -28,7 +28,12 @@ test("full booking journey: dates → room → guests → meals → details → 
   await expect(page.locator("h1")).not.toContainText("Thanks,"); // still on the form
 
   // ---- Step 2: room ----
-  const roomButtons = page.locator('button[aria-pressed]');
+  // Scope to the room step: the calendar's date cells also carry aria-pressed,
+  // and all steps are mounted in one form, so an unscoped selector hits them first.
+  const roomStep = page
+    .getByRole("heading", { name: "Choose your room" })
+    .locator("xpath=..");
+  const roomButtons = roomStep.locator('button[aria-pressed]');
   await expect(roomButtons.first()).toBeVisible();
   const roomCount = await roomButtons.count();
   expect(roomCount).toBeGreaterThan(0);
@@ -45,9 +50,11 @@ test("full booking journey: dates → room → guests → meals → details → 
   // ---- Step 3: meals ----
   const form = page.locator("form").first();
   const [breakfastCb, dinnerCb, consentCb] = await form.getByRole("checkbox").all();
-  await breakfastCb.click();
+  // The meal toggles are sr-only inputs inside labels — click the visible label
+  // (Playwright can't actionability-check clipped sr-only elements).
+  await form.getByText("Breakfast", { exact: true }).click();
   await expect(breakfastCb).toBeChecked();
-  await dinnerCb.click();
+  await form.getByText("Dinner", { exact: true }).click();
   await expect(dinnerCb).toBeChecked();
   // Summary meals line
   await expect(page.locator("body")).toContainText("Breakfast + Dinner");
@@ -117,9 +124,14 @@ test("unavailable rooms are greyed out for a conflicting stay", async ({ page, d
   // DB is seeded fresh; rather than depend on state, this checks the UI's
   // handling contract: rooms can be disabled, and disabled rooms are labelled.
   await page.goto("/book");
-  const disabled = page.locator('button[aria-pressed][disabled]');
-  const total = await page.locator('button[aria-pressed]').count();
+  // Calendar date cells also carry aria-pressed + [disabled] for past dates —
+  // scope to the room step, where [disabled] means "already booked for your dates".
+  const roomStep = page
+    .getByRole("heading", { name: "Choose your room" })
+    .locator("xpath=..");
+  const total = await roomStep.locator('button[aria-pressed]').count();
   expect(total).toBeGreaterThan(0);
+  const disabled = roomStep.locator('button[disabled]');
   if ((await disabled.count()) > 0) {
     await expect(disabled.first()).toContainText("Booked");
   }

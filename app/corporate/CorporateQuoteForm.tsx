@@ -206,7 +206,7 @@ export default function CorporateQuoteForm() {
 
             <div className="py-8 border-b border-walnut/10">
               <h3 className="font-semibold text-ink text-lg">5. Anything else?</h3>
-              <textarea id="corporateNotes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, dietary needs, preferred room locations..." />
+              <textarea id="corporateNotes" aria-label="Special requirements" value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, dietary needs, preferred room locations..." />
             </div>
 
             <div className="py-8 border-b border-walnut/10">
