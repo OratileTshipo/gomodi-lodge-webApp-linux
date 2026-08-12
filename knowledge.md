@@ -6,6 +6,15 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 - **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
 - **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 passes fixed (lint errors, `bathOrShower` bug, BookingForm + AdminDashboard + homepage splits, shared booking helpers, vitest, CI job). READ before refactoring — every listed follow-up is now DONE except the owner-side env untrack.
+- **`E2E-TESTING.md`** — the Playwright end-to-end suite (82 tests, 11 specs, desktop + mobile): how to run (`npm run e2e`, needs a seeded DB), env knobs, coverage map, CI integration. READ before changing any interactive UI — the suite asserts every form, flow, label, and loading budget.
+
+## E2E testing (merged into `dev` 2026-08-12)
+
+- Playwright suite under `e2e/` — covers every page/form/flow plus perf budgets (LCP/FCP/DCL/Load/TTFB) and a11y smoke checks; runs on desktop + mobile viewports.
+- Self-gating: the `dbReady` fixture pings `/api/ping`; DB-less environments skip DB-dependent specs instead of failing.
+- CI runs the full suite against a Postgres service (`db:push` + `db:seed` + production server).
+- `E2E_REVIEW_TOKEN` enables the review-form spec; admin OTP is only machine-readable in non-production servers (dev mode).
+- Labels: consent checkboxes + admin login inputs now have `id`/`htmlFor` wiring (a11y fix from the suite).
 - **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
 
 ## Guest reviews (merged into `dev` 2026-08-12)

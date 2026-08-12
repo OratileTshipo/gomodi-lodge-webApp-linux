@@ -235,4 +235,23 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 **Flags:** All review follow-ups now closed. The single remaining owner-side item is the env untrack: `git rm --cached .env .env.local` + rotate any secrets ever pushed (the platform blocks env-file ops from the sandbox). Upstash keys can be added in the Freebuff Keys UI whenever the site needs a global limiter — until then the in-memory fallback applies.
 
+### 2026-08-12 — Full E2E test suite (Playwright) — Buffy
+
+**Status:** ✅ Delivered — PR → `dev`.
+
+**Why:** the site had unit tests (vitest, 42) but zero browser-level coverage. This adds an end-to-end suite covering **every page, form, and interactive flow** — buttons, scrolls, clicks, data entry, loading times — so nothing ships untested.
+
+**What was added:**
+
+- **Playwright** (`@playwright/test` 1.62, chromium) — **82 tests in 11 spec files** under `e2e/`, each run on desktop **and** mobile viewports (perf on desktop only). Config: `playwright.config.ts` auto-starts `npm run dev` (or `npm run start` with `E2E_SERVER=prod`), reuses an existing server, `E2E_NO_WEBSERVER=1` for preview targets.
+- **Coverage map** (see `E2E-TESTING.md`): site shell (brand/nav/footer, branch modal routing, 404), all 9 homepage sections + reviews strip, **full booking journey** (calendar dates → room → guest stepper → meals → details → EFT/cash payment switch + POP upload → consent gate → submit → success), rooms explorer (filters, sort, detail modal, bath/shower labels), events + corporate forms (catering radios, room lines, **live estimate math**, consent gates, submissions), review token gating + full form (stars/feelings/byline/consent), admin (unauth redirect, **OTP login**, dashboard, queue pages, logout), API surface (ping/auth/validation/404), **internal-link crawl** (5xx fails, 404 warns), **perf budgets** (LCP/FCP/DCL/Load/TTFB — strict vs prod, relaxed vs dev), and a11y smoke checks (h1 count, image alt, button names, labelled inputs, duplicate ids).
+- **DB-aware resilience**: every spec probes `/api/ping` via a `dbReady` fixture — without a healthy backend, DB-dependent tests skip cleanly instead of failing the run.
+- **CI**: new `e2e` job in `.github/workflows/ci.yml` — Postgres 16 service → `npm run db:push && npm run db:seed` → build → Playwright against the production server with strict budgets → report artifact on failure.
+- **npm scripts**: `e2e`, `e2e:headed`, `e2e:perf`, `db:push`, `db:seed`.
+- **A11y fix discovered by the suite**: consent checkboxes on book/events/corporate and the admin login phone/OTP inputs were **unlabelled** (input not wrapped, no `for`). Added `id` + `htmlFor` wiring (`bookingConsent`, `eventsConsent`, `quoteConsent`, `interestedInRooms`, `adminPhone`, `adminOtp`) — screen-reader + `getByLabel` support restored.
+
+**Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 · ✅ lint zero errors (8 pre-existing warnings) · ✅ 82 Playwright tests compile (`--list`) · ✅ Chromium launches in the sandbox (browser smoke check) — full browser run happens in CI/local with a DB, per `E2E-TESTING.md` (the sandbox blocks starting a dev server).
+
+**Flags:** run `npm run db:push && npm run db:seed` (dev DB only — seed truncates) before `npm run e2e`. Set `E2E_REVIEW_TOKEN` for the review-form spec. Perf budgets are strict under `E2E_SERVER=prod` only.
+
 <!-- New entries go above this line, newest last. -->

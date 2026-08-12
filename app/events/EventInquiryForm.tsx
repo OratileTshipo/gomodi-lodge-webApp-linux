@@ -159,8 +159,8 @@ export default function EventInquiryForm() {
               <h3 className="font-semibold text-ink text-lg">Anything else?</h3>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, themes, or questions..." />
               <div className="mt-5 flex items-start gap-3">
-                <input type="checkbox" checked={interestedInRooms} onChange={(e) => setInterestedInRooms(e.target.checked)} className="mt-1 accent-gold" />
-                <label className="text-sm text-ink cursor-pointer">
+                <input id="interestedInRooms" type="checkbox" checked={interestedInRooms} onChange={(e) => setInterestedInRooms(e.target.checked)} className="mt-1 accent-gold" />
+                <label htmlFor="interestedInRooms" className="text-sm text-ink cursor-pointer">
                   I&apos;m also interested in booking rooms for my guests. <Link href="/rooms" className="text-gold-dark font-semibold underline">See rooms →</Link>
                 </label>
               </div>
@@ -168,8 +168,8 @@ export default function EventInquiryForm() {
 
             <div className="py-6 border-b border-walnut/10">
               <div className="flex items-start gap-3">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-gold" />
-                <label className="text-sm text-stone">I agree to Gomodi Guest Lodge collecting my details to respond to this inquiry, in line with POPIA. *</label>
+                <input id="eventsConsent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-gold" />
+                <label htmlFor="eventsConsent" className="text-sm text-stone">I agree to Gomodi Guest Lodge collecting my details to respond to this inquiry, in line with POPIA. *</label>
               </div>
             </div>
 

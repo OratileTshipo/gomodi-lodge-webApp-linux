@@ -172,10 +172,11 @@ export function AdminLogin() {
             {step === "phone" ? (
               <form onSubmit={handleRequestOtp} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">
+                  <label htmlFor="adminPhone" className="block text-sm font-medium text-ink mb-1.5">
                     Phone Number
                   </label>
                   <input
+                    id="adminPhone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -212,10 +213,11 @@ export function AdminLogin() {
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">
+                  <label htmlFor="adminOtp" className="block text-sm font-medium text-ink mb-1.5">
                     Enter OTP
                   </label>
                   <input
+                    id="adminOtp"
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
