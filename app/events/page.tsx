@@ -3,6 +3,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
+import { EVENT_CATERING } from "@/lib/pricing";
 
 // The interactive inquiry form is loaded lazily so the hero and static
 // content render immediately (no JS needed). A compact skeleton placeholder
@@ -361,7 +362,7 @@ export default function EventsPage() {
             <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="1">
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Light</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Tea &amp; Snacks</h3>
-              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R150 <span className="text-stone text-sm font-normal">pp</span></div>
+              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R{EVENT_CATERING["tea-snacks"]} <span className="text-stone text-sm font-normal">pp</span></div>
               <ul className="mt-5 space-y-2 text-sm text-ink">
                 <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Tea, coffee, and soft drinks</li>
                 <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Assorted savouries and pastries</li>
@@ -372,7 +373,7 @@ export default function EventsPage() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gold-dark text-white text-xs font-semibold px-3 py-1 rounded-full">Most Popular</div>
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Full</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Three-Course Meal</h3>
-              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R250 <span className="text-stone text-sm font-normal">pp</span></div>
+              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R{EVENT_CATERING["three-course"]} <span className="text-stone text-sm font-normal">pp</span></div>
               <ul className="mt-5 space-y-2 text-sm text-ink">
                 <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Starter, main, and dessert</li>
                 <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Soft drinks, water, tea &amp; coffee</li>
@@ -382,7 +383,7 @@ export default function EventsPage() {
             <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="3">
               <div className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Premium</div>
               <h3 className="font-semibold text-ink text-lg mt-2">Full-Day Package</h3>
-              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R350 <span className="text-stone text-sm font-normal">pp</span></div>
+              <div className="text-terracotta-dark font-semibold text-2xl mt-3">R{EVENT_CATERING["full-day"]} <span className="text-stone text-sm font-normal">pp</span></div>
               <ul className="mt-5 space-y-2 text-sm text-ink">
                 <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Morning tea, lunch, and dinner</li>
                 <li className="flex items-start gap-2"><span className="text-gold-dark mt-0.5">✓</span> Full beverage service</li>
