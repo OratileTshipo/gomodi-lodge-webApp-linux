@@ -269,6 +269,7 @@ export function AdminLogin() {
           <div className="mt-6 text-center text-xs text-stone/60">
             <p className="mb-1 font-medium text-stone">Test credentials</p>
             <p>Owner: +27820000001 · Manager: +27820000002 · Staff: +27820000003</p>
+            <p>Partner (Lelz): +27780784139</p>
           </div>
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { enrichRequests } from "../app/api/admin/requests/route";
 
 const pending = [
-  { id: 1, category: "leisure", guestName: "Leisure Guest", contactPhone: "0821111111", contactEmail: null, specialRequests: null, status: "pending" },
-  { id: 2, category: "event", guestName: "Event Guest", contactPhone: "0822222222", contactEmail: null, specialRequests: null, status: "pending" },
-  { id: 3, category: "corporate", guestName: "Corp Guest", contactPhone: "0823333333", contactEmail: null, specialRequests: null, status: "pending" },
+  { id: 1, category: "leisure", guestName: "Leisure Guest", contactPhone: "0821111111", contactEmail: null, specialRequests: null, status: "pending", notifiedPartnerAt: null, contactedAt: null },
+  { id: 2, category: "event", guestName: "Event Guest", contactPhone: "0822222222", contactEmail: null, specialRequests: null, status: "pending", notifiedPartnerAt: null, contactedAt: null },
+  { id: 3, category: "corporate", guestName: "Corp Guest", contactPhone: "0823333333", contactEmail: null, specialRequests: null, status: "pending", notifiedPartnerAt: null, contactedAt: null },
 ];
 
 const linesByRequest: Record<number, any[]> = {
@@ -49,7 +49,7 @@ assert("corporate carries corporateDetails", byId[3].corporateDetails?.poNumber 
 assert("corporate has no hard conflict (rooms/dates don't overlap approved)", byId[3].conflict === null);
 
 // Soft-warning scenario: a 4th pending leisure request overlapping #1 on room 2
-const pending2 = [...pending, { id: 4, category: "leisure", guestName: "Second Leisure", contactPhone: "0824444444", contactEmail: null, specialRequests: null, status: "pending" }];
+const pending2 = [...pending, { id: 4, category: "leisure", guestName: "Second Leisure", contactPhone: "0824444444", contactEmail: null, specialRequests: null, status: "pending", notifiedPartnerAt: null, contactedAt: null }];
 const lines2 = { ...linesByRequest, 4: [{ roomId: 2, checkIn: "2026-08-15", checkOut: "2026-08-17", guestCount: 2, roomName: "Room 2" }] };
 const out2 = enrichRequests(pending2, lines2, approved, {}, {}, {}, {});
 const byId2 = Object.fromEntries(out2.map((r: any) => [r.id, r]));

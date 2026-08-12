@@ -40,7 +40,9 @@ export function BranchModal() {
 
   const options = [
     {
-      path: "/rooms",
+      // Leisure goes straight to the booking form (dates, room, meals) —
+      // /rooms is the browsing listing, not where you request a booking.
+      path: "/book",
       label: "Request a Stay",
       desc: "Dates, room, breakfast/dinner add-ons",
       hoverBorder: "hover:border-terracotta/40",
