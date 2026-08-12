@@ -6,7 +6,7 @@
  * Meta WhatsApp Cloud API client (lib/whatsapp.ts); until credentials are set
  * the sends fail open and log visibly, so the booking flow keeps working.
  */
-import { sendBookingAlert, sendBookingStatus } from "./whatsapp";
+import { sendBookingAlert, sendBookingStatus, sendReviewRequest } from "./whatsapp";
 
 export async function notifyOwnerOfNewRequest(details: {
   guestName: string;
@@ -55,4 +55,15 @@ export async function notifyLelzOfNewRequest(details: {
   // TODO (go-live): real Meta Cloud API call once Lelz's WhatsApp Business
   // number and template are confirmed — same swap-in point pattern as
   // notifyOwnerOfNewRequest().
+}
+
+export async function notifyGuestOfReviewRequest(details: {
+  phone: string;
+  guestName: string;
+  link: string;
+}): Promise<void> {
+  const result = await sendReviewRequest(details);
+  if (!result.sent) {
+    console.log("[WhatsApp review request not sent]", { reason: result.reason, ...details });
+  }
 }

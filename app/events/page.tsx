@@ -209,9 +209,9 @@ export default function EventsPage() {
             className="absolute inset-0"
           />
           <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
-            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">Host your event here.</h1>
+            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">The garden fills with people you love.</h1>
             <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">
-              Weddings, baby showers, birthday parties and private functions — for up to 50 guests, with confirmed catering and on-site accommodation.
+              Weddings, baby showers, birthdays and private functions — up to 50 guests, confirmed catering, and rooms for the family to stay over. You enjoy the day; we handle the rest.
             </p>
             <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="3">
               <a href="#inquiry-form" className="btn-gold px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 shadow-lg shadow-gold/20 hover:shadow-xl hover:shadow-gold/30 btn-press">Inquire About Your Event</a>
@@ -265,7 +265,9 @@ export default function EventsPage() {
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
             <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl">Events we host.</h2>
             <p className="text-stone mt-4 text-base">
-              From intimate baby showers to milestone birthday celebrations — we help you create unforgettable moments.
+              From intimate baby showers to milestone birthdays — a venue that
+              feels like home, catering with confirmed prices, and a team that
+              answers when you call.
             </p>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -296,7 +298,7 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="motion-fade-left motion-ready">
             <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">A flexible space for your event.</h2>
-            <p className="text-stone mt-4 leading-relaxed">Seated dinners, cocktail setups, buffet layouts, or an open floor for dancing.</p>
+            <p className="text-stone mt-4 leading-relaxed">Seated dinners, cocktail setups, buffet layouts, or an open floor for dancing. Tell us what you&apos;re picturing — we&apos;ll set it up, and the family&apos;s own rooms are right there for guests who stay over.</p>
             <div className="mt-6 grid grid-cols-2 gap-4">
               {[["50", "Max Guests"], ["Flexible", "Layout Options"], ["9", "Rooms for Guests"], ["On-site", "Secure Parking"]].map(([n, l], i) => (
                 <div key={l} className="bg-white rounded-xl p-4 border border-walnut/10 motion-scale-in motion-ready interactive-element" data-stagger={i + 1}>
@@ -307,7 +309,7 @@ export default function EventsPage() {
             </div>
           </div>
           <div className="motion-fade-right motion-ready image-zoom">
-            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]"><PhotoPlaceholder label="Function space interior" tone="gold" /></div>
+            <div className="rounded-2xl overflow-hidden card-shadow aspect-[4/3]"><PhotoPlaceholder label="Function space interior — real photos coming" tone="gold" /></div>
           </div>
         </div>
       </section>

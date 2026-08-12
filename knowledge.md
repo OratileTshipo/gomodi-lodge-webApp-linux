@@ -2,6 +2,26 @@
 
 Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house in Mafikeng, South Africa. Next.js 16.2 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Drizzle ORM + PostgreSQL. Three guest journeys (Leisure / Corporate / Events) feed one booking-request pipeline, with a staff admin area to review/approve.
 
+## See also (READ FIRST before UI / photography / copy / reviews work)
+
+- **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
+- **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
+
+## Guest reviews (merged into `dev` 2026-08-12)
+
+- **Flow**: approved booking ends → `/api/review-reminders` (cron, daily) creates one unguessable invite per booking (`review_invites.token`) and sends it via WhatsApp template `gomodi_review_request` (fails open) → guest opens `/review?token=…` → review saved `pending` → staff approve in `/admin/reviews` (`/api/admin/reviews/[id]`, manager-only) → approved reviews render on the homepage "What guests say" (3 cards, aggregate badge at ≥5).
+- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Push with `npx drizzle-kit push`.
+- **Guardrails (binding)**: no fabricated/seed reviews — every review traces to a booking via the token; pending reviews never display; no consent → shown as "Guest".
+- **Homepage resilience**: reviews query is try/caught — missing tables degrade to the empty state instead of failing the page.
+
+## Seasonal pricing (wiring now COMPLETE)
+
+- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) is committed to `dev`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `dev` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. `npx drizzle-kit push` is still needed to create the table.
+
+## Contact surfaces
+
+- `lib/contact.ts` is the single source of truth for WhatsApp/email (`WHATSAPP_NUMBER = null` until the owner supplies it; `whatsappHref()` returns `"#"` meanwhile). Swap the number there and every CTA updates.
+
 ## Commands
 
 - Install: `npm install` (needs `DATABASE_URL` in `.env`)
@@ -11,6 +31,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - DB schema: `npx drizzle-kit push`
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
 - Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` (needs live DB), `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
+- Perf: `npm run perf` — response-time benchmark for all 11 routes (HTTP TTFB + headless Chromium FCP/LCP + per-component render times; optional `BASE_URL` env) — see `scripts/perf-bench.ts`
 
 ## Key code locations
 
@@ -104,6 +125,17 @@ No system-level browsers (no sudo), but all three are installed user-space and o
 - The symlinks are tied to the current nvm Node version dir — re-create them if Node is upgraded. Raw binaries live in `~/.cache/ms-playwright/` and `~/edge-pkg/` (survive node changes).
 
 ## Changelog
+
+### 2026-08-11 — Page response-time pass: parallel admin-requests queries + perf benchmark
+
+- **Admin requests API: 8 sequential queries → 1 `Promise.all` (Aug 11):** `app/api/admin/requests/route.ts` was running 8 sequential Neon round-trips (room lines, approved bookings, add-ons, corporate details, events, POPs, quotes). Parallelized with `Promise.all` — warm response dropped **~1.5s → ~0.4s** (server log: `405ms`). Live on `main` via **PR #15** (`perf/faster-pages`, merge sha `2670e80`).
+- **Dev preview HMR over `*.monkeycode-ai.live` (Aug 11):** `next.config.ts` gains `allowedDevOrigins: ["*.monkeycode-ai.live"]` so HMR websockets aren't blocked on the preview host (`3000-8eb61bc89f699507.monkeycode-ai.live`) — zero blocked-HMR warnings since restart.
+- **`npm run perf` benchmark (Aug 11):** new `scripts/perf-bench.ts` (+ package.json script). Phase 1: HTTP cold/warm TTFB for all 11 routes. Phase 2: headless Chromium (playwright-core) FCP/LCP/load + per-component render times via an injected watcher on `document` (settle-polled up to 8s) + slowest-asset list. Auth handled by minting the HMAC admin cookie directly (avoids the dev OTP rate limiter). Optional `BASE_URL` arg.
+- **Measured (warm, dev server):** `/` 0.2s TTFB / 1.8s LCP; `/rooms` 0.1s / 0.5s; `/book` 0.2s / 0.5s; `/corporate` 0.2s / 1.0s; `/events` 0.3s / 1.2s; `/admin` 0.1s / 0.5s; `/admin/dashboard` 0.1s / **3.1s LCP**; `/admin/quotes` 0.1s / 0.4s; `/quote/[token]` 0.5s / 1.4s; quote PDF download-start 0.5s.
+- **Remaining hotspot — `/admin/dashboard` LCP ~3.1s (Aug 11):** two contributors — a hard-coded **500ms skeleton `setTimeout`** in `app/admin/dashboard/AdminDashboard.tsx` (~line 100) gating render, and **Neon cold start ~2.6s** whenever the pool has been idle >30s (`lib/db/index.ts` `idleTimeoutMillis: 30_000`). Suggested fixes (not yet applied): remove/shorten the skeleton delay and/or warm the pool. Dev-server first-visit Turbopack compile (1–5s) is dev-only and absent from production builds.
+- **Git path note (Aug 11):** `main` was ahead of `dev` (dev had nothing main lacked), so a feature→dev→dev→main chain couldn't carry these changes. Branch `perf/faster-pages` was cut from `origin/main` (changed files were identical in both), pushed, and merged to `main` as **PR #15** at the owner's explicit request. Untracked `tsconfig.tsbuildinfo` build-artifact churn was left uncommitted.
+- Validation: `npm run build` exit 0 (23 routes), `tsc --noEmit` clean. 4 pre-existing lint errors (react-hooks refs / setState-in-effect in `lib/motion.tsx`, `test_pages.js` require-import, unused `gold` in `lib/quote-pdf.tsx`, unused `isApi` in `middleware.ts`) + the `middleware.ts`→`proxy.ts` deprecation warning — all pre-existing, unrelated to this pass.
+- **Agent + model:** this changelog entry and the 2026-08-11 changes were authored by the **opencode** coding agent (on behalf of the MonkeyCode-AI Smart Development Platform), running model **`monkeycode-ai/monkeycode-basic/deepseek-v4-flash`**.
 
 ### 2026-08-10 — Neon PR preview workflow live (auto DB branch per PR, drizzle push, auto-cleanup)
 

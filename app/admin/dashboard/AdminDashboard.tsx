@@ -97,7 +97,7 @@ export function AdminDashboard() {
       } catch (err) {
         console.error("Failed to load requests:", err);
       } finally {
-        setTimeout(() => setLoading(false), 500);
+        setLoading(false);
       }
     })();
     void (async () => {
@@ -276,6 +276,12 @@ export function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => router.push("/admin/reviews")}
+              className="px-3 py-2 text-stone hover:text-ink hover:bg-walnut/5 text-sm rounded-lg transition-colors"
+            >
+              Reviews
+            </button>
             <button
               onClick={() => router.push("/")}
               className="px-3 py-2 text-stone hover:text-ink hover:bg-walnut/5 text-sm rounded-lg transition-colors"
