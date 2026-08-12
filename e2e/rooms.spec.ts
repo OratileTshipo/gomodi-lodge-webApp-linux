@@ -13,7 +13,7 @@ test("rooms explorer lists seeded rooms with bath/shower labels", async ({
   const errors = collectErrors(page);
   await page.goto("/rooms");
 
-  await expect(page.locator("body")).toContainText(/Showing \\d+ of \\d+ rooms/);
+  await expect(page.locator("body")).toContainText(/Showing \d+ of \d+ rooms/);
 
   // Every room card surfaces a bathroom type — the display-bug regression test.
   const body = await page.locator("body").innerText();
@@ -65,7 +65,8 @@ test("room detail modal opens and closes", async ({ page, dbReady }) => {
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText(/amenities|description|book|price/i);
 
-  await dialog.getByRole("button", { name: "Close" }).click();
+  // The dialog renders two Close affordances (X + footer button) — either closes it.
+  await dialog.getByRole("button", { name: "Close" }).first().click();
   await expect(dialog).toBeHidden();
 });
 
