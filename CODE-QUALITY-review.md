@@ -73,16 +73,19 @@ real bugs, all now fixed.
 
 ---
 
-## What remains (for a future agent)
+## Follow-ups — status
 
-| Item | Why it's still open |
+Everything below except the owner-side env untrack shipped in the second pass
+(`chore/follow-up-quality-pass`, merged into `dev` 2026-08-12).
+
+| Item | Status |
 |---|---|
-| **Untrack `.env` / `.env.local`** | Both are tracked in git (pre-existing security exposure). The platform blocks env-file operations from the sandbox, so it needs the owner: `git rm --cached .env .env.local` in a dedicated PR, keep local copies, rotate any secrets that were ever pushed. `.gitignore` is already fixed to prevent re-adding. |
-| **`AdminDashboard.tsx` extraction (710 lines)** | Same split pattern as `BookingForm` now proves: extract the tab panels into components (the `ReviewsList`/`QuotesList` pattern already exists). Left for a dedicated pass to keep this PR reviewable. |
-| **`app/page.tsx` section extraction (838 lines)** | Extract `ReviewsSection`, dining teaser, things-to-do, contact CTA into components. Same reasoning — size kept this PR honest. |
-| **`Result<T>` unification** | The `{ ok } \| { ok: false; error }` shape is already consistent everywhere; a shared `lib/result.ts` type would formalize it. Purely mechanical, low priority. |
-| **In-memory rate limiter → Upstash/Redis** | Per-instance brake only (documented in `middleware.ts`); swap when the site outgrows a single warm instance. |
-| **CI: lint + typecheck job** | Repo has GitHub Actions; add a job running `tsc --noEmit`, `npm run lint`, `npm test` so every PR gates on them. |
+| **Untrack `.env` / `.env.local`** | ⏳ Owner-side (platform blocks env-file ops from the sandbox): `git rm --cached .env .env.local` in a dedicated PR, keep local copies, rotate any secrets that were ever pushed. `.gitignore` is already fixed to prevent re-adding. |
+| **`AdminDashboard.tsx` extraction (710 → 189 lines)** | ✅ Split into `AdminHeader`, `ManagerStats`, `RequestCard`, `EmptyState`, `DashboardSkeleton` + pure `types.ts`/`format.ts` under `app/admin/dashboard/`. |
+| **`app/page.tsx` section extraction (838 → 55 lines)** | ✅ 12 sections extracted to `components/home/`; anchor ids preserved. |
+| **`Result<T>` unification** | ✅ `lib/result.ts` — the four action-result unions now alias the shared type. |
+| **In-memory rate limiter → Upstash/Redis** | ✅ `lib/rate-limit.ts` — Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` exist, in-memory fallback otherwise; both fail open. Add the keys in the Freebuff Keys UI when the site needs a global limiter. |
+| **CI: lint + typecheck job** | ✅ `.github/workflows/ci.yml` — tsc + lint + vitest on every PR and push to dev/main. |
 
 ---
 

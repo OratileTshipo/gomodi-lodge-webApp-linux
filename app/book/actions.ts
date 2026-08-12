@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result } from "@/lib/result";
 import { db } from "@/lib/db";
 import { bookingRequests, bookingRoomLines, addOnSelections, rooms, proofOfPayments } from "@/lib/db/schema";
 import { and, eq, lt, gt } from "drizzle-orm";
@@ -32,9 +33,7 @@ export type LeisureBookingInput = {
   proofOfPaymentUrl?: string | null;
 };
 
-export type LeisureBookingResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export type LeisureBookingResult = Result;
 
 export async function submitLeisureBooking(
   input: LeisureBookingInput

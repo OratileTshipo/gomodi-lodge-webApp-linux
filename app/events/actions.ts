@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result } from "@/lib/result";
 import { db } from "@/lib/db";
 import { bookingRequests, eventDetails } from "@/lib/db/schema";
 import {
@@ -33,7 +34,7 @@ export type EventInquiryInput = {
   notes?: string;
 };
 
-export type EventInquiryResult = { ok: true } | { ok: false; error: string };
+export type EventInquiryResult = Result;
 
 export async function submitEventInquiry(
   input: EventInquiryInput

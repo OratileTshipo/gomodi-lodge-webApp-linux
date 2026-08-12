@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { allowRequest } from "@/lib/rate-limit";
 
 /**
  * Global security middleware — the front door for every request.
@@ -14,44 +15,18 @@ import { NextResponse, type NextRequest } from "next/server";
  *     request/verify, file upload, and the three public booking forms.
  *
  * Notes:
- *  - The rate limiter is in-memory, i.e. per warm instance. On Vercel this is
- *    a strong per-instance brake, not a global guarantee; the same caveat
- *    already applied to the OTP limiter. Swap for a Redis/Upstash limiter if
- *    the site ever grows to many concurrent instances.
+ *  - The limiter is Upstash Redis (global, multi-instance) when the Upstash
+ *    REST credentials are configured, and falls back to a per-instance
+ *    in-memory window otherwise (see lib/rate-limit.ts). Both fail open on
+ *    limiter errors so an outage never blocks every guest.
  *  - The whole app is force-dynamic, so per-request nonces are safe (no
  *    static pages to invalidate).
  */
 
 // ---------------------------------------------------------------------------
-// Rate limiting (sliding window, per client IP)
+// Rate limiting (sliding window, per client IP — Upstash Redis, in-memory
+// fallback; see lib/rate-limit.ts)
 // ---------------------------------------------------------------------------
-
-const MAX_BUCKETS = 100_000;
-const buckets = new Map<string, number[]>();
-
-function pruneBuckets() {
-  if (buckets.size <= MAX_BUCKETS) return;
-  const now = Date.now();
-  for (const [key, hits] of buckets) {
-    if (hits.length === 0 || now - hits[hits.length - 1] > 60 * 60 * 1000) {
-      buckets.delete(key);
-    }
-  }
-}
-
-/** Returns true when the request is allowed; false when rate-limited. */
-function allowRequest(key: string, max: number, windowMs: number): boolean {
-  const now = Date.now();
-  pruneBuckets();
-  const hits = (buckets.get(key) || []).filter((t) => now - t < windowMs);
-  if (hits.length >= max) {
-    buckets.set(key, hits);
-    return false;
-  }
-  hits.push(now);
-  buckets.set(key, hits);
-  return true;
-}
 
 function clientIp(request: NextRequest): string {
   // Vercel and most proxies set x-forwarded-for; take the leftmost (client) hop.
@@ -141,7 +116,7 @@ function buildCsp(nonce: string): string {
 // Middleware
 // ---------------------------------------------------------------------------
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
   const ip = clientIp(request);
@@ -149,7 +124,6 @@ export function middleware(request: NextRequest) {
   // 1. CSRF: reject cross-origin state-changing requests before anything else.
   if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
     if (!isTrustedOrigin(request)) {
-      const isApi = pathname.startsWith("/api/");
       return NextResponse.json(
         { error: "Cross-origin request rejected" },
         { status: 403, headers: { "Cache-Control": "no-store" } }
@@ -160,9 +134,9 @@ export function middleware(request: NextRequest) {
   // 2. Rate limiting on abuse-prone endpoints.
   for (const rule of RATE_RULES) {
     if (method === rule.method && pathname === rule.path) {
-      if (!allowRequest(`rl:${rule.path}:${ip}`, rule.max, rule.windowMs)) {
+      const allowed = await allowRequest(`rl:${rule.path}:${ip}`, rule.max, rule.windowMs);
+      if (!allowed) {
         const retryAfter = Math.ceil(rule.windowMs / 1000);
-        const isApi = pathname.startsWith("/api/");
         return NextResponse.json(
           { error: "Too many requests. Please slow down and try again shortly." },
           { status: 429, headers: { "Retry-After": String(retryAfter), "Cache-Control": "no-store" } }
