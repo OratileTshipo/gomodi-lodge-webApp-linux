@@ -5,6 +5,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## See also (READ FIRST before UI / photography / copy / reviews work)
 
 - **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
+- **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 pass fixed (lint errors, `bathOrShower` bug, BookingForm split, shared booking helpers, vitest). READ before refactoring: it lists the remaining follow-ups (AdminDashboard/page extraction, env untrack, CI job).
 - **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
 
 ## Guest reviews (merged into `dev` 2026-08-12)
@@ -21,6 +22,13 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## Contact surfaces
 
 - `lib/contact.ts` is the single source of truth for WhatsApp/email (`WHATSAPP_NUMBER = null` until the owner supplies it; `whatsappHref()` returns `"#"` meanwhile). Swap the number there and every CTA updates.
+
+## Code-quality (2026-08-12 pass merged into `dev`)
+
+- **Room bathroom label**: use `bathLabel()` from `lib/rooms.ts` — never hand-roll `bathOrShower === "bath"` comparisons (seed stores capitalised values; the old lowercase check silently showed "Shower" for rooms 2 & 8).
+- **Unit tests**: `npm test` (Vitest) covers the pure money/date/validate helpers in `lib/__tests__/`. Run before PRs alongside build/tsc.
+- **Booking action logic**: contact validation + add-on inserts live in `lib/booking-common.ts` — the three booking actions import from there; don't re-implement in new actions.
+- **Pricing**: money flows from `lib/pricing.ts` (single source of truth) — including catering constants on the events page/form.
 
 ## Commands
 
@@ -125,6 +133,17 @@ No system-level browsers (no sudo), but all three are installed user-space and o
 - The symlinks are tied to the current nvm Node version dir — re-create them if Node is upgraded. Raw binaries live in `~/.cache/ms-playwright/` and `~/edge-pkg/` (survive node changes).
 
 ## Changelog
+
+### 2026-08-12 — Code-quality pass (Buffy)
+
+- **Lint is now green (Aug 12):** all 4 pre-existing React lint errors fixed (RoomsExplorer setState-in-effect, BranchModal setState-in-effect, HeroSlideshow ref-during-render, root `test_pages.js` → `scripts/test-pages.js`). `npm run lint` reports zero errors.
+- **`bathOrShower` display bug fixed (Aug 12):** shared `lib/rooms.ts` `bathLabel()` replaces the lowercase `=== "bath"` comparisons across homepage/rooms/booking — rooms 2 & 8 now render their real bathroom type.
+- **BookingForm split (Aug 12):** 818-line wizard decomposed into step components (`app/book/BookingCalendar.tsx`, `RoomStep`, `MealsStep`, `DetailsStep`, `PaymentStep`, `StaySummary`, `OtherRooms`) + shared `booking-utils.ts`. Admin dashboard + homepage remain documented follow-ups.
+- **Shared booking-action helpers (Aug 12):** `lib/booking-common.ts` (`validateContact`, `insertAddOnRows`, meal normalization) — book/corporate/events actions de-duplicated; `nightDates()` added to `lib/validate.ts`.
+- **Quick wins (Aug 12):** availability check is now a single SQL query (was N+1); review stats use SQL `AVG`/`COUNT`; `submitReview` is transactional; events-page prices read `lib/pricing.ts` constants.
+- **Vitest added (Aug 12):** `npm test` — 42 tests across `lib/__tests__/` (quote-math cents math, seasonal rate resolution, validate primitives, bathLabel).
+- **Repo hygiene (Aug 12):** `.gitignore` rewritten (was mangled — stray markdown fence + paste artifacts); `tsconfig.tsbuildinfo` untracked; scratch artifacts consolidated under `scratch/` (ignored).
+- **Still needs the owner's hand:** `.env` / `.env.local` remain tracked in git (platform blocks sandbox env ops) — `git rm --cached .env .env.local` in a dedicated PR, rotate any secrets that were ever pushed.
 
 ### 2026-08-11 — Page response-time pass: parallel admin-requests queries + perf benchmark
 

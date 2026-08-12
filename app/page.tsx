@@ -2,10 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { BookNowHeroButtonClient } from "@/components/BookNowHeroButtonClient";
-import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { BREAKFAST_PRICE, DINNER_PRICE, EVENT_CATERING_FROM } from "@/lib/pricing";
 import { whatsappHref, ENQUIRIES_EMAIL } from "@/lib/contact";
 import { listApprovedReviews, reviewStats } from "@/lib/reviews";
 import { getRooms } from "@/lib/rooms-cache";
+import { bathLabel } from "@/lib/rooms";
 import HeroSlideshow from "@/components/HeroSlideshow";
 
 export const dynamic = "force-dynamic";
@@ -141,7 +142,7 @@ export default async function HomePage() {
                 iconBg: "bg-gold-tint",
                 items: [
                   "Up to 50 guests",
-                  "Catering packages from R150 pp",
+                  `Catering packages from R${EVENT_CATERING_FROM} pp`,
                   "Accommodation for guests on-site",
                 ],
                 link: "/events",
@@ -329,8 +330,7 @@ export default async function HomePage() {
                   </div>
                   <p className="text-stone text-sm mt-1">
                     {room.config} ·{" "}
-                    {room.bathOrShower === "bath" ? "Bath" : "Shower"} · 2
-                    guests
+                    {bathLabel(room.bathOrShower)} · 2 guests
                   </p>
                 </div>
               </Link>
@@ -577,7 +577,7 @@ export default async function HomePage() {
             <ul className="mt-6 space-y-3 text-sm text-ink">
               {[
                 "Up to 50 guests seated or cocktail",
-                "Catering packages from R150 pp",
+                `Catering packages from R${EVENT_CATERING_FROM} pp`,
                 "On-site accommodation for your guests",
                 "Confirmed pricing — no surprises on the day",
               ].map((item, i) => (

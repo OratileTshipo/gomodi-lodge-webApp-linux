@@ -11,17 +11,15 @@ import {
 import { and, eq, lt, gt } from "drizzle-orm";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
-import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { sanitizeContact, buildAddOnRows } from "@/lib/booking-common";
 import {
   safeText,
-  normalizePhone,
-  isValidEmail,
   isValidStay,
+  isValidEmail,
   isNotInPast,
   intInRange,
   oneOf,
-  MAX_NAME,
-  MAX_EMAIL,
+  nightDates,
   MAX_COMPANY,
   MAX_JOB_TITLE,
   MAX_REFERENCE,
@@ -56,16 +54,6 @@ export type CorporateQuoteInput = {
 };
 
 export type CorporateQuoteResult = { ok: true } | { ok: false; error: string };
-
-function nightsBetween(checkIn: string, checkOut: string): string[] {
-  const dates: string[] = [];
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
-  for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-    dates.push(d.toISOString().slice(0, 10));
-  }
-  return dates;
-}
 
 async function findAvailableRoomIds(
   isFlexible: boolean,
@@ -105,17 +93,15 @@ export async function submitCorporateQuote(
   input: CorporateQuoteInput
 ): Promise<CorporateQuoteResult> {
   // ---- Strict server-side validation ----
-  const fullName = safeText(input.fullName, MAX_NAME);
-  if (!fullName) return { ok: false, error: "Please enter your full name." };
+  const contact = sanitizeContact(
+    { name: input.fullName, phone: input.phone, email: input.email },
+    { requireEmail: true }
+  );
+  if (!contact.ok) return contact;
+  const { name: fullName, phone, email } = contact;
 
   const company = safeText(input.company, MAX_COMPANY);
   if (!company) return { ok: false, error: "Please enter your company or department." };
-
-  const phone = normalizePhone(input.phone);
-  if (!phone) return { ok: false, error: "Please enter a valid contact number." };
-
-  const email = safeText(input.email, MAX_EMAIL);
-  if (!isValidEmail(email)) return { ok: false, error: "Please enter a valid email address." };
 
   const billingEmail =
     input.billingEmail && input.billingEmail.trim() !== ""
@@ -192,19 +178,14 @@ export async function submitCorporateQuote(
       }
     }
 
-    const nights = nightsBetween(input.checkIn, input.checkOut);
     const totalGuests = validLines.reduce((sum, l) => sum + l.count * l.guestsPerRoom, 0);
-    const addOnRows: (typeof addOnSelections.$inferInsert)[] = [];
-    if (input.breakfast) {
-      for (const night of nights) {
-        addOnRows.push({ bookingRequestId: request.id, type: "breakfast", persons: totalGuests, date: night, unitPrice: BREAKFAST_PRICE.toFixed(2) });
-      }
-    }
-    if (input.dinner) {
-      for (const night of nights) {
-        addOnRows.push({ bookingRequestId: request.id, type: "dinner", persons: totalGuests, date: night, unitPrice: DINNER_PRICE.toFixed(2) });
-      }
-    }
+    const addOnRows = buildAddOnRows({
+      bookingRequestId: request.id,
+      nights: nightDates(input.checkIn, input.checkOut),
+      guestCount: totalGuests,
+      breakfast: input.breakfast,
+      dinner: input.dinner,
+    });
     if (addOnRows.length > 0) await db.insert(addOnSelections).values(addOnRows);
 
     await db.insert(corporateDetails).values({

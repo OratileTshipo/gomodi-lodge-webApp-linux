@@ -25,7 +25,7 @@ const eventMap: Record<number, any> = { 2: { eventType: "wedding", expectedGuest
 const corporateMap: Record<number, any> = { 3: { companyName: "ACME", poNumber: "PO-123" } };
 const popMap: Record<number, boolean> = { 1: true };
 
-const out = enrichRequests(pending, linesByRequest, approved, {}, corporateMap, eventMap, popMap);
+const out = enrichRequests(pending, linesByRequest, approved, {}, corporateMap, eventMap, popMap, {});
 const byId = Object.fromEntries(out.map((r: any) => [r.id, r]));
 
 let fails = 0;
@@ -51,7 +51,7 @@ assert("corporate has no hard conflict (rooms/dates don't overlap approved)", by
 // Soft-warning scenario: a 4th pending leisure request overlapping #1 on room 2
 const pending2 = [...pending, { id: 4, category: "leisure", guestName: "Second Leisure", contactPhone: "0824444444", contactEmail: null, specialRequests: null, status: "pending", notifiedPartnerAt: null, contactedAt: null }];
 const lines2 = { ...linesByRequest, 4: [{ roomId: 2, checkIn: "2026-08-15", checkOut: "2026-08-17", guestCount: 2, roomName: "Room 2" }] };
-const out2 = enrichRequests(pending2, lines2, approved, {}, {}, {}, {});
+const out2 = enrichRequests(pending2, lines2, approved, {}, {}, {}, {}, {});
 const byId2 = Object.fromEntries(out2.map((r: any) => [r.id, r]));
 assert("soft warning on overlapping pending request #1", byId2[1].pendingWarning?.includes("1 OTHER PENDING REQUEST"));
 assert("soft warning on overlapping pending request #4", byId2[4].pendingWarning?.includes("1 OTHER PENDING REQUEST"));

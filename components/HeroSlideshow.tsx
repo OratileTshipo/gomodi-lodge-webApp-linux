@@ -21,8 +21,15 @@ export default function HeroSlideshow({
   // (priority), and later slides are fetched on demand when they rotate in.
   const [displayedIndex, setDisplayedIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  // Mirror of the current index for callbacks (timers, buttons). Synced after
+  // render via effect — writing refs during render is a react-hooks violation
+  // and can produce tearing when React 19 concurrent rendering interleaves
+  // renders. Events fire after effects run, so callbacks always see the
+  // latest value.
   const displayedRef = useRef(0);
-  displayedRef.current = displayedIndex;
+  useEffect(() => {
+    displayedRef.current = displayedIndex;
+  }, [displayedIndex]);
   // Single coordinated timer for dropping the outgoing slide after the fade —
   // clearing it on each transition prevents rapid clicks from cutting a
   // crossfade short with a stale cleanup.
