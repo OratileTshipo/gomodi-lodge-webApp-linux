@@ -1,7 +1,7 @@
 # Completed Job — Pricing Drift Fix (Task 1) + DB Keep-Alive (Task 3)
 
 **Repository:** gomodi-lodge-webApp-linux
-**Branch:** `dev` (created from `main` for this delivery)
+**Delivered to branch:** `dev` (rebased on top of `origin/dev`, pushed)
 **Date:** 2026-08-11
 
 ---
@@ -26,19 +26,29 @@ Task 4 (MiniMax M2.5) and the other outstanding gaps in
    `export const ROOM_BASE_RATE = 750;` next to the existing
    `BREAKFAST_PRICE` / `DINNER_PRICE` exports (same style), and updated the
    file's doc comment since it is now the single source of truth for room +
-   meal pricing.
-2. **`app/corporate/page.tsx`** — imported `ROOM_BASE_RATE` and replaced both
-   hardcoded `price: 950` entries in `ROOM_TYPES` with `price: ROOM_BASE_RATE`.
+   meal pricing. On `dev` this file already carried `LUNCH_PRICE` from a
+   parallel task — that was preserved untouched.
+2. **`app/corporate/CorporateQuoteForm.tsx`** — the corporate form's
+   `ROOM_TYPES` array now prices both room types from `ROOM_BASE_RATE`
+   instead of the drifted `price: 950` literals. (Note: on `dev`, the
+   corporate page was refactored in PR #11 to lazy-load this form component,
+   so `ROOM_TYPES` lives here rather than in `app/corporate/page.tsx`.)
 3. **`app/layout.tsx`** — the JSON-LD `priceRange` field was the only other
    clearly room-rate `950` in the repo (it advertised the stale `"R950-R1200"`
    range); changed to `"R750"` to match the confirmed flat rate.
+4. **`lib/db/seed.ts`** — dev's committed seed still had Room 8's
+   `baseRate: "950.00"` — the exact drift this task exists to kill (a local
+   fix existed only in an uncommitted working tree). Corrected to `"750.00"`
+   with an explanatory comment. The seasonal `ratePerNight: "950.00"`
+   entries are untouched (intentional festive-window overrides).
 
 ### Findings from the full-repo `950` sweep
 
 | Location | Match | Verdict |
 |---|---|---|
-| `app/corporate/page.tsx` | `price: 950` ×2 (ROOM_TYPES) | **Fixed** — this was the drift |
+| `app/corporate/CorporateQuoteForm.tsx` | `price: 950` ×2 (ROOM_TYPES) | **Fixed** — this was the drift |
 | `app/layout.tsx` | `priceRange: "R950-R1200"` (JSON-LD) | **Fixed** — clearly a room rate |
+| `lib/db/seed.ts` | Room 8 `baseRate: "950.00"` | **Fixed** → `"750.00"` — the confirmed flat rate (this exact drift was still present in dev's committed seed) |
 | `lib/db/seed.ts` | `ratePerNight: "950.00"` ×2 | **Left alone** — seasonal festive-window overrides (separate confirmed pricing domain; base rate stays R750 outside those windows) |
 | `lib/seasonal.ts` | comment mentioning "R950" festive season | **Left alone** — documents the seasonal domain |
 | `.agents/content-pricing-auditor.ts` | historical audit narrative | **Left alone** — agent prompt/history, not a live rate |
@@ -109,12 +119,23 @@ revert the page change) to restore a green typecheck.
 
 | File | Change |
 |---|---|
-| `lib/pricing.ts` | Added `ROOM_BASE_RATE = 750`; updated doc comment |
-| `app/corporate/page.tsx` | `ROOM_TYPES` now priced from `ROOM_BASE_RATE` |
+| `lib/pricing.ts` | Added `ROOM_BASE_RATE = 750`; updated doc comment; preserved dev's `LUNCH_PRICE` |
+| `app/corporate/CorporateQuoteForm.tsx` | `ROOM_TYPES` now priced from `ROOM_BASE_RATE` (was 950) |
 | `app/layout.tsx` | JSON-LD `priceRange` → `"R750"` |
 | `app/api/ping/route.ts` | New keep-alive GET endpoint (`SELECT 1`) |
 | `vercel.json` | New — `/api/ping` cron every 4 minutes |
 | `completedjob.md` | This document |
+
+### Branch integration note
+
+This work was originally committed on top of the local `main` tip
+(`f284ffe`). Before pushing, `origin/dev` was fetched: it had moved ahead
+with several merged PRs (including #10 Lelz partnership and #11
+server-shell corporate form refactor). The delivery commit was **rebased
+onto `origin/dev`** and the conflicts resolved — the corporate `ROOM_TYPES`
+drift fix was relocated to `app/corporate/CorporateQuoteForm.tsx` (where the
+refactor moved it), and dev's `LUNCH_PRICE` addition to `lib/pricing.ts` was
+preserved. The push updated `dev` (head of PR #12) with a single new commit.
 
 ## Next steps for the Architect
 
