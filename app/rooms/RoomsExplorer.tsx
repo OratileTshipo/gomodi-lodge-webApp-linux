@@ -113,33 +113,46 @@ export function RoomsExplorer({
         </ol>
       </nav>
 
-      {/* HERO */}
-      <section className="relative h-[45vh] min-h-[300px] max-h-[440px] overflow-hidden parallax-container mb-0">
-        <HeroSlideshow
-          images={[
-            { src: "/images/rooms/room1.jpeg", alt: "Room 1 — main view" },
-            { src: "/images/rooms/room1-view1.jpeg", alt: "Room 1 — second view" },
-            { src: "/images/rooms/room1-view2.jpeg", alt: "Room 1 — third view" },
-            { src: "/images/rooms/room1-view3.jpeg", alt: "Room 1 — fourth view" },
-            { src: "/images/rooms/room1-view4.jpeg", alt: "Room 1 — fifth view" },
-            { src: "/images/rooms/room1-bed-tv.jpeg", alt: "Room 1 — bed and TV" },
-            { src: "/images/rooms/room1-bathroom.jpeg", alt: "Room 1 — bathroom" },
-          ]}
-          interval={5000}
-          className="absolute inset-0"
-        />
-        <div className="relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12">
-          <h1 className="font-display font-semibold text-cream-light text-3xl md:text-4xl max-w-3xl motion-fade-up motion-ready" data-stagger="1">Every room, freshly renovated.</h1>
-          <p className="text-cream/90 mt-3 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">
-            Terracotta walls, walnut wood, and cream textiles — nine rooms, all recently renovated.
-          </p>
+      {/* HERO — same template as corporate/events (hero-outer + hero-content,
+          identical spacing, stagger and interval; only text, images and height
+          differ). Height is trimmed (~38vh) so the room grid sits above the
+          fold on laptops instead of being pushed off-screen. */}
+      <section className="relative">
+        <div className="hero-outer relative h-[38vh] min-h-[min(360px,calc(100svh_-_var(--header-h)))] max-h-[440px] overflow-hidden parallax-container">
+          <HeroSlideshow
+            images={[
+              { src: "/images/rooms/room1.jpeg", alt: "Room 1 — main view" },
+              { src: "/images/rooms/room1-view1.jpeg", alt: "Room 1 — second view" },
+              { src: "/images/rooms/room1-view2.jpeg", alt: "Room 1 — third view" },
+              { src: "/images/rooms/room1-view3.jpeg", alt: "Room 1 — fourth view" },
+            ]}
+            interval={5500}
+            className="absolute inset-0"
+          />
+          <div className="hero-content relative z-10 h-full max-w-6xl mx-auto px-6 flex flex-col justify-end pb-12 md:pb-16">
+            <h1 className="font-display text-cream-light font-semibold text-3xl md:text-5xl leading-tight max-w-3xl motion-fade-up motion-ready" data-stagger="1">
+              Every room, freshly renovated.
+            </h1>
+            <p className="text-cream/90 mt-4 max-w-xl text-base md:text-lg motion-fade-up motion-ready" data-stagger="2">
+              Terracotta walls, walnut wood, and cream textiles — nine rooms, all recently renovated.
+            </p>
+            <div className="hero-cta mt-8 flex flex-col sm:flex-row gap-3 motion-fade-up motion-ready" data-stagger="3">
+              <Link
+                href="/book"
+                className="px-6 py-3 rounded-lg font-semibold text-base inline-flex items-center justify-center gap-2 bg-cream-light text-walnut hover:bg-white transition-all shadow-lg shadow-ink/10 hover:shadow-xl btn-press"
+              >
+                Book a Stay
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </Link>
+              <a
+                href="#rooms-grid"
+                className="px-6 py-3 rounded-lg font-semibold text-base border border-cream-light/40 text-cream-light hover:bg-cream-light/10 inline-flex items-center justify-center backdrop-blur-sm btn-press"
+              >
+                Browse Rooms
+              </a>
+            </div>
+          </div>
         </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 pb-12 pt-8">
-        <p className="text-stone max-w-2xl text-base leading-relaxed motion-fade-up motion-ready" data-stagger="2">
-          Terracotta walls, walnut wood, and cream textiles throughout. Every room has a Smart TV, WiFi, air conditioning with fan and heater backup, and a shower or bath. One room can be set up as two singles or one double — tell us which you prefer when you book.
-        </p>
       </section>
 
       {/* FILTER & SORT BAR */}
@@ -186,7 +199,7 @@ export function RoomsExplorer({
       </section>
 
       {/* ROOMS GRID */}
-      <section className="max-w-6xl mx-auto px-6 pb-20">
+      <section id="rooms-grid" className="max-w-6xl mx-auto px-6 pb-20">
         {sorted.length > 0 ? (
           <div key={`${filter}-${sort}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sorted.map((room, i) => {

@@ -4,11 +4,11 @@ const definition: AgentDefinition = {
   id: 'accessibility-reviewer',
   version: '1.0.0',
   displayName: 'Accessibility Reviewer',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'deepseek/deepseek-v4-flash',
   outputMode: 'last_message',
   includeMessageHistory: false,
-  toolNames: ['read_files', 'code_search', 'end_turn'],
-  spawnableAgents: ['codebuff/file-picker@0.0.1'],
+  toolNames: ['read_files', 'spawn_agents'],
+  spawnableAgents: ['file-picker'],
   spawnerPrompt:
     'Spawn this agent to check new or changed guest-facing UI against the WCAG AA baseline in knowledge.md. It reports issues only — it does not fix them.',
   inputSchema: {
@@ -27,8 +27,9 @@ The project's accessibility floor, per knowledge.md, is WCAG AA contrast with st
 4. Form inputs without an associated, visible label.
 5. Modal dialogs missing proper focus trapping or an accessible way to close via keyboard (Escape).
 
-Produce a short, prioritized report grouped by file and severity. Do not edit any files — hand the report back for a human or another agent to act on.`,
-  stepPrompt: 'Continue until every file in scope has been reviewed, then summarize and end_turn.',
+If you need to locate files beyond what you were given, spawn the file-picker agent. Produce a short, prioritized report grouped by file and severity, then report it via set_output. Do not edit any files — hand the report back for a human or another agent to act on.`,
+  stepPrompt:
+    'Continue until every file in scope has been reviewed, then report your findings with set_output.',
 }
 
 export default definition

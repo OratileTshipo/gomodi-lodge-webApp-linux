@@ -1,8 +1,5 @@
-import { db } from "@/lib/db";
-import { rooms } from "@/lib/db/schema";
 import { RoomsExplorer } from "./RoomsExplorer";
-
-export const dynamic = "force-dynamic";
+import { getRooms } from "@/lib/rooms-cache";
 
 export default async function RoomsPage({
   searchParams,
@@ -10,7 +7,8 @@ export default async function RoomsPage({
   searchParams: Promise<{ checkIn?: string; checkOut?: string; guests?: string }>;
 }) {
   const params = await searchParams;
-  const allRooms = await db.select().from(rooms).orderBy(rooms.id);
+  // 60s-cached room list (lib/rooms-cache) — repeat visits skip the remote DB.
+  const allRooms = await getRooms();
 
   return (
     <RoomsExplorer

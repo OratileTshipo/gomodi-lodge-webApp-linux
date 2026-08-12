@@ -126,12 +126,13 @@ Setup & runtime constraints:
 ## 6. Coding & Refactoring Guidelines for AI Models
 
 - **Logic Rules:**
-  - Preserve the Drizzle schema (`lib/db/schema.ts`), enum values (`leisure|corporate|event`, `pending|approved|declined|cancelled`, `breakfast|dinner`, `owner|assistant|staff`, `clock_in|clock_out`), and existing API payload shapes — the admin dashboard and regression scripts depend on them.
+  - Preserve the Drizzle schema (`lib/db/schema.ts`), enum values (`leisure|corporate|event`, `pending|approved|declined|cancelled`, `breakfast|lunch|dinner`, `owner|assistant|staff|partner`, `clock_in|clock_out`), and existing API payload shapes — the admin dashboard and regression scripts depend on them.
   - Server Actions must keep the `{ ok: true } | { ok: false; error }` result contract and validate before inserting.
   - Availability rule is non-negotiable: only **approved** bookings block a room; approve re-checks every room line and returns 409 on overlap. Never weaken this.
   - Meal prices live in `lib/pricing.ts` (`BREAKFAST_PRICE = 175`, `DINNER_PRICE = 300`) — keep forms and marketing copy reading from there; do not hardcode new copies.
   - Notifications must go through `lib/notifications.ts` (single swap-in point for the real WhatsApp API).
-  - Auth guards: booking writes require `requireManager()`, queue reads/time-clock require `requireStaff()`; derive users from the signed session, never from request bodies.
+  - Auth guards: booking writes require `requireManager()`, queue reads/time-clock require `requireStaff()`; derive users from the signed session, never from request bodies. The Lelz partner role uses `requirePartner()` (event-only scope) and the admin queue is role-scoped server-side (staff → leisure only, partner → events only).
+  - **Gomodi/Lelz scope split (Lelz Business Enterprise partnership):** any request tied to `category = "event"` — including all standalone/external catering enquiries — belongs to **Lelz Business Enterprise** (quoted, coordinated, and delivered by Lelz; the Owner's assistant retains full visibility as Events Manager). Only booking-tied meal add-ons (breakfast/lunch/dinner on a Leisure/Corporate room booking) belong to Gomodi. Staff-role users must never see any event/catering data.
 - **UI Rules:**
   - Use the brand tokens (terracotta/walnut/cream/gold/ink) and existing utility classes (`.btn-*`, `.pill-*`, `.card-shadow`, `.form-input`, etc.); do not introduce off-palette colors on public pages.
   - Follow the motion system strictly: scroll-reveal classes need `motion-ready` + observer support; elements mounted after load (success screens, filtered grids) must use **`.motion-pop`**, never bare `motion-ready`/`motion-scale-in` (they stay `opacity: 0`).

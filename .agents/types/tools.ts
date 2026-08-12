@@ -1,36 +1,35 @@
 /**
- * Union type of all available tool names
+ * Union type of all available tool names in Freebuff.
+ *
+ * IMPORTANT: this is the Freebuff tool set. A few tools this project's agents
+ * used under Codebuff do NOT exist here — use the equivalent Freebuff agents
+ * from `spawnableAgents` instead:
+ *
+ *   code_search           -> spawn the 'code-searcher' agent
+ *   run_terminal_command  -> spawn the 'basher' agent
+ *   web_search / read_docs-> spawn the 'researcher-web' / 'researcher-docs' agents
+ *   find_files            -> spawn the 'file-picker' agent
+ *   end_turn              -> use 'set_output' to report results
+ *
+ * Agent files that list a tool not in this union (or a spawnable agent that
+ * is not 'file-picker', 'code-searcher', 'researcher-web', 'researcher-docs',
+ * 'basher', 'tmux-cli', 'browser-use', 'code-reviewer-deepseek-flash', or a
+ * sibling agent id from this same .agents directory) will fail to load.
  */
 export type ToolName =
-  | 'add_message'
-  | 'apply_patch'
   | 'ask_user'
-  | 'cloud_plan_ready'
-  | 'code_search'
-  | 'end_turn'
-  | 'find_files'
   | 'glob'
   | 'gravity_index'
   | 'list_directory'
-  | 'lookup_agent_info'
-  | 'propose_str_replace'
-  | 'propose_write_file'
-  | 'read_docs'
   | 'read_files'
   | 'read_subtree'
   | 'read_url'
   | 'render_ui'
-  | 'run_file_change_hooks'
-  | 'run_terminal_command'
-  | 'set_messages'
   | 'set_output'
   | 'skill'
   | 'spawn_agents'
   | 'str_replace'
   | 'suggest_followups'
-  | 'task_completed'
-  | 'think_deeply'
-  | 'web_search'
   | 'write_file'
   | 'write_todos'
 

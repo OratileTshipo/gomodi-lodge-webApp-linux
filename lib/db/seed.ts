@@ -120,6 +120,7 @@ const USERS_DATA: (typeof users.$inferInsert)[] = [
   { name: "Keba", phone: "+27820000004", role: "staff" },
   { name: "Keletso", phone: "+27820000005", role: "staff" },
   { name: "Staff 4", phone: "+27820000006", role: "staff" },
+  { name: "Lelz Business Enterprise", phone: "+27780784139", role: "partner" },
 ];
 
 // Seasonal pricing: festive/busy windows carry a higher per-night rate that

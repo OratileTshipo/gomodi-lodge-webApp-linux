@@ -1,17 +1,37 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
-import { submitEventInquiry } from "./actions";
 
-const CATERING_OPTIONS = [
-  { id: "tea-snacks", label: "Tea & Snacks", price: "R150 pp" },
-  { id: "three-course", label: "Three-Course Meal", price: "R250 pp" },
-  { id: "full-day", label: "Full-Day Package", price: "R350 pp" },
-];
+// The interactive inquiry form is loaded lazily so the hero and static
+// content render immediately (no JS needed). A compact skeleton placeholder
+// is shown while the form JS loads.
+const EventInquiryForm = dynamic(
+  () => import("./EventInquiryForm"),
+  {
+    loading: () => (
+      <section className="py-16 md:py-24 bg-cream-light">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center">
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              Loading inquiry form…
+            </h2>
+            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10 space-y-6">
+              <div className="h-10 bg-walnut/5 rounded-lg animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+                <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+              </div>
+              <div className="h-32 bg-walnut/5 rounded-lg animate-pulse" />
+              <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+  }
+);
 
 const EVENT_TYPES = [
   {
@@ -49,48 +69,123 @@ const FAQS = [
   { q: "What's the cancellation policy?", a: "Our standard cancellation and deposit terms will be included in your written quote." },
 ];
 
+// Lelz Business Enterprise package catalogue — verbatim owner-approved content
+type LelzPackage = {
+  name: string;
+  tag: string;
+  inclusions: string[];
+  prices: { pax: number; price: string; note?: string }[];
+  note?: string;
+};
+
+const PACKAGE_GRADUATION_INCLUSIONS = [
+  "Cabana tent", "Flooring", "Personalised Welcome Board",
+  "Balloon Garland (400 Balloons)", "Guest of honour chair",
+  "Tiffany Gold chairs & cushions", "Glass Tables", "Centrepiece",
+  "Baby accessories", "Artificial flowers", "Dinner plate", "Side Plate",
+  "Napkin", "3pc cutlery set", "Wine Glass", "Champagne Glass",
+];
+
+const PACKAGE_BABY_SHOWER_INCLUSIONS = [
+  "Cabana tent", "Flooring", "Balloon Garland (300 Balloons)",
+  "Guest of honour chair", "Tiffany Gold chairs & cushions", "Glass Tables",
+  "Centrepiece", "Baby accessories", "Artificial flowers", "Dinner plate",
+  "Side Plate", "Napkin", "3pc cutlery set", "Wine Glass", "Champagne Glass",
+];
+
+const PACKAGE_GRADUATION_PRICES = [
+  { pax: 10, price: "R2,200" },
+  { pax: 15, price: "R3,500" },
+  { pax: 20, price: "R4,400" },
+  { pax: 25, price: "R5,500", note: "Platter Incl." },
+  { pax: 30, price: "R6,400", note: "Platter Incl." },
+];
+
+const PACKAGE_BABY_SHOWER_PRICES = [
+  { pax: 10, price: "R2,000" },
+  { pax: 15, price: "R3,000" },
+  { pax: 20, price: "R4,000" },
+  { pax: 25, price: "R4,800" },
+  { pax: 30, price: "R5,500" },
+];
+
+const EVENT_PACKAGES: LelzPackage[] = [
+  {
+    name: "Graduation Package",
+    tag: "Graduation",
+    inclusions: PACKAGE_GRADUATION_INCLUSIONS,
+    prices: PACKAGE_GRADUATION_PRICES,
+  },
+  {
+    name: "Birthday Package",
+    tag: "Birthday",
+    inclusions: PACKAGE_GRADUATION_INCLUSIONS,
+    prices: PACKAGE_GRADUATION_PRICES,
+  },
+  {
+    name: "Baby Shower Package",
+    tag: "Baby Shower",
+    inclusions: PACKAGE_BABY_SHOWER_INCLUSIONS,
+    prices: PACKAGE_BABY_SHOWER_PRICES,
+  },
+  {
+    name: "Standard Package",
+    tag: "Anniversary · Family Gathering · Private Function · Other",
+    inclusions: PACKAGE_BABY_SHOWER_INCLUSIONS,
+    prices: PACKAGE_BABY_SHOWER_PRICES,
+    note: "Additional items and custom décor are available on request — speak to Lelz Business Enterprise when you enquire.",
+  },
+];
+
+function PackageCard({ pkg, stagger }: { pkg: LelzPackage; stagger: number }) {
+  return (
+    <article
+      className="bg-white rounded-2xl border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift"
+      data-stagger={stagger}
+    >
+      <div className="p-6 md:p-8">
+        <span className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Lelz Package</span>
+        <h3 className="font-display font-semibold text-ink text-xl mt-2">{pkg.name}</h3>
+        {pkg.tag && <p className="text-stone text-sm mt-1">{pkg.tag}</p>}
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {pkg.inclusions.map((item) => (
+            <span key={item} className="bg-cream text-ink text-xs px-2.5 py-1 rounded-full border border-walnut/10">
+              {item}
+            </span>
+          ))}
+        </div>
+        {pkg.note && (
+          <p className="mt-4 text-sm text-stone bg-gold-tint border border-gold/30 rounded-xl p-3">
+            &ldquo;{pkg.note}&rdquo;
+          </p>
+        )}
+        <div className="mt-5 overflow-hidden rounded-xl border border-walnut/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-cream text-left text-stone text-xs uppercase tracking-wider">
+                <th className="px-4 py-2.5 font-semibold">Guests</th>
+                <th className="px-4 py-2.5 font-semibold">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pkg.prices.map((row) => (
+                <tr key={row.pax} className="border-t border-walnut/10">
+                  <td className="px-4 py-2.5 text-ink font-medium">{row.pax} pax</td>
+                  <td className="px-4 py-2.5 text-terracotta-dark font-semibold">
+                    {row.price}
+                    {row.note && <span className="text-stone text-xs font-normal"> · {row.note}</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function EventsPage() {
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [eventType, setEventType] = useState("");
-  const [guestCount, setGuestCount] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [altDate, setAltDate] = useState("");
-  const [catering, setCatering] = useState("");
-  const [interestedInRooms, setInterestedInRooms] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Auto-scroll to top on success
-  useEffect(() => {
-    if (status === "success") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [status]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!consent) {
-      setStatus("error");
-      setErrorMessage("Please confirm your consent to continue.");
-      return;
-    }
-    setStatus("submitting");
-    setErrorMessage(null);
-    const result = await submitEventInquiry({
-      fullName, phone, email, eventType,
-      guestCount: Number(guestCount), eventDate, altDate,
-      catering, interestedInRooms, notes,
-    });
-    if (result.ok) setStatus("success");
-    else { setStatus("error"); setErrorMessage(result.error); }
-  }
-
   return (
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
@@ -101,7 +196,7 @@ export default function EventsPage() {
         </ol>
       </nav>
 
-      {/* HERO */}
+      {/* HERO — preloaded first image renders in the HTML stream */}
       <section className="relative">
         <div className="hero-outer relative h-[55vh] min-h-[min(520px,calc(100svh_-_var(--header-h)))] max-h-[560px] overflow-hidden parallax-container">
           <HeroSlideshow
@@ -126,7 +221,7 @@ export default function EventsPage() {
         </div>
       </section>
 
-      {/* LeLz Events Branding */}
+      {/* LELZ BRANDING BAR */}
       <section className="py-8 bg-cream border-b border-walnut/10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
@@ -142,7 +237,7 @@ export default function EventsPage() {
               </div>
               <div>
                 <p className="text-ink font-semibold text-sm">Events managed by</p>
-                <p className="text-gold-dark font-semibold text-base">LeLz Events</p>
+                <p className="text-gold-dark font-semibold text-base">Lelz Business Enterprise</p>
               </div>
             </div>
             <div className="h-8 w-px bg-walnut/20 hidden md:block" />
@@ -151,13 +246,13 @@ export default function EventsPage() {
                 <svg className="w-4 h-4 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                +27 XX XXX XXXX
+                078 078 4139
               </span>
               <span className="flex items-center gap-1.5">
                 <svg className="w-4 h-4 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                events@lelz.co.za
+                lelzenterprise1@gmail.com
               </span>
             </div>
           </div>
@@ -217,11 +312,48 @@ export default function EventsPage() {
         </div>
       </section>
 
-      {/* CATERING PACKAGES */}
-      <section id="catering" className="py-16 md:py-24 bg-cream-light">
+      {/* EVENT DÉCOR & CATERING PACKAGES */}
+      <section id="packages" className="py-16 md:py-24 bg-cream-light">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Confirmed pricing.</h2>
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Event Décor &amp; Catering Packages.</h2>
+            <p className="text-stone mt-4 text-base">
+              Full décor &amp; catering packages delivered by Lelz Business Enterprise.
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {EVENT_PACKAGES.map((pkg, i) => (
+              <PackageCard key={pkg.name} pkg={pkg} stagger={i + 1} />
+            ))}
+          </div>
+
+          {/* Wedding — price on request */}
+          <div className="mt-6 bg-white rounded-2xl border-2 border-gold-dark card-shadow p-6 md:p-8 motion-scale-in motion-ready card-lift" data-stagger="5">
+            <div className="flex flex-col md:flex-row md:items-center gap-5">
+              <div className="flex-1">
+                <span className="text-gold-dark text-xs uppercase tracking-wider font-semibold">Lelz Package</span>
+                <h3 className="font-display font-semibold text-ink text-xl mt-1">Wedding Package</h3>
+                <p className="text-stone text-sm mt-2">
+                  Wedding packages are tailored to your event — contact Lelz Business Enterprise directly for a personalised quote.
+                </p>
+              </div>
+              <a href="#inquiry-form" className="btn-gold px-5 py-2.5 rounded-lg font-semibold text-sm inline-flex items-center justify-center gap-2 shadow-sm shadow-gold/20 hover:shadow-md hover:shadow-gold/30 btn-press">
+                Request a Wedding Quote
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CATERING-ONLY PACKAGES */}
+      <section id="catering" className="py-16 md:py-24 bg-cream">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto motion-fade-up motion-ready">
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Catering-Only Packages.</h2>
+            <p className="text-stone mt-4 text-base">
+              Catering without event décor — ideal for corporate or government functions that don&apos;t require room bookings.
+            </p>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl p-8 border border-walnut/10 card-shadow motion-scale-in motion-ready card-lift" data-stagger="1">
@@ -270,135 +402,8 @@ export default function EventsPage() {
         </div>
       </section>
 
-      {/* INQUIRY FORM */}
-      <section id="inquiry-form" className="py-16 md:py-24 bg-cream-light">
-        <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center motion-fade-up motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Tell us about your event.</h2>
-            <p className="text-stone mt-3 text-base">
-              All inquiries are handled by <span className="font-semibold text-gold-dark">LeLz Events</span>. We&apos;ll respond within one business day.
-            </p>
-          </div>
-
-          {status === "success" ? (
-            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center">
-              <div className="motion-pop" data-stagger="1">
-                <div className="w-16 h-16 rounded-full bg-gold-tint flex items-center justify-center mb-5 mx-auto shadow-lg shadow-gold/20">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
-                </div>
-              </div>
-              <h3 className="font-semibold text-ink text-xl mb-2 motion-pop" data-stagger="2">Inquiry received.</h3>
-              <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto motion-pop" data-stagger="3">
-                Thanks — we&apos;ve received your inquiry. We&apos;ll check availability for <span className="font-medium text-ink">{new Date(eventDate).toLocaleDateString("en-ZA", { day: "numeric", month: "long", year: "numeric" })}</span> and reply within one business day with options and pricing.
-              </p>
-              <div className="mt-4 motion-pop" data-stagger="4">
-                <p className="text-stone text-sm">
-                  Managed by <span className="font-semibold text-gold-dark">LeLz Events</span>
-                </p>
-              </div>
-              <div className="mt-8 motion-pop" data-stagger="5">
-                <Link href="/" className="inline-block btn-primary px-6 py-3 rounded-lg font-semibold btn-press ripple">Back to Home</Link>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10 motion-fade-up motion-ready">
-              {status === "error" && errorMessage && (
-                <div className="mb-6 rounded-xl border border-terracotta bg-terracotta-tint p-4 text-sm text-terracotta-dark">{errorMessage}</div>
-              )}
-
-              <div className="pb-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">Your details</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
-                    <input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Phone / WhatsApp *</label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div className="md:col-span-2"><label className="block text-sm font-medium text-ink mb-1.5">Email</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                </div>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">Event details</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-ink mb-1.5">Event type *</label>
-                    <select value={eventType} onChange={(e) => setEventType(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light">
-                      <option value="">Select an event type</option>
-                      <option value="wedding">Wedding</option>
-                      <option value="baby-shower">Baby shower</option>
-                      <option value="birthday">Birthday party</option>
-                      <option value="graduation">Graduation</option>
-                      <option value="anniversary">Anniversary</option>
-                      <option value="family-gathering">Family gathering</option>
-                      <option value="private-function">Private function</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Expected guests *</label>
-                    <input type="number" min={1} max={50} value={guestCount} onChange={(e) => setGuestCount(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Preferred date *</label>
-                    <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Alternative date (optional)</label>
-                    <input type="date" value={altDate} onChange={(e) => setAltDate(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                </div>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">Catering preference</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {CATERING_OPTIONS.map((c) => (
-                    <label key={c.id} className={`catering-card cursor-pointer bg-cream-light rounded-xl p-4 border border-walnut/10 ${catering === c.id ? "selected" : ""}`}>
-                      <input type="radio" name="catering" value={c.id} checked={catering === c.id} onChange={(e) => setCatering(e.target.value)} className="sr-only" />
-                      <div className="flex items-start justify-between">
-                        <div><div className="font-semibold text-ink text-sm">{c.label}</div><div className="text-stone text-xs mt-0.5">{c.price}</div></div>
-                        <div className="w-4 h-4 rounded-full border-2 border-walnut/30 flex items-center justify-center">
-                          {catering === c.id && <div className="w-2 h-2 rounded-full bg-gold-dark" />}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-                <label className="mt-3 flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="catering" checked={catering === "venue-only"} onChange={() => setCatering("venue-only")} className="accent-gold" />
-                  <span className="text-sm text-ink">Venue only — I&apos;ll arrange my own catering</span>
-                </label>
-                <label className="mt-2 flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="catering" checked={catering === "not-sure"} onChange={() => setCatering("not-sure")} className="accent-gold" />
-                  <span className="text-sm text-ink">Not sure yet — help me decide</span>
-                </label>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">Anything else?</h3>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, themes, or questions..." />
-                <div className="mt-5 flex items-start gap-3">
-                  <input type="checkbox" checked={interestedInRooms} onChange={(e) => setInterestedInRooms(e.target.checked)} className="mt-1 accent-gold" />
-                  <label className="text-sm text-ink cursor-pointer">
-                    I&apos;m also interested in booking rooms for my guests. <Link href="/rooms" className="text-gold-dark font-semibold underline">See rooms →</Link>
-                  </label>
-                </div>
-              </div>
-
-              <div className="py-6 border-b border-walnut/10">
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-gold" />
-                  <label className="text-sm text-stone">I agree to Gomodi Guest Lodge collecting my details to respond to this inquiry, in line with POPIA. *</label>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <button type="submit" disabled={status === "submitting"} className="w-full btn-gold px-6 py-3 rounded-lg font-semibold text-base disabled:opacity-60 shadow-sm shadow-gold-dark/20 hover:shadow-md hover:shadow-gold-dark/30 transition-all btn-press ripple">
-                  {status === "submitting" ? "Sending..." : "Submit Inquiry"}
-                </button>
-                <p className="text-center text-stone text-xs mt-3">
-                  Managed by <span className="font-semibold text-gold-dark">LeLz Events</span>
-                </p>
-              </div>
-            </form>
-          )}
-        </div>
-      </section>
+      {/* INQUIRY FORM — lazy-loaded */}
+      <EventInquiryForm />
 
       {/* FAQ */}
       <section className="py-16 md:py-20 bg-cream">
@@ -408,12 +413,14 @@ export default function EventsPage() {
           </div>
           <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
-              <div key={f.q} className={`faq-item px-6 py-5 ${openFaq === i ? "open" : ""}`}>
-                <button className="flex items-center justify-between w-full text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                  <span className="font-semibold text-ink">{f.q}</span>
-                  <svg className="faq-chevron flex-shrink-0 ml-4 text-gold-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div className="faq-answer text-stone text-sm">{f.a}</div>
+              <div key={f.q} className={`faq-item px-6 py-5`}>
+                <details className="group">
+                  <summary className="flex items-center justify-between w-full text-left cursor-pointer list-none">
+                    <span className="font-semibold text-ink">{f.q}</span>
+                    <svg className="faq-chevron flex-shrink-0 ml-4 text-gold-dark group-open:rotate-180 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 9l6 6 6-6"/></svg>
+                  </summary>
+                  <p className="text-stone text-sm mt-3">{f.a}</p>
+                </details>
               </div>
             ))}
           </div>
@@ -426,25 +433,21 @@ export default function EventsPage() {
         <div className="relative max-w-4xl mx-auto px-6 text-center motion-fade-up motion-ready">
           <h2 className="font-display font-semibold text-2xl md:text-3xl">Message us on WhatsApp.</h2>
           <p className="text-cream/80 mt-4 max-w-xl mx-auto">
-            Chat directly with LeLz Events for bookings, availability, and custom packages.
+            Chat directly with Lelz Business Enterprise for bookings, availability, and custom packages.
           </p>
-          <a href="#" className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:shadow-[#25D366]/30 btn-press ripple">
+          <a href="https://wa.me/27780784139" target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:shadow-[#25D366]/30 btn-press ripple">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
             Chat on WhatsApp
           </a>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-cream/70">
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              +27 XX XXX XXXX
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+              078 078 4139
             </span>
             <span>·</span>
             <span className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              events@lelz.co.za
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              lelzenterprise1@gmail.com
             </span>
           </div>
         </div>

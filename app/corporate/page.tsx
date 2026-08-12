@@ -1,16 +1,60 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
-import { submitCorporateQuote, RoomLineInput } from "./actions";
-import { BREAKFAST_PRICE, DINNER_PRICE, ROOM_BASE_RATE } from "@/lib/pricing";
 
-const ROOM_TYPES: { id: "double" | "flexible"; label: string; price: number }[] = [
-  { id: "double", label: "Double Room", price: ROOM_BASE_RATE },
-  { id: "flexible", label: "Flexible Twin/Double", price: ROOM_BASE_RATE },
+const CorporateQuoteForm = dynamic(
+  () => import("./CorporateQuoteForm"),
+  {
+    loading: () => (
+      <section className="py-16 md:py-24 bg-cream">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center">
+            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">
+              Loading form…
+            </h2>
+            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10 space-y-6">
+              <div className="h-10 bg-walnut/5 rounded-lg animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+                <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+                <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+                <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+              </div>
+              <div className="h-32 bg-walnut/5 rounded-lg animate-pulse" />
+              <div className="h-12 bg-walnut/5 rounded-lg animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </section>
+    ),
+  }
+);
+
+const clientSegments = [
+  {
+    title: "Contractor Deployments",
+    text: "Week-long or month-long stays for project teams. Multi-room bookings, consolidated invoicing, and reliable WiFi.",
+    items: ["Multi-room, multi-night in one quote", "Weekly/monthly rates on request", "Secure on-site parking"],
+  },
+  {
+    title: "Government Officials",
+    text: "Rotations, inspections, and official visits — with formal quotations, PO references, and VAT-compliant invoices.",
+    items: ["PO numbers captured upfront", "Formal quotation before commitment", "VAT-compliant invoicing"],
+  },
+  {
+    title: "Group & Team Stays",
+    text: "Training groups, audit teams, or project kick-offs — book multiple rooms in a single submission.",
+    items: ["Up to 9 rooms in one booking", "Flexible twin/double configuration", "Group rates on request"],
+  },
+];
+
+const docSteps = [
+  ["1. Formal Quotation", "Itemised by room, night, and add-on. References your PO number if provided."],
+  ["2. Written Confirmation", "Once you approve the quote, a formal confirmation is issued by email."],
+  ["3. VAT-Compliant Invoice", "Issued after stay, suitable for EFT payment against your PO."],
+  ["4. Consolidated Statement", "For repeat clients — multiple invoices grouped into a single statement."],
 ];
 
 const FAQS = [
@@ -23,78 +67,6 @@ const FAQS = [
 ];
 
 export default function CorporatePage() {
-  const [fullName, setFullName] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [billingEmail, setBillingEmail] = useState("");
-  const [poNumber, setPoNumber] = useState("");
-  const [vatNumber, setVatNumber] = useState("");
-  const [clientRef, setClientRef] = useState("");
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [lines, setLines] = useState<RoomLineInput[]>([
-    { roomType: "double", count: 1, guestsPerRoom: 1 },
-  ]);
-  const [breakfast, setBreakfast] = useState(false);
-  const [dinner, setDinner] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Auto-scroll to top on success
-  useEffect(() => {
-    if (status === "success") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [status]);
-
-  const nights =
-    checkIn && checkOut && new Date(checkOut) > new Date(checkIn)
-      ? Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
-      : 0;
-  const totalRooms = lines.reduce((s, l) => s + (l.count || 0), 0);
-  const totalGuests = lines.reduce((s, l) => s + (l.count || 0) * (l.guestsPerRoom || 0), 0);
-  const accomEstimate = lines.reduce((s, l) => {
-    const type = ROOM_TYPES.find((t) => t.id === l.roomType);
-    return s + (type ? type.price * (l.count || 0) * nights : 0);
-  }, 0);
-  const addonEstimate =
-    (breakfast ? totalGuests * nights * BREAKFAST_PRICE : 0) + (dinner ? totalGuests * nights * DINNER_PRICE : 0);
-
-  function updateLine(i: number, patch: Partial<RoomLineInput>) {
-    setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
-  }
-  function addLine() {
-    setLines((prev) => [...prev, { roomType: "double", count: 1, guestsPerRoom: 1 }]);
-  }
-  function removeLine(i: number) {
-    setLines((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!consent) {
-      setStatus("error");
-      setErrorMessage("Please confirm your consent to continue.");
-      return;
-    }
-    setStatus("submitting");
-    setErrorMessage(null);
-    const result = await submitCorporateQuote({
-      fullName, jobTitle, company, phone, email, billingEmail, poNumber, vatNumber, clientRef,
-      checkIn, checkOut, roomLines: lines, breakfast, dinner, notes,
-    });
-    if (result.ok) setStatus("success");
-    else { setStatus("error"); setErrorMessage(result.error); }
-  }
-
-  const fmt = (n: number) => "R" + n.toLocaleString("en-ZA");
-
   return (
     <main className="page-transition">
       <nav className="max-w-6xl mx-auto px-6 py-4 text-sm text-stone" aria-label="Breadcrumb">
@@ -142,11 +114,7 @@ export default function CorporatePage() {
             <h2 className="font-display text-ink font-semibold text-2xl md:text-3xl">The clients we host.</h2>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { title: "Contractor Deployments", text: "Week-long or month-long stays for project teams. Multi-room bookings, consolidated invoicing, and reliable WiFi.", items: ["Multi-room, multi-night in one quote", "Weekly/monthly rates on request", "Secure on-site parking"] },
-              { title: "Government Officials", text: "Rotations, inspections, and official visits — with formal quotations, PO references, and VAT-compliant invoices.", items: ["PO numbers captured upfront", "Formal quotation before commitment", "VAT-compliant invoicing"] },
-              { title: "Group & Team Stays", text: "Training groups, audit teams, or project kick-offs — book multiple rooms in a single submission.", items: ["Up to 9 rooms in one booking", "Flexible twin/double configuration", "Group rates on request"] },
-            ].map((s, i) => (
+            {clientSegments.map((s, i) => (
               <article key={s.title} className="segment-card bg-white rounded-2xl p-6 border border-walnut/10 card-shadow motion-scale-in motion-ready interactive-element card-lift" data-stagger={i + 1}>
                 <div className="doc-icon bg-walnut-tint text-walnut">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM9 5h6v2H9z"/></svg>
@@ -173,12 +141,7 @@ export default function CorporatePage() {
               Every document, from the first quote to the final consolidated statement, is issued by email and ready for your approval and payment process.
             </p>
             <div className="mt-6 space-y-3">
-              {[
-                ["1. Formal Quotation", "Itemised by room, night, and add-on. References your PO number if provided."],
-                ["2. Written Confirmation", "Once you approve the quote, a formal confirmation is issued by email."],
-                ["3. VAT-Compliant Invoice", "Issued after stay, suitable for EFT payment against your PO."],
-                ["4. Consolidated Statement", "For repeat clients — multiple invoices grouped into a single statement."],
-              ].map(([title, text], i) => (
+              {docSteps.map(([title, text], i) => (
                 <div key={title} className="flex items-start gap-3 motion-fade-up motion-ready" data-stagger={i + 1}>
                   <div className="w-8 h-8 rounded-lg bg-walnut-tint text-walnut flex items-center justify-center flex-shrink-0">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M20 6L9 17l-5-5"/></svg>
@@ -199,164 +162,8 @@ export default function CorporatePage() {
         </div>
       </section>
 
-      {/* QUOTE FORM */}
-      <section id="quote-form" className="py-16 md:py-24 bg-cream">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center motion-fade-up motion-ready">
-            <h2 className="font-display font-semibold text-ink text-2xl md:text-3xl">Tell us what you need and we&apos;ll send a formal quote.</h2>
-          </div>
-
-          {status === "success" ? (
-            <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-10 text-center">
-              <div className="motion-pop" data-stagger="1">
-                <div className="w-16 h-16 rounded-full bg-gold-tint flex items-center justify-center mb-5 mx-auto shadow-lg shadow-gold/20">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
-                </div>
-              </div>
-              <div className="w-14 h-14 rounded-full bg-gold-tint flex items-center justify-center mb-4 mx-auto">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8f6a3e" strokeWidth={2.5}><path d="M20 6L9 17l-5-5"/></svg>
-              </div>
-              <h3 className="font-semibold text-ink text-xl mb-2 motion-pop" data-stagger="2">Quote request received.</h3>
-              <p className="text-stone text-sm leading-relaxed max-w-2xl mx-auto motion-pop" data-stagger="3">
-                Thank you, <span className="font-medium text-ink">{company}</span>. We have received your request for <span className="font-medium text-ink">{totalRooms} room{totalRooms !== 1 ? "s" : ""}</span>. 
-                Our team will review availability and email a formal quotation to <span className="font-medium text-ink">{email || billingEmail}</span> within 24 hours.
-              </p>
-              <div className="mt-8 motion-pop" data-stagger="4">
-                <Link href="/" className="inline-block btn-primary px-6 py-3 rounded-lg font-semibold btn-press ripple">Back to Home</Link>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow p-6 md:p-10 motion-fade-up motion-ready">
-              {status === "error" && errorMessage && (
-                <div className="mb-6 rounded-xl border border-terracotta bg-terracotta-tint p-4 text-sm text-terracotta-dark">{errorMessage}</div>
-              )}
-
-              <div className="pb-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">1. Your details</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
-                    <input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Job title / role</label>
-                    <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Company / department *</label>
-                    <input value={company} onChange={(e) => setCompany(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Phone / WhatsApp *</label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div className="md:col-span-2"><label className="block text-sm font-medium text-ink mb-1.5">Email *</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                </div>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">2. Billing details</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Billing email (if different)</label>
-                    <input type="email" value={billingEmail} onChange={(e) => setBillingEmail(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">PO number (if available)</label>
-                    <input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">VAT number (optional)</label>
-                    <input value={vatNumber} onChange={(e) => setVatNumber(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Your reference (optional)</label>
-                    <input value={clientRef} onChange={(e) => setClientRef(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                </div>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">3. Stay details</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Check-in date *</label>
-                    <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                  <div><label className="block text-sm font-medium text-ink mb-1.5">Check-out date *</label>
-                    <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                </div>
-
-                <div className="mt-8">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-ink text-sm">Room configuration</h4>
-                    <span className="text-xs text-stone">{nights} night{nights !== 1 ? "s" : ""}</span>
-                  </div>
-                  <div className="space-y-3">
-                    {lines.map((line, i) => (
-                      <div key={i} className="room-line bg-cream-light rounded-xl border border-walnut/10 p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-semibold text-ink">Room {i + 1}</span>
-                          <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1} aria-label={`Remove room ${i + 1}`} className="text-stone hover:text-terracotta-dark w-11 h-11 -m-2 flex items-center justify-center rounded transition-colors disabled:opacity-30">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="md:col-span-2">
-                            <label className="block text-xs font-medium text-stone mb-1">Room type</label>
-                            <select value={line.roomType} onChange={(e) => updateLine(i, { roomType: e.target.value as "double" | "flexible" })} className="form-input w-full border border-walnut/20 rounded-lg px-3 py-2 text-sm bg-white">
-                              {ROOM_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label} — R{t.price}/night</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-stone mb-1">No. of rooms</label>
-                            <input type="number" min={1} max={9} value={line.count} onChange={(e) => updateLine(i, { count: Number(e.target.value) })} className="form-input w-full border border-walnut/20 rounded-lg px-3 py-2 text-sm bg-white" />
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <label className="block text-xs font-medium text-stone mb-1">Guests per room</label>
-                          <input type="number" min={1} max={2} value={line.guestsPerRoom} onChange={(e) => updateLine(i, { guestsPerRoom: Number(e.target.value) })} className="form-input w-full border border-walnut/20 rounded-lg px-3 py-2 text-sm bg-white" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <button type="button" onClick={addLine} className="mt-4 w-full border border-dashed border-walnut/30 hover:border-walnut hover:bg-walnut-tint/40 rounded-xl py-3 text-sm font-semibold text-walnut transition-colors inline-flex items-center justify-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M12 5v14M5 12h14"/></svg>
-                    Add another room
-                  </button>
-                </div>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">4. Meal add-ons (optional)</h3>
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className={`addon-card flex items-start gap-3 rounded-xl p-4 border border-walnut/10 ${breakfast ? "selected" : ""}`}>
-                    <input type="checkbox" checked={breakfast} onChange={(e) => setBreakfast(e.target.checked)} className="mt-1 accent-walnut" />
-                    <div className="flex-1"><div className="flex items-center justify-between"><span className="font-semibold text-ink text-sm">Breakfast</span><span className="text-walnut font-semibold text-sm">R{BREAKFAST_PRICE} pp/day</span></div></div>
-                  </label>
-                  <label className={`addon-card flex items-start gap-3 rounded-xl p-4 border border-walnut/10 ${dinner ? "selected" : ""}`}>
-                    <input type="checkbox" checked={dinner} onChange={(e) => setDinner(e.target.checked)} className="mt-1 accent-walnut" />
-                    <div className="flex-1"><div className="flex items-center justify-between"><span className="font-semibold text-ink text-sm">Dinner</span><span className="text-walnut font-semibold text-sm">R{DINNER_PRICE} pp/day</span></div></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">5. Anything else?</h3>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, dietary needs, preferred room locations..." />
-              </div>
-
-              <div className="py-8 border-b border-walnut/10">
-                <h3 className="font-semibold text-ink text-lg">Indicative estimate</h3>
-                <div className="mt-4 bg-cream-light rounded-xl border border-walnut/10 p-5">
-                  <div className="summary-row"><span className="text-stone">Rooms</span><span className="text-ink">{totalRooms || "—"}</span></div>
-                  <div className="summary-row"><span className="text-stone">Nights</span><span className="text-ink">{nights || "—"}</span></div>
-                  <div className="summary-row"><span className="text-stone">Guests</span><span className="text-ink">{totalGuests || "—"}</span></div>
-                  <div className="summary-row"><span className="text-stone">Accommodation estimate</span><span className="text-ink">{accomEstimate ? fmt(accomEstimate) : "—"}</span></div>
-                  <div className="summary-row"><span className="text-stone">Add-ons estimate</span><span className="text-ink">{addonEstimate ? fmt(addonEstimate) : "None selected"}</span></div>
-                  <div className="summary-row total"><span className="text-ink">Indicative total</span><span className="text-walnut">{accomEstimate || addonEstimate ? fmt(accomEstimate + addonEstimate) : "—"}</span></div>
-                </div>
-              </div>
-
-              <div className="py-6 border-b border-walnut/10">
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-walnut" />
-                  <label className="text-sm text-stone">I agree to Gomodi Guest Lodge collecting my details to respond to this quote request, in line with POPIA. *</label>
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <button type="submit" disabled={status === "submitting"}                  className="w-full btn-primary px-6 py-3 rounded-lg font-semibold text-base disabled:opacity-60 shadow-sm shadow-terracotta-dark/20 hover:shadow-md hover:shadow-terracotta-dark/30 transition-all btn-press ripple">
-                  {status === "submitting" ? "Sending…" : "Submit Quote Request"}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </section>
+      {/* QUOTE FORM — lazy-loaded */}
+      <CorporateQuoteForm />
 
       {/* FAQ */}
       <section className="py-16 md:py-20 bg-cream">
@@ -366,12 +173,14 @@ export default function CorporatePage() {
           </div>
           <div className="mt-10 bg-white rounded-2xl border border-walnut/10 card-shadow overflow-hidden motion-fade-up motion-ready">
             {FAQS.map((f, i) => (
-              <div key={f.q} className={`faq-item px-6 py-5 ${openFaq === i ? "open" : ""}`}>
-                <button className="flex items-center justify-between w-full text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                  <span className="font-semibold text-ink">{f.q}</span>
-                  <svg className="faq-chevron flex-shrink-0 ml-4 text-walnut" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div className="faq-answer text-stone text-sm">{f.a}</div>
+              <div key={f.q} className={`faq-item px-6 py-5`}>
+                <details className="group">
+                  <summary className="flex items-center justify-between w-full text-left cursor-pointer list-none">
+                    <span className="font-semibold text-ink">{f.q}</span>
+                    <svg className="faq-chevron flex-shrink-0 ml-4 text-walnut group-open:rotate-180 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 9l6 6 6-6"/></svg>
+                  </summary>
+                  <p className="text-stone text-sm mt-3">{f.a}</p>
+                </details>
               </div>
             ))}
           </div>
@@ -388,7 +197,7 @@ export default function CorporatePage() {
               <p className="text-cream/80 mt-4">WhatsApp, phone, or email — whichever suits you.</p>
             </div>
             <div className="flex flex-col gap-3">
-              <a href="#" className="inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:shadow-[#25D366]/30 btn-press">
+              <a href="https://wa.me/27780784139" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#1EBE5B] text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg shadow-[#25D366]/20 hover:shadow-xl hover:shadow-[#25D366]/30 btn-press">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                 WhatsApp
               </a>

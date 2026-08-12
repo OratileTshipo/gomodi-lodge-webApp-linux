@@ -4,6 +4,7 @@ import { createHash, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { users, authOtps } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { normalizePhone } from "@/lib/validate";
 import { buildSessionCookie, SESSION_COOKIE } from "@/lib/auth";
 
 const MAX_ATTEMPTS = 5;
@@ -15,14 +16,12 @@ export async function POST(request: Request) {
     if (!otp || typeof otp !== "string" || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
       return NextResponse.json({ error: "Invalid OTP format" }, { status: 401 });
     }
-    if (
-      typeof phone !== "string" ||
-      phone.length > 30 ||
-      !/^\+?[0-9]{7,15}$/.test(phone.trim())
-    ) {
+    // Normalize identically to request-otp so the code row (stored under the
+    // canonical number) is found even when the user types a local format.
+    const cleanPhone = normalizePhone(phone);
+    if (!cleanPhone) {
       return NextResponse.json({ error: "Phone number not registered." }, { status: 401 });
     }
-    const cleanPhone = phone.trim();
 
     // 1. User must exist in the DB.
     const [user] = await db.select().from(users).where(eq(users.phone, cleanPhone));

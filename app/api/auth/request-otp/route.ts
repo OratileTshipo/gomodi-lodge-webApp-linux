@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { db } from "@/lib/db";
 import { authOtps, users } from "@/lib/db/schema";
 import { sendOtp } from "@/lib/whatsapp";
+import { normalizePhone } from "@/lib/validate";
 import { lt, and, eq } from "drizzle-orm";
 
 /**
@@ -39,14 +40,13 @@ export async function POST(request: Request) {
   try {
     const { phone } = await request.json();
 
-    if (
-      typeof phone !== "string" ||
-      phone.length > 30 ||
-      !/^\+?[0-9]{7,15}$/.test(phone.trim())
-    ) {
+    // Normalize first so "082 000 0002", "0820000002", "002782..." and
+    // "+27820000002" all resolve to the same registered number — otherwise
+    // the registered-only lookup below silently skips local-format entries.
+    const cleanPhone = normalizePhone(phone);
+    if (!cleanPhone) {
       return NextResponse.json({ error: "Valid phone number required" }, { status: 400 });
     }
-    const cleanPhone = phone.trim();
 
     if (isRateLimited(cleanPhone)) {
       return NextResponse.json(

@@ -1,9 +1,6 @@
-import { db } from "@/lib/db";
-import { rooms } from "@/lib/db/schema";
 import { getSeasonalPeriods } from "@/lib/db/seasonal";
 import { BookingForm } from "./BookingForm";
-
-export const dynamic = "force-dynamic";
+import { getRooms } from "@/lib/rooms-cache";
 
 export default async function BookPage({
   searchParams,
@@ -17,8 +14,9 @@ export default async function BookPage({
 }) {
   const params = await searchParams;
 
+  // 60s-cached room list (lib/rooms-cache) — repeat visits skip the remote DB.
   const [allRooms, seasonalPeriods] = await Promise.all([
-    db.select().from(rooms).orderBy(rooms.id),
+    getRooms(),
     getSeasonalPeriods(),
   ]);
 

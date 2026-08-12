@@ -4,11 +4,11 @@ const definition: AgentDefinition = {
   id: 'design-polish',
   version: '1.0.0',
   displayName: 'Design Polish',
-  model: 'anthropic/claude-sonnet-4.5',
+  model: 'deepseek/deepseek-v4-flash',
   outputMode: 'last_message',
   includeMessageHistory: true,
-  toolNames: ['read_files', 'code_search', 'write_file', 'end_turn'],
-  spawnableAgents: ['codebuff/reviewer@0.0.1'],
+  toolNames: ['read_files', 'write_file', 'str_replace', 'spawn_agents'],
+  spawnableAgents: ['code-reviewer-deepseek-flash'],
   spawnerPrompt:
     'Spawn this agent on a specific page or component to make it feel less generic/templated and more like the confirmed Gomodi Guest Lodge brand. Never spawn it to invent a new palette, add a dependency, or touch business logic.',
   inputSchema: {
@@ -36,9 +36,9 @@ You are constructive, not just critical: propose and make the specific edit, don
 4. Preserve all business logic, data-fetching, and Server Action wiring exactly as-is — you only touch presentation (className/markup structure for layout), never behavior.
 5. If the target is under app/book/ or app/admin/ (the legacy orange palette), do NOT repaint it as part of this task — that gap is already tracked in knowledge.md and needs a separate decision from Oray about scope. Stop and say so instead.
 6. Summarize what you changed and why, in terms of the brand goals above (e.g., "replaced flat gray status text with a terracotta pill + icon, per the WCAG pairing rule").
-7. Spawn codebuff/reviewer to check the diff before finishing, since this touches guest-facing UI.`,
+7. Spawn code-reviewer-deepseek-flash to check the diff before finishing, since this touches guest-facing UI, then report your summary via set_output.`,
   stepPrompt:
-    'Continue polishing only the target scope, in small reviewable edits. Stop at the app/book/ or app/admin/ boundary described above rather than crossing it unasked. Use end_turn once the section is polished or you hit that boundary.',
+    'Continue polishing only the target scope, in small reviewable edits. Stop at the app/book/ or app/admin/ boundary described above rather than crossing it unasked. Use set_output once the section is polished or you hit that boundary.',
 }
 
 export default definition

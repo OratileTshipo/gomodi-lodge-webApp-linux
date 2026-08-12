@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "NODE_ENV=production next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "perf": "tsx scripts/perf-bench.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",

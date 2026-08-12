@@ -1,0 +1,101 @@
+name: Create/Delete Branch for Pull Request
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+jobs:
+  setup:
+    name: Setup
+    outputs:
+      branch: ${{ steps.branch_name.outputs.current_branch }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get branch name
+        id: branch_name
+        uses: tj-actions/branch-names@v8
+
+  create_neon_branch:
+    name: Create Neon Branch
+    needs: setup
+    if: |
+      github.event_name == 'pull_request' && (
+      github.event.action == 'synchronize'
+      || github.event.action == 'opened'
+      || github.event.action == 'reopened')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Get branch expiration date (14 days from now)
+        id: get_expiration_date
+        run: echo "EXPIRES_AT=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
+      - name: Create Neon Branch
+        id: create_neon_branch
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+          expires_at: ${{ env.EXPIRES_AT }}
+
+      # Note: GitHub Actions blanks action outputs that look like secrets
+      # (e.g. connection strings), so we fetch the pooled URL with neonctl
+      # instead of relying on steps.create_neon_branch.outputs.*.
+      # If the PR was opened and closed within seconds, the delete job may
+      # have already removed the preview branch before migrations run — in
+      # that case there is nothing to migrate, so skip with a warning.
+      # Any other neonctl failure still fails the job.
+      - name: Run Migrations
+        run: |
+          npm i -g neonctl@v2
+          if ! URL="$(neonctl connection-string "$NEON_BRANCH" --pooled --project-id "$NEON_PROJECT_ID" 2>/tmp/neonctl-err.txt)"; then
+            if grep -q 'not found' /tmp/neonctl-err.txt; then
+              echo "::warning::Preview branch $NEON_BRANCH was already removed (PR closed before migrations ran); skipping."
+              exit 0
+            fi
+            cat /tmp/neonctl-err.txt >&2
+            exit 1
+          fi
+          DATABASE_URL="$URL" npx drizzle-kit push
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_BRANCH: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+
+      - name: Post Schema Diff Comment to PR
+        uses: neondatabase/schema-diff-action@v1
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          compare_branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+  delete_neon_branch:
+    name: Delete Neon Branch
+    needs: setup
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Neon Branch
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          api_key: ${{ secrets.NEON_API_KEY }}
