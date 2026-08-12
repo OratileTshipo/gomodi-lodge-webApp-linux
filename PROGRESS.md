@@ -99,7 +99,6 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
-<<<<<<< HEAD
 ### 2026-08-11 — Improvement pass on Tasks 1–7 (security + performance) — DeepSeek Flash
 
 **Status:** ✅ Delivered — PR → `dev` from `perf/lcp-priority-and-region` (follow-up to PRs #18/#19).
@@ -124,6 +123,7 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
+<<<<<<< HEAD
 ### 2026-08-11 — UI findings & recommendations handoff doc (audit vs Protea Hotel Mahikeng) — Buffy
 
 **Status:** ✅ Delivered (docs-only, no code changes).
