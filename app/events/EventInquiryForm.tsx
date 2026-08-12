@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { submitEventInquiry } from "./actions";
+import { EVENT_CATERING } from "@/lib/pricing";
 
 const CATERING_OPTIONS = [
-  { id: "tea-snacks", label: "Tea & Snacks", price: "R150 pp" },
-  { id: "three-course", label: "Three-Course Meal", price: "R250 pp" },
-  { id: "full-day", label: "Full-Day Package", price: "R350 pp" },
+  { id: "tea-snacks", label: "Tea & Snacks", price: `R${EVENT_CATERING["tea-snacks"]} pp` },
+  { id: "three-course", label: "Three-Course Meal", price: `R${EVENT_CATERING["three-course"]} pp` },
+  { id: "full-day", label: "Full-Day Package", price: `R${EVENT_CATERING["full-day"]} pp` },
 ];
 
 export default function EventInquiryForm() {

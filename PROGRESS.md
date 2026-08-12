@@ -194,4 +194,26 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 **Reminders:** `npx drizzle-kit push` still needed once for `reviews`/`review_invites` tables (homepage degrades gracefully meanwhile). `.env`/`.env.local` remain tracked in git (pre-existing on `main`) — recommend a dedicated PR to untrack them.
 
+### 2026-08-12 — Code-quality pass (review findings executed) — Buffy
+
+**Status:** ✅ Delivered — PR → `dev` from `chore/code-quality-pass`.
+
+**Why:** full-repo quality audit (see `CODE-QUALITY-review.md` at repo root — the handoff doc with findings, fixes, and what remains). Verdict: well-built codebase; the issues were mostly maintainability/hygiene plus a few real bugs.
+
+**Files changed (highlights):**
+
+- `lib/rooms.ts` — **new** `bathLabel()` helper; fixed the `bathOrShower` case bug (seed stores `"Bath"`/`"Shower"`, 4 UIs compared lowercase → rooms 2 & 8 always showed "Shower"). Now used by homepage / rooms explorer / booking wizard.
+- 3 React lint fixes: `RoomsExplorer.tsx` (setState-in-effect → derived), `BranchModal.tsx` (outer gate + keyed inner mount), `HeroSlideshow.tsx` (ref write moved into effect). `test_pages.js` → `scripts/test-pages.js` (eslint ignores `scripts/`). **All 4 pre-existing lint errors eliminated.**
+- `lib/db/availability.ts` — corrected the stale "lock not built yet" comment (advisory locks exist in `app/api/admin/requests/[id]/route.ts`).
+- `BookingForm.tsx` split (818 → ~180 lines) into `BookingCalendar`, `RoomStep`, `MealsStep`, `DetailsStep`, `PaymentStep`, `StaySummary`, `OtherRooms` + shared `booking-utils.ts` (see `app/book/`).
+- `app/api/admin/requests/route.ts` — typed `EnrichedRequest` shapes (no more `Record<number, unknown>`).
+- `lib/booking-common.ts` — **new** shared `validateContact`/`insertAddOnRows`/meal-normalization; the three booking actions no longer duplicate contact/add-on logic. `lib/validate.ts` gains `nightDates()`.
+- Quick wins: single-query availability check (was N+1), SQL `AVG`/`COUNT` review stats, transactional `submitReview`, pricing sweep into `lib/pricing.ts` (events page/form/homepage).
+- Repo hygiene: `.gitignore` rewritten (was mangled); `tsconfig.tsbuildinfo` untracked; scratch artifacts moved to `scratch/` (ignored).
+- **Vitest** added — `npm test`, 42 tests in `lib/__tests__/` (quote-math cents, seasonal rates, validate primitives, bathLabel).
+
+**Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 · ✅ lint — zero errors (was 4), remaining warnings pre-existing.
+
+**Flags:** `.env`/`.env.local` still tracked in git — platform blocks env-file ops from the sandbox; owner must run `git rm --cached .env .env.local` in a dedicated PR (`.gitignore` already prevents re-adding). AdminDashboard + page.tsx extraction, `Result<T>` type, Upstash limiter, and CI lint/typecheck job remain as documented follow-ups in `CODE-QUALITY-review.md`.
+
 <!-- New entries go above this line, newest last. -->

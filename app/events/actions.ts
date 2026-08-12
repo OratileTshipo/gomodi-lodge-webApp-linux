@@ -7,14 +7,12 @@ import {
   notifyOwnerOfNewRequest,
 } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
+import { sanitizeContact } from "@/lib/booking-common";
 import {
   safeText,
-  normalizePhone,
-  isValidEmail,
   isValidIsoDate,
   isNotInPast,
   intInRange,
-  MAX_NAME,
   MAX_EVENT_TYPE,
   MAX_CATERING,
   MAX_LONG_NOTES,
@@ -41,17 +39,13 @@ export async function submitEventInquiry(
   input: EventInquiryInput
 ): Promise<EventInquiryResult> {
   // ---- Strict server-side validation ----
-  const fullName = safeText(input.fullName, MAX_NAME);
-  if (!fullName) return { ok: false, error: "Please enter your full name." };
-
-  const phone = normalizePhone(input.phone);
-  if (!phone) return { ok: false, error: "Please enter a valid contact number." };
-
-  const email =
-    input.email && input.email.trim() !== "" ? input.email.trim() : null;
-  if (email && !isValidEmail(email)) {
-    return { ok: false, error: "Please enter a valid email address." };
-  }
+  const contact = sanitizeContact({
+    name: input.fullName,
+    phone: input.phone,
+    email: input.email,
+  });
+  if (!contact.ok) return contact;
+  const { name: fullName, phone, email } = contact;
 
   const eventType = safeText(input.eventType, MAX_EVENT_TYPE);
   if (!eventType) return { ok: false, error: "Please select an event type." };

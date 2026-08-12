@@ -47,6 +47,30 @@ type AddOn = {
   date: string;
 };
 
+type QuoteSummary = {
+  bookingRequestId: number;
+  id: number;
+  quoteNumber: string;
+  status: string;
+  total: string;
+};
+
+/** A pending request enriched with room lines, conflicts, add-ons, docs, POP and quote summary. */
+export type EnrichedRequest = PendingRequest & {
+  roomId: number | null;
+  checkIn: string | null;
+  checkOut: string | null;
+  guestCount: number | null;
+  roomName: string | null;
+  conflict: string | null;
+  pendingWarning: string | null;
+  addOns: AddOn[];
+  corporateDetails: typeof corporateDetails.$inferSelect | null;
+  eventDetails: typeof eventDetails.$inferSelect | null;
+  proofOfPaymentUploaded: boolean;
+  quote: QuoteSummary | null;
+};
+
 function overlaps(
   a: { checkIn: string; checkOut: string },
   b: { checkIn: string; checkOut: string }
@@ -67,10 +91,11 @@ export function enrichRequests(
   linesByRequest: Record<number, RoomLine[]>,
   approvedBookings: ApprovedBooking[],
   addOnsMap: Record<number, AddOn[]>,
-  corporateMap: Record<number, unknown>,
-  eventMap: Record<number, unknown>,
-  popMap: Record<number, boolean>
-) {
+  corporateMap: Record<number, typeof corporateDetails.$inferSelect>,
+  eventMap: Record<number, typeof eventDetails.$inferSelect>,
+  popMap: Record<number, boolean>,
+  quotesMap: Record<number, QuoteSummary>
+): EnrichedRequest[] {
   return pending.map((req) => {
     const lines = linesByRequest[req.id] || [];
 
@@ -127,6 +152,7 @@ export function enrichRequests(
       corporateDetails: corporateMap[req.id] || null,
       eventDetails: eventMap[req.id] || null,
       proofOfPaymentUploaded: popMap[req.id] || false,
+      quote: quotesMap[req.id] || null,
     };
   });
 }
@@ -254,16 +280,16 @@ export async function GET() {
       (addOnsMap[a.bookingRequestId] ||= []).push(a);
     }
 
-    const corporateMap: Record<number, unknown> = {};
+    const corporateMap: Record<number, typeof corporateDetails.$inferSelect> = {};
     for (const cd of corporateData) corporateMap[cd.bookingRequestId] = cd;
 
-    const eventMap: Record<number, unknown> = {};
+    const eventMap: Record<number, typeof eventDetails.$inferSelect> = {};
     for (const ed of eventData) eventMap[ed.bookingRequestId] = ed;
 
     const popMap: Record<number, boolean> = {};
     for (const p of popData) popMap[p.bookingRequestId] = true;
 
-    const quotesMap: Record<number, unknown> = {};
+    const quotesMap: Record<number, QuoteSummary> = {};
     for (const q of quoteData) quotesMap[q.bookingRequestId] = q;
 
     const enriched = enrichRequests(
@@ -273,13 +299,9 @@ export async function GET() {
       addOnsMap,
       corporateMap,
       eventMap,
-      popMap
+      popMap,
+      quotesMap
     );
-
-    // Attach quote summary to each request card (for the dashboard badge).
-    for (const row of enriched) {
-      (row as Record<string, unknown>).quote = quotesMap[row.id] || null;
-    }
 
     return NextResponse.json(enriched);
   } catch (error) {

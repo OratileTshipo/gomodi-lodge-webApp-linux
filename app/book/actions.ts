@@ -2,35 +2,33 @@
 
 import { db } from "@/lib/db";
 import { bookingRequests, bookingRoomLines, addOnSelections, rooms, proofOfPayments } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, lt, gt } from "drizzle-orm";
 import { isRoomAvailable } from "@/lib/db/availability";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
-import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { sanitizeContact, buildAddOnRows } from "@/lib/booking-common";
 import {
-  safeText,
-  normalizePhone,
-  isValidEmail,
   isValidStay,
   isNotInPast,
   intInRange,
   isSafeProofOfPaymentUrl,
-  MAX_NAME,
+  nightDates,
+  safeText,
   MAX_TEXT,
   MAX_GUESTS_LEISURE,
 } from "@/lib/validate";
 
 export type LeisureBookingInput = {
   roomId: number;
-  checkIn: string; 
-  checkOut: string; 
+  checkIn: string;
+  checkOut: string;
   guestCount: number;
   breakfast: boolean;
   dinner: boolean;
   guestName: string;
   contactPhone: string;
   contactEmail?: string;
-  specialRequests?: string; // <--- ADDED HERE
+  specialRequests?: string;
   proofOfPaymentUrl?: string | null;
 };
 
@@ -38,33 +36,17 @@ export type LeisureBookingResult =
   | { ok: true }
   | { ok: false; error: string };
 
-function nightsBetween(checkIn: string, checkOut: string): string[] {
-  const dates: string[] = [];
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
-  for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-    dates.push(d.toISOString().slice(0, 10));
-  }
-  return dates;
-}
-
 export async function submitLeisureBooking(
   input: LeisureBookingInput
 ): Promise<LeisureBookingResult> {
   // ---- Strict server-side validation (never trust the client) ----
-  const guestName = safeText(input.guestName, MAX_NAME);
-  if (!guestName) return { ok: false, error: "Please enter your name." };
-
-  const contactPhone = normalizePhone(input.contactPhone);
-  if (!contactPhone) return { ok: false, error: "Please enter a valid contact phone number." };
-
-  const contactEmail =
-    input.contactEmail && input.contactEmail.trim() !== ""
-      ? input.contactEmail.trim()
-      : null;
-  if (contactEmail && !isValidEmail(contactEmail)) {
-    return { ok: false, error: "Please enter a valid email address." };
-  }
+  const contact = sanitizeContact({
+    name: input.guestName,
+    phone: input.contactPhone,
+    email: input.contactEmail,
+  });
+  if (!contact.ok) return contact;
+  const { name: guestName, phone: contactPhone, email: contactEmail } = contact;
 
   if (!isValidStay(input.checkIn, input.checkOut)) {
     return {
@@ -126,30 +108,13 @@ export async function submitLeisureBooking(
       guestCount,
     });
 
-    const nights = nightsBetween(input.checkIn, input.checkOut);
-    const addOnRows: (typeof addOnSelections.$inferInsert)[] = [];
-    if (input.breakfast) {
-      for (const night of nights) {
-        addOnRows.push({
-          bookingRequestId: request.id,
-          type: "breakfast",
-          persons: guestCount,
-          date: night,
-          unitPrice: BREAKFAST_PRICE.toFixed(2),
-        });
-      }
-    }
-    if (input.dinner) {
-      for (const night of nights) {
-        addOnRows.push({
-          bookingRequestId: request.id,
-          type: "dinner",
-          persons: guestCount,
-          date: night,
-          unitPrice: DINNER_PRICE.toFixed(2),
-        });
-      }
-    }
+    const addOnRows = buildAddOnRows({
+      bookingRequestId: request.id,
+      nights: nightDates(input.checkIn, input.checkOut),
+      guestCount,
+      breakfast: input.breakfast,
+      dinner: input.dinner,
+    });
     if (addOnRows.length > 0) {
       await db.insert(addOnSelections).values(addOnRows);
     }
@@ -192,11 +157,18 @@ export async function getUnavailableRoomIds(
 ): Promise<number[]> {
   // Only ever run the availability query with validated calendar dates.
   if (!isValidStay(checkIn, checkOut)) return [];
-  const allRooms = await db.select({ id: rooms.id }).from(rooms);
-  const unavailable: number[] = [];
-  for (const room of allRooms) {
-    const ok = await isRoomAvailable(room.id, checkIn, checkOut);
-    if (!ok) unavailable.push(room.id);
-  }
-  return unavailable;
+  // One query instead of N: every room with an approved booking overlapping
+  // the requested range is unavailable (same overlap logic as isRoomAvailable).
+  const rows = await db
+    .selectDistinct({ roomId: bookingRoomLines.roomId })
+    .from(bookingRoomLines)
+    .innerJoin(bookingRequests, eq(bookingRoomLines.bookingRequestId, bookingRequests.id))
+    .where(
+      and(
+        eq(bookingRequests.status, "approved"),
+        lt(bookingRoomLines.checkIn, checkOut),
+        gt(bookingRoomLines.checkOut, checkIn)
+      )
+    );
+  return rows.map((r) => r.roomId);
 }
