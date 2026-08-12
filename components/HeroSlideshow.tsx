@@ -132,6 +132,7 @@ export default function HeroSlideshow({
                 // Only the very first slide is high-priority (LCP); every
                 // other slide is fetched lazily when it becomes the active one.
                 priority={index === 0}
+                fetchPriority={index === 0 ? "high" : undefined}
                 sizes="100vw"
               />
             </div>

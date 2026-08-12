@@ -11,6 +11,7 @@ import {
 import { and, eq, lt, gt } from "drizzle-orm";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
+import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
 import {
   safeText,
   normalizePhone,
@@ -55,9 +56,6 @@ export type CorporateQuoteInput = {
 };
 
 export type CorporateQuoteResult = { ok: true } | { ok: false; error: string };
-
-const BREAKFAST_PRICE = "175.00";
-const DINNER_PRICE = "300.00";
 
 function nightsBetween(checkIn: string, checkOut: string): string[] {
   const dates: string[] = [];
@@ -199,12 +197,12 @@ export async function submitCorporateQuote(
     const addOnRows: (typeof addOnSelections.$inferInsert)[] = [];
     if (input.breakfast) {
       for (const night of nights) {
-        addOnRows.push({ bookingRequestId: request.id, type: "breakfast", persons: totalGuests, date: night, unitPrice: BREAKFAST_PRICE });
+        addOnRows.push({ bookingRequestId: request.id, type: "breakfast", persons: totalGuests, date: night, unitPrice: BREAKFAST_PRICE.toFixed(2) });
       }
     }
     if (input.dinner) {
       for (const night of nights) {
-        addOnRows.push({ bookingRequestId: request.id, type: "dinner", persons: totalGuests, date: night, unitPrice: DINNER_PRICE });
+        addOnRows.push({ bookingRequestId: request.id, type: "dinner", persons: totalGuests, date: night, unitPrice: DINNER_PRICE.toFixed(2) });
       }
     }
     if (addOnRows.length > 0) await db.insert(addOnSelections).values(addOnRows);
