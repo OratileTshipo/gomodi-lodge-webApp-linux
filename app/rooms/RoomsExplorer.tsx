@@ -15,12 +15,15 @@ type Room = {
   amenities: string[];
   description: string;
   flexible: boolean;
+  images: string[];
 };
 
 type Filter = "all" | "double" | "flexible";
 type Sort = "default" | "price-asc" | "price-desc" | "name-asc";
 
-// Real images for Room 1 — other rooms use PhotoPlaceholder
+// Fallback photos for Room 1 while the DB is unseeded — the source of truth
+// is `rooms.images` (jsonb, ordered, first entry = thumbnail) passed down
+// from the server page. Empty array = placeholder art until real photos land.
 const ROOM_IMAGES: Record<number, { src: string; alt: string }[]> = {
   1: [
     { src: "/images/rooms/room1.jpeg", alt: "Room 1 main view" },
@@ -32,6 +35,14 @@ const ROOM_IMAGES: Record<number, { src: string; alt: string }[]> = {
     { src: "/images/rooms/room1-bathroom.jpeg", alt: "Room 1 bathroom" },
   ],
 };
+
+/** Room gallery: DB images win, seed fallback second, placeholder last. */
+function roomImages(room: Room): { src: string; alt: string }[] {
+  if (room.images.length > 0) {
+    return room.images.map((src, i) => ({ src, alt: `${room.name} photo ${i + 1}` }));
+  }
+  return ROOM_IMAGES[room.id] || [];
+}
 
 export function RoomsExplorer({
   rooms,
@@ -100,7 +111,7 @@ export function RoomsExplorer({
     return 0;
   });
 
-  const getRoomImages = (roomId: number) => ROOM_IMAGES[roomId] || [];
+  const getRoomImages = (room: Room) => roomImages(room);
 
   return (
     <main className="page-transition">
@@ -203,7 +214,7 @@ export function RoomsExplorer({
         {sorted.length > 0 ? (
           <div key={`${filter}-${sort}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sorted.map((room, i) => {
-              const images = getRoomImages(room.id);
+              const images = getRoomImages(room);
               return (
                 <article
                   key={room.id}
@@ -328,7 +339,7 @@ export function RoomsExplorer({
               <div className="w-full md:w-1/2 md:border-r border-walnut/10 flex flex-col min-h-0 bg-cream-light">
                 <div className="relative w-full h-56 sm:h-64 md:h-auto md:flex-1 min-h-0 overflow-hidden bg-ink/10">
                   {(() => {
-                    const images = getRoomImages(activeRoom.id);
+                    const images = getRoomImages(activeRoom);
                     if (images.length > 0) {
                       return (
                         <>
@@ -374,10 +385,10 @@ export function RoomsExplorer({
                 </div>
 
                 {/* Thumbnail strip */}
-                {getRoomImages(activeRoom.id).length > 1 && (
+                {getRoomImages(activeRoom).length > 1 && (
                   <div className="px-3 py-2.5 bg-white border-t border-walnut/10 overflow-x-auto flex-shrink-0">
                     <div className="flex gap-2">
-                      {getRoomImages(activeRoom.id).map((img, idx) => (
+                      {getRoomImages(activeRoom).map((img, idx) => (
                         <button
                           key={idx}
                           onClick={() => setActiveImageIndex(idx)}
