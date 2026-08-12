@@ -15,6 +15,7 @@
  *  - Never show pending reviews publicly.
  */
 import { randomBytes } from "crypto";
+import type { Result } from "./result";
 import { db } from "./db";
 import {
   reviews,
@@ -133,7 +134,7 @@ export type SubmitReviewInput = {
   photos: string[];
 };
 
-export type SubmitReviewResult = { ok: true } | { ok: false; error: string };
+export type SubmitReviewResult = Result;
 
 const FEELINGS_ALLOWLIST: readonly string[] = REVIEW_FEELINGS;
 

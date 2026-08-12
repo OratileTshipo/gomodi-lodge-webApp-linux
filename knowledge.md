@@ -5,7 +5,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## See also (READ FIRST before UI / photography / copy / reviews work)
 
 - **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
-- **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 pass fixed (lint errors, `bathOrShower` bug, BookingForm split, shared booking helpers, vitest). READ before refactoring: it lists the remaining follow-ups (AdminDashboard/page extraction, env untrack, CI job).
+- **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 passes fixed (lint errors, `bathOrShower` bug, BookingForm + AdminDashboard + homepage splits, shared booking helpers, vitest, CI job). READ before refactoring — every listed follow-up is now DONE except the owner-side env untrack.
 - **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
 
 ## Guest reviews (merged into `dev` 2026-08-12)
@@ -23,11 +23,16 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 - `lib/contact.ts` is the single source of truth for WhatsApp/email (`WHATSAPP_NUMBER = null` until the owner supplies it; `whatsappHref()` returns `"#"` meanwhile). Swap the number there and every CTA updates.
 
-## Code-quality (2026-08-12 pass merged into `dev`)
+## Code-quality (2026-08-12 passes merged into `dev`)
 
 - **Room bathroom label**: use `bathLabel()` from `lib/rooms.ts` — never hand-roll `bathOrShower === "bath"` comparisons (seed stores capitalised values; the old lowercase check silently showed "Shower" for rooms 2 & 8).
 - **Unit tests**: `npm test` (Vitest) covers the pure money/date/validate helpers in `lib/__tests__/`. Run before PRs alongside build/tsc.
 - **Booking action logic**: contact validation + add-on inserts live in `lib/booking-common.ts` — the three booking actions import from there; don't re-implement in new actions.
+- **Homepage sections live in `components/home/`** (one component per section, 12 total; `app/page.tsx` is a thin composition). Extend a section in its own file — keep the page thin.
+- **Admin dashboard lives in `app/admin/dashboard/`**: `AdminDashboard.tsx` composes `AdminHeader` / `ManagerStats` / `RequestCard` / `EmptyState` / `DashboardSkeleton`; shared shapes in `types.ts`, pure display helpers in `format.ts`. Add a new queue action/card there, not in the dashboard root.
+- **Action results**: all four form actions return the shared `Result` type from `lib/result.ts` (`{ ok: true }` or `{ ok: false; error: string }`, optional success payload via `Result<{...}>`). Don't re-declare per-action unions.
+- **Rate limiting**: `lib/rate-limit.ts` — Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` exist, in-memory fallback otherwise; both fail open. `middleware.ts` calls `allowRequest()`; don't inline new limiter logic there.
+- **CI**: `.github/workflows/ci.yml` gates every PR on tsc + lint + vitest.
 - **Pricing**: money flows from `lib/pricing.ts` (single source of truth) — including catering constants on the events page/form.
 
 ## Commands
