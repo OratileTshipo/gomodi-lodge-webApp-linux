@@ -93,6 +93,21 @@ export function isNotInPast(value: string, today = new Date()): boolean {
   return start >= todayMidnight;
 }
 
+/**
+ * List of calendar dates (YYYY-MM-DD) covered by a stay — check-in inclusive,
+ * check-out exclusive. Used to expand meals into one row per night. Mirrors
+ * the date-window semantics of nightsBetween().
+ */
+export function nightDates(checkIn: string, checkOut: string): string[] {
+  const dates: string[] = [];
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
+  for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
 /** Whole nights between two calendar dates (>= 0). */
 export function nightsBetween(checkIn: string, checkOut: string): number {
   const start = new Date(`${checkIn}T00:00:00Z`).getTime();

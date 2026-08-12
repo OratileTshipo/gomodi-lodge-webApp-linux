@@ -199,7 +199,8 @@ async function runE2ETests() {
     {},
     {},
     {},
-    {}
+    {},
+    {} // quotes
   );
   assert("Enriched admin request list length matches pending count", enriched.length === pendingRequests.length);
 

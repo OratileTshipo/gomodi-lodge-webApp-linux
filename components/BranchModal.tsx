@@ -6,8 +6,22 @@ import { useBranchModal } from "./BranchModalContext";
 
 export function BranchModal() {
   const { isOpen, closeBranch } = useBranchModal();
+  if (!isOpen) return null;
+  // Mounts fresh on every open: the fade-in transition replays, the scroll
+  // lock is released on unmount, and no synchronous setState runs inside an
+  // effect (react-hooks/set-state-in-effect).
+  return <BranchModalInner closeBranch={closeBranch} />;
+}
+
+function BranchModalInner({ closeBranch }: { closeBranch: () => void }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Small delay so the transition plays on mount
+    const t = setTimeout(() => setMounted(true), 10);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -18,20 +32,11 @@ export function BranchModal() {
   }, [closeBranch]);
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Small delay so the transition plays on mount
-      const t = setTimeout(() => setMounted(true), 10);
-      return () => clearTimeout(t);
-    } else {
-      setMounted(false);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   function goTo(path: string) {
     closeBranch();

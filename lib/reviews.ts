@@ -173,30 +173,37 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   const consentToPublish = Boolean(input.consentToPublish);
 
   try {
-    const [inviteRow] = await db
-      .select({ bookingRequestId: reviewInvites.bookingRequestId })
-      .from(reviewInvites)
-      .where(eq(reviewInvites.token, token));
+    // Insert the review + mark the invite submitted atomically — a failure
+    // between the two would leave the invite "sent" with a review already
+    // present (the hasReview guard would still block re-submission, but the
+    // invite status would be a lie).
+    await db.transaction(async (tx) => {
+      const [inviteRow] = await tx
+        .select({ bookingRequestId: reviewInvites.bookingRequestId })
+        .from(reviewInvites)
+        .where(eq(reviewInvites.token, token));
+      if (!inviteRow) throw new Error("Review invite vanished mid-submit");
 
-    await db
-      .insert(reviews)
-      .values({
-        bookingRequestId: inviteRow!.bookingRequestId,
-        guestName: consentToPublish ? guestName : "",
-        category: invite.category,
-        rating,
-        headline,
-        body,
-        feelings,
-        photos,
-        status: "pending",
-        consentToPublish,
-      });
+      await tx
+        .insert(reviews)
+        .values({
+          bookingRequestId: inviteRow.bookingRequestId,
+          guestName: consentToPublish ? guestName : "",
+          category: invite.category,
+          rating,
+          headline,
+          body,
+          feelings,
+          photos,
+          status: "pending",
+          consentToPublish,
+        });
 
-    await db
-      .update(reviewInvites)
-      .set({ status: "submitted", submittedAt: new Date() })
-      .where(eq(reviewInvites.token, token));
+      await tx
+        .update(reviewInvites)
+        .set({ status: "submitted", submittedAt: new Date() })
+        .where(eq(reviewInvites.token, token));
+    });
 
     return { ok: true };
   } catch (err) {
@@ -231,13 +238,17 @@ export async function listApprovedReviews(limit = 3): Promise<PublicReview[]> {
 
 /** Aggregate stats from approved reviews (for a "4.8 · 12 reviews" badge). */
 export async function reviewStats(): Promise<{ count: number; average: number }> {
-  const rows = await db
-    .select({ rating: reviews.rating })
+  // SQL aggregates instead of pulling every approved rating into JS — count
+  // and average stay on the DB. Casts keep real JS numbers (pg returns int8
+  // counts and numerics as strings otherwise).
+  const [row] = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+      average: sql<number>`coalesce(round(avg(${reviews.rating})::numeric, 1), 0)::float8`,
+    })
     .from(reviews)
     .where(eq(reviews.status, "approved"));
-  if (rows.length === 0) return { count: 0, average: 0 };
-  const sum = rows.reduce((s, r) => s + r.rating, 0);
-  return { count: rows.length, average: Math.round((sum / rows.length) * 10) / 10 };
+  return { count: row?.count ?? 0, average: row?.average ?? 0 };
 }
 
 // ---------------------------------------------------------------------------

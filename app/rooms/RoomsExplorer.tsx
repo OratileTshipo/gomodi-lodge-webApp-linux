@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
+import { bathLabel } from "@/lib/rooms";
 
 type Room = {
   id: number;
@@ -58,19 +59,17 @@ export function RoomsExplorer({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
-    if (activeRoom) {
-      setActiveImageIndex(0);
-      const t = setTimeout(() => setModalMounted(true), 10);
-      // Lock body scroll while the modal is open — no page scroll behind it
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        clearTimeout(t);
-        document.body.style.overflow = prevOverflow;
-      };
-    } else {
-      setModalMounted(false);
-    }
+    if (!activeRoom) return;
+    // Fade-in after mount (async — the sync setState-in-effect lint rule is
+    // about cascading renders, and the transition needs one frame anyway).
+    const t = setTimeout(() => setModalMounted(true), 10);
+    // Lock body scroll while the modal is open — no page scroll behind it
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [activeRoom]);
 
   // Close modal on Escape
@@ -112,6 +111,14 @@ export function RoomsExplorer({
   });
 
   const getRoomImages = (room: Room) => roomImages(room);
+
+  // Reset per-open state in the event handler (not an effect) so the gallery
+  // always starts at the first photo and the fade-in replays on every open.
+  function openRoom(room: Room) {
+    setActiveRoom(room);
+    setActiveImageIndex(0);
+    setModalMounted(false);
+  }
 
   return (
     <main className="page-transition">
@@ -220,7 +227,7 @@ export function RoomsExplorer({
                   key={room.id}
                   className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop cursor-pointer group"
                   data-stagger={(i % 6) + 1}
-                  onClick={() => setActiveRoom(room)}
+                  onClick={() => openRoom(room)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -263,7 +270,7 @@ export function RoomsExplorer({
                       </div>
                     </div>
                     <p className="text-stone text-sm mt-1">
-                      {room.config} · {room.bathOrShower === "bath" ? "Bath" : "Shower"} · Up to 2 guests
+                      {room.config} · {bathLabel(room.bathOrShower)} · Up to 2 guests
                     </p>
                     <p className="text-stone text-sm mt-3 line-clamp-2 flex-1">{room.description}</p>
                     <div className="flex flex-wrap gap-2 mt-4">
@@ -278,7 +285,7 @@ export function RoomsExplorer({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveRoom(room);
+                          openRoom(room);
                         }}
                         className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press"
                       >
@@ -319,7 +326,7 @@ export function RoomsExplorer({
               <div className="min-w-0">
                 <h2 className="font-semibold text-ink text-lg md:text-xl truncate">{activeRoom.name}</h2>
                 <p className="text-stone text-xs mt-0.5">
-                  {activeRoom.config} · {activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"} · Room {activeRoom.id} of 9
+                  {activeRoom.config} · {bathLabel(activeRoom.bathOrShower)} · Room {activeRoom.id} of 9
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
@@ -416,7 +423,7 @@ export function RoomsExplorer({
                   </div>
                   <div className="bg-cream rounded-lg p-3 border border-walnut/5">
                     <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Bathroom</div>
-                    <div className="text-ink text-sm font-medium mt-1">{activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
+                    <div className="text-ink text-sm font-medium mt-1">{bathLabel(activeRoom.bathOrShower)}</div>
                   </div>
                   <div className="bg-cream rounded-lg p-3 border border-walnut/5">
                     <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Guests</div>
