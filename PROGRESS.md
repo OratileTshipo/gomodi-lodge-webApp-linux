@@ -99,6 +99,7 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
+<<<<<<< HEAD
 ### 2026-08-11 — Improvement pass on Tasks 1–7 (security + performance) — DeepSeek Flash
 
 **Status:** ✅ Delivered — PR → `dev` from `perf/lcp-priority-and-region` (follow-up to PRs #18/#19).
