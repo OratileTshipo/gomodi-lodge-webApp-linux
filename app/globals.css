@@ -112,9 +112,9 @@ img {
 .hero-gradient {
   background: linear-gradient(
     180deg,
-    rgba(42, 30, 24, 0.05) 0%,
-    rgba(42, 30, 24, 0.55) 60%,
-    rgba(42, 30, 24, 0.75) 100%
+    rgba(42, 30, 24, 0.04) 0%,
+    rgba(42, 30, 24, 0.45) 55%,
+    rgba(42, 30, 24, 0.7) 100%
   );
 }
 .card-shadow {
@@ -317,7 +317,7 @@ img {
 
 html.motion-armed .motion-ready:not(.motion-visible) {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(18px);
 }
 
 .motion-ready.motion-visible {
@@ -342,7 +342,7 @@ html.motion-armed .motion-ready:not(.motion-visible) {
 }
 html.motion-armed .motion-fade-up:not(.motion-visible) {
   opacity: 0;
-  transform: translateY(32px);
+  transform: translateY(24px);
 }
 .motion-fade-up.motion-visible {
   opacity: 1;
@@ -356,7 +356,7 @@ html.motion-armed .motion-fade-up:not(.motion-visible) {
 }
 html.motion-armed .motion-fade-down:not(.motion-visible) {
   opacity: 0;
-  transform: translateY(-32px);
+  transform: translateY(-24px);
 }
 .motion-fade-down.motion-visible {
   opacity: 1;

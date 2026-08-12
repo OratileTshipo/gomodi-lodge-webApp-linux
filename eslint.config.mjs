@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     // Dev-only tooling (not shipped or part of the app bundle):
     ".agents/**",
     "scripts/**",
+    "scratch/**",
   ]),
 ]);
 

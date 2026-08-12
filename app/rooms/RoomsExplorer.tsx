@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import HeroSlideshow from "@/components/HeroSlideshow";
+import { bathLabel } from "@/lib/rooms";
 
 type Room = {
   id: number;
@@ -15,12 +16,15 @@ type Room = {
   amenities: string[];
   description: string;
   flexible: boolean;
+  images: string[];
 };
 
 type Filter = "all" | "double" | "flexible";
 type Sort = "default" | "price-asc" | "price-desc" | "name-asc";
 
-// Real images for Room 1 — other rooms use PhotoPlaceholder
+// Fallback photos for Room 1 while the DB is unseeded — the source of truth
+// is `rooms.images` (jsonb, ordered, first entry = thumbnail) passed down
+// from the server page. Empty array = placeholder art until real photos land.
 const ROOM_IMAGES: Record<number, { src: string; alt: string }[]> = {
   1: [
     { src: "/images/rooms/room1.jpeg", alt: "Room 1 main view" },
@@ -32,6 +36,14 @@ const ROOM_IMAGES: Record<number, { src: string; alt: string }[]> = {
     { src: "/images/rooms/room1-bathroom.jpeg", alt: "Room 1 bathroom" },
   ],
 };
+
+/** Room gallery: DB images win, seed fallback second, placeholder last. */
+function roomImages(room: Room): { src: string; alt: string }[] {
+  if (room.images.length > 0) {
+    return room.images.map((src, i) => ({ src, alt: `${room.name} photo ${i + 1}` }));
+  }
+  return ROOM_IMAGES[room.id] || [];
+}
 
 export function RoomsExplorer({
   rooms,
@@ -47,19 +59,17 @@ export function RoomsExplorer({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
-    if (activeRoom) {
-      setActiveImageIndex(0);
-      const t = setTimeout(() => setModalMounted(true), 10);
-      // Lock body scroll while the modal is open — no page scroll behind it
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        clearTimeout(t);
-        document.body.style.overflow = prevOverflow;
-      };
-    } else {
-      setModalMounted(false);
-    }
+    if (!activeRoom) return;
+    // Fade-in after mount (async — the sync setState-in-effect lint rule is
+    // about cascading renders, and the transition needs one frame anyway).
+    const t = setTimeout(() => setModalMounted(true), 10);
+    // Lock body scroll while the modal is open — no page scroll behind it
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [activeRoom]);
 
   // Close modal on Escape
@@ -100,7 +110,15 @@ export function RoomsExplorer({
     return 0;
   });
 
-  const getRoomImages = (roomId: number) => ROOM_IMAGES[roomId] || [];
+  const getRoomImages = (room: Room) => roomImages(room);
+
+  // Reset per-open state in the event handler (not an effect) so the gallery
+  // always starts at the first photo and the fade-in replays on every open.
+  function openRoom(room: Room) {
+    setActiveRoom(room);
+    setActiveImageIndex(0);
+    setModalMounted(false);
+  }
 
   return (
     <main className="page-transition">
@@ -203,13 +221,13 @@ export function RoomsExplorer({
         {sorted.length > 0 ? (
           <div key={`${filter}-${sort}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sorted.map((room, i) => {
-              const images = getRoomImages(room.id);
+              const images = getRoomImages(room);
               return (
                 <article
                   key={room.id}
                   className="room-card card-shadow card-lift bg-white rounded-2xl overflow-hidden border border-walnut/10 flex flex-col motion-pop cursor-pointer group"
                   data-stagger={(i % 6) + 1}
-                  onClick={() => setActiveRoom(room)}
+                  onClick={() => openRoom(room)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -252,7 +270,7 @@ export function RoomsExplorer({
                       </div>
                     </div>
                     <p className="text-stone text-sm mt-1">
-                      {room.config} · {room.bathOrShower === "bath" ? "Bath" : "Shower"} · Up to 2 guests
+                      {room.config} · {bathLabel(room.bathOrShower)} · Up to 2 guests
                     </p>
                     <p className="text-stone text-sm mt-3 line-clamp-2 flex-1">{room.description}</p>
                     <div className="flex flex-wrap gap-2 mt-4">
@@ -267,7 +285,7 @@ export function RoomsExplorer({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveRoom(room);
+                          openRoom(room);
                         }}
                         className="flex-1 btn-outline px-3 py-2 rounded-lg text-sm font-semibold btn-press"
                       >
@@ -308,7 +326,7 @@ export function RoomsExplorer({
               <div className="min-w-0">
                 <h2 className="font-semibold text-ink text-lg md:text-xl truncate">{activeRoom.name}</h2>
                 <p className="text-stone text-xs mt-0.5">
-                  {activeRoom.config} · {activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"} · Room {activeRoom.id} of 9
+                  {activeRoom.config} · {bathLabel(activeRoom.bathOrShower)} · Room {activeRoom.id} of 9
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
@@ -328,7 +346,7 @@ export function RoomsExplorer({
               <div className="w-full md:w-1/2 md:border-r border-walnut/10 flex flex-col min-h-0 bg-cream-light">
                 <div className="relative w-full h-56 sm:h-64 md:h-auto md:flex-1 min-h-0 overflow-hidden bg-ink/10">
                   {(() => {
-                    const images = getRoomImages(activeRoom.id);
+                    const images = getRoomImages(activeRoom);
                     if (images.length > 0) {
                       return (
                         <>
@@ -374,10 +392,10 @@ export function RoomsExplorer({
                 </div>
 
                 {/* Thumbnail strip */}
-                {getRoomImages(activeRoom.id).length > 1 && (
+                {getRoomImages(activeRoom).length > 1 && (
                   <div className="px-3 py-2.5 bg-white border-t border-walnut/10 overflow-x-auto flex-shrink-0">
                     <div className="flex gap-2">
-                      {getRoomImages(activeRoom.id).map((img, idx) => (
+                      {getRoomImages(activeRoom).map((img, idx) => (
                         <button
                           key={idx}
                           onClick={() => setActiveImageIndex(idx)}
@@ -405,7 +423,7 @@ export function RoomsExplorer({
                   </div>
                   <div className="bg-cream rounded-lg p-3 border border-walnut/5">
                     <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Bathroom</div>
-                    <div className="text-ink text-sm font-medium mt-1">{activeRoom.bathOrShower === "bath" ? "Bath" : "Shower"}</div>
+                    <div className="text-ink text-sm font-medium mt-1">{bathLabel(activeRoom.bathOrShower)}</div>
                   </div>
                   <div className="bg-cream rounded-lg p-3 border border-walnut/5">
                     <div className="text-[10px] uppercase tracking-wide text-stone font-semibold">Guests</div>

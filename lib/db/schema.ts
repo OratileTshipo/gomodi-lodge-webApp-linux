@@ -8,8 +8,10 @@ import {
   date,
   decimal,
   boolean,
+  jsonb,
   pgEnum,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ---------- Enums ----------
 export const roleEnum = pgEnum("role", ["owner", "assistant", "staff", "partner"]);
@@ -32,6 +34,11 @@ export const quoteStatusEnum = pgEnum("quote_status", [
   "accepted",
   "declined",
 ]);
+export const reviewStatusEnum = pgEnum("review_status", [
+  "pending",
+  "approved",
+  "declined",
+]);
 
 // ---------- Users (Owner / Assistant / Staff) ----------
 export const users = pgTable("users", {
@@ -51,6 +58,27 @@ export const rooms = pgTable("rooms", {
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
   amenities: text("amenities").notNull(),
   description: text("description").notNull().default(""),
+  // Public image paths (from /public) for this room's gallery — order matters,
+  // the first entry is the card thumbnail. Empty array = use placeholder art.
+  images: jsonb("images")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+});
+
+// ---------- Seasonal Pricing ----------
+// Date-ranged rate overrides for festive/busy periods (e.g. the December
+// festive season, Easter weekends). When a night falls inside an ACTIVE period
+// the seasonal per-night rate applies instead of the room's base rate; outside
+// those windows the base rate is used. This gives the owner the "set a higher
+// price for the busy weekend, then it resets automatically" behaviour.
+export const seasonalPricing = pgTable("seasonal_pricing", {
+  id: serial("id").primaryKey(),
+  label: varchar("label", { length: 120 }).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  ratePerNight: decimal("rate_per_night", { precision: 10, scale: 2 }).notNull(),
+  active: boolean("active").notNull().default(true),
 });
 
 // ---------- Booking Requests ----------
@@ -199,6 +227,55 @@ export const quoteLineItems = pgTable("quote_line_items", {
   unit: varchar("unit", { length: 30 }).notNull().default("night"),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull().default("0.00"),
   sortOrder: integer("sort_order").notNull().default(0),
+});
+
+// ---------- Guest Reviews ----------
+// Public guest reviews, written via the token-gated /review flow (see
+// review_invites below). Every review must trace to a real stay:
+// - bookingRequestId links the review to the actual booking (kept when the
+//   booking is deleted, hence "set null")
+// - the public review form is only reachable with the unguessable invite
+//   token, so strangers can't post
+// Reviews start `pending`; staff approve/decline before anything public.
+// Guardrail: never seed or fabricate reviews — only real guests via invites.
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  bookingRequestId: integer("booking_request_id").references(
+    () => bookingRequests.id,
+    { onDelete: "set null" }
+  ),
+  // Display name — empty means the guest chose to stay anonymous ("Guest").
+  guestName: varchar("guest_name", { length: 150 }).notNull().default(""),
+  category: bookingCategoryEnum("category"),
+  rating: integer("rating").notNull(), // 1–5
+  headline: varchar("headline", { length: 120 }).notNull(),
+  body: text("body").notNull(),
+  // Felt-word tags the guest picks ("slept well", "felt at home", "great breakfast"…)
+  feelings: jsonb("feelings").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  // Vercel Blob URLs (via /api/upload) — displayed on the review card.
+  photos: jsonb("photos").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  status: reviewStatusEnum("status").notNull().default("pending"),
+  // POPIA: explicit consent to publish name + words. False → shown as "Guest".
+  consentToPublish: boolean("consent_to_publish").notNull().default(true),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
+  approvedById: integer("approved_by_id").references(() => users.id),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+});
+
+// One unguessable invite per booking request (unique), created after checkout
+// and delivered by WhatsApp. The /review?token=… page validates it, so only
+// a real guest who stayed can leave a review — and only once.
+export const reviewInvites = pgTable("review_invites", {
+  id: serial("id").primaryKey(),
+  bookingRequestId: integer("booking_request_id")
+    .notNull()
+    .unique()
+    .references(() => bookingRequests.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  // "sent" → invited, not yet reviewed; "submitted" → review already written
+  status: varchar("status", { length: 20 }).notNull().default("sent"),
+  sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
 });
 
 // ---------- Proof of Payments ----------

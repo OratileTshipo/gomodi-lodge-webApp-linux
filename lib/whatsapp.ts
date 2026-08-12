@@ -35,6 +35,7 @@ function config() {
     alertTemplate: process.env.WHATSAPP_ALERT_TEMPLATE || "gomodi_booking_alert",
     statusTemplate: process.env.WHATSAPP_STATUS_TEMPLATE || "gomodi_booking_status",
     quoteTemplate: process.env.WHATSAPP_QUOTE_TEMPLATE || "gomodi_quote_link",
+    reviewTemplate: process.env.WHATSAPP_REVIEW_TEMPLATE || "gomodi_review_request",
     language: process.env.WHATSAPP_LANGUAGE || "en",
   };
 }
@@ -205,5 +206,32 @@ export async function sendQuoteLink(params: {
     to: params.phone,
     templateName: quoteTemplate,
     parameters: [params.guestName, params.quoteNumber, params.link],
+  });
+}
+
+/**
+ * Post-stay review request — sent to the guest after checkout with a private
+ * link to /review?token=…. Uses the approved UTILITY template (default
+ * gomodi_review_request) with parameters [guestName, link]. Fails open: while
+ * WhatsApp is unconfigured it logs the link so the lodge can share it from
+ * the admin queue instead.
+ */
+export async function sendReviewRequest(params: {
+  phone: string;
+  guestName: string;
+  link: string;
+}): Promise<SendResult> {
+  const { reviewTemplate } = config();
+  if (!isWhatsAppConfigured()) {
+    console.log(
+      `[WhatsApp not configured] review request for ${params.guestName} was NOT delivered. ` +
+        `Share link: ${params.link}`
+    );
+    return { sent: false, reason: "WhatsApp not configured" };
+  }
+  return sendTemplateMessage({
+    to: params.phone,
+    templateName: reviewTemplate,
+    parameters: [params.guestName, params.link],
   });
 }

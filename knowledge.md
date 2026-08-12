@@ -2,6 +2,48 @@
 
 Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house in Mafikeng, South Africa. Next.js 16.2 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Drizzle ORM + PostgreSQL. Three guest journeys (Leisure / Corporate / Events) feed one booking-request pipeline, with a staff admin area to review/approve.
 
+## See also (READ FIRST before UI / photography / copy / reviews work)
+
+- **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
+- **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 passes fixed (lint errors, `bathOrShower` bug, BookingForm + AdminDashboard + homepage splits, shared booking helpers, vitest, CI job). READ before refactoring — every listed follow-up is now DONE except the owner-side env untrack.
+- **`E2E-TESTING.md`** — the Playwright end-to-end suite (82 tests, 11 specs, desktop + mobile): how to run (`npm run e2e`, needs a seeded DB), env knobs, coverage map, CI integration. READ before changing any interactive UI — the suite asserts every form, flow, label, and loading budget.
+
+## E2E testing (merged into `dev` 2026-08-12)
+
+- Playwright suite under `e2e/` — covers every page/form/flow plus perf budgets (LCP/FCP/DCL/Load/TTFB) and a11y smoke checks; runs on desktop + mobile viewports.
+- Self-gating: the `dbReady` fixture pings `/api/ping`; DB-less environments skip DB-dependent specs instead of failing.
+- CI runs the full suite against a Postgres service (`db:push` + `db:seed` + production server).
+- `E2E_REVIEW_TOKEN` enables the review-form spec; admin OTP is only machine-readable in non-production servers (dev mode).
+- Labels: consent checkboxes + admin login inputs now have `id`/`htmlFor` wiring (a11y fix from the suite).
+- **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
+
+## Guest reviews (merged into `dev` 2026-08-12)
+
+- **Flow**: approved booking ends → `/api/review-reminders` (cron, daily) creates one unguessable invite per booking (`review_invites.token`) and sends it via WhatsApp template `gomodi_review_request` (fails open) → guest opens `/review?token=…` → review saved `pending` → staff approve in `/admin/reviews` (`/api/admin/reviews/[id]`, manager-only) → approved reviews render on the homepage "What guests say" (3 cards, aggregate badge at ≥5).
+- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Push with `npx drizzle-kit push`.
+- **Guardrails (binding)**: no fabricated/seed reviews — every review traces to a booking via the token; pending reviews never display; no consent → shown as "Guest".
+- **Homepage resilience**: reviews query is try/caught — missing tables degrade to the empty state instead of failing the page.
+
+## Seasonal pricing (wiring now COMPLETE)
+
+- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) is committed to `dev`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `dev` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. `npx drizzle-kit push` is still needed to create the table.
+
+## Contact surfaces
+
+- `lib/contact.ts` is the single source of truth for WhatsApp/email (`WHATSAPP_NUMBER = null` until the owner supplies it; `whatsappHref()` returns `"#"` meanwhile). Swap the number there and every CTA updates.
+
+## Code-quality (2026-08-12 passes merged into `dev`)
+
+- **Room bathroom label**: use `bathLabel()` from `lib/rooms.ts` — never hand-roll `bathOrShower === "bath"` comparisons (seed stores capitalised values; the old lowercase check silently showed "Shower" for rooms 2 & 8).
+- **Unit tests**: `npm test` (Vitest) covers the pure money/date/validate helpers in `lib/__tests__/`. Run before PRs alongside build/tsc.
+- **Booking action logic**: contact validation + add-on inserts live in `lib/booking-common.ts` — the three booking actions import from there; don't re-implement in new actions.
+- **Homepage sections live in `components/home/`** (one component per section, 12 total; `app/page.tsx` is a thin composition). Extend a section in its own file — keep the page thin.
+- **Admin dashboard lives in `app/admin/dashboard/`**: `AdminDashboard.tsx` composes `AdminHeader` / `ManagerStats` / `RequestCard` / `EmptyState` / `DashboardSkeleton`; shared shapes in `types.ts`, pure display helpers in `format.ts`. Add a new queue action/card there, not in the dashboard root.
+- **Action results**: all four form actions return the shared `Result` type from `lib/result.ts` (`{ ok: true }` or `{ ok: false; error: string }`, optional success payload via `Result<{...}>`). Don't re-declare per-action unions.
+- **Rate limiting**: `lib/rate-limit.ts` — Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` exist, in-memory fallback otherwise; both fail open. `middleware.ts` calls `allowRequest()`; don't inline new limiter logic there.
+- **CI**: `.github/workflows/ci.yml` gates every PR on tsc + lint + vitest.
+- **Pricing**: money flows from `lib/pricing.ts` (single source of truth) — including catering constants on the events page/form.
+
 ## Commands
 
 - Install: `npm install` (needs `DATABASE_URL` in `.env`)
@@ -105,6 +147,17 @@ No system-level browsers (no sudo), but all three are installed user-space and o
 - The symlinks are tied to the current nvm Node version dir — re-create them if Node is upgraded. Raw binaries live in `~/.cache/ms-playwright/` and `~/edge-pkg/` (survive node changes).
 
 ## Changelog
+
+### 2026-08-12 — Code-quality pass (Buffy)
+
+- **Lint is now green (Aug 12):** all 4 pre-existing React lint errors fixed (RoomsExplorer setState-in-effect, BranchModal setState-in-effect, HeroSlideshow ref-during-render, root `test_pages.js` → `scripts/test-pages.js`). `npm run lint` reports zero errors.
+- **`bathOrShower` display bug fixed (Aug 12):** shared `lib/rooms.ts` `bathLabel()` replaces the lowercase `=== "bath"` comparisons across homepage/rooms/booking — rooms 2 & 8 now render their real bathroom type.
+- **BookingForm split (Aug 12):** 818-line wizard decomposed into step components (`app/book/BookingCalendar.tsx`, `RoomStep`, `MealsStep`, `DetailsStep`, `PaymentStep`, `StaySummary`, `OtherRooms`) + shared `booking-utils.ts`. Admin dashboard + homepage remain documented follow-ups.
+- **Shared booking-action helpers (Aug 12):** `lib/booking-common.ts` (`validateContact`, `insertAddOnRows`, meal normalization) — book/corporate/events actions de-duplicated; `nightDates()` added to `lib/validate.ts`.
+- **Quick wins (Aug 12):** availability check is now a single SQL query (was N+1); review stats use SQL `AVG`/`COUNT`; `submitReview` is transactional; events-page prices read `lib/pricing.ts` constants.
+- **Vitest added (Aug 12):** `npm test` — 42 tests across `lib/__tests__/` (quote-math cents math, seasonal rate resolution, validate primitives, bathLabel).
+- **Repo hygiene (Aug 12):** `.gitignore` rewritten (was mangled — stray markdown fence + paste artifacts); `tsconfig.tsbuildinfo` untracked; scratch artifacts consolidated under `scratch/` (ignored).
+- **Still needs the owner's hand:** `.env` / `.env.local` remain tracked in git (platform blocks sandbox env ops) — `git rm --cached .env .env.local` in a dedicated PR, rotate any secrets that were ever pushed.
 
 ### 2026-08-11 — Page response-time pass: parallel admin-requests queries + perf benchmark
 

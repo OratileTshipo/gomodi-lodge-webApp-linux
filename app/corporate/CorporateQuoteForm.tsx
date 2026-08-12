@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
-import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { BREAKFAST_PRICE, DINNER_PRICE, ROOM_BASE_RATE } from "@/lib/pricing";
 
 const ROOM_TYPES: { id: "double" | "flexible"; label: string; price: number }[] = [
-  { id: "double", label: "Double Room", price: 950 },
-  { id: "flexible", label: "Flexible Twin/Double", price: 950 },
+  { id: "double", label: "Double Room", price: ROOM_BASE_RATE },
+  { id: "flexible", label: "Flexible Twin/Double", price: ROOM_BASE_RATE },
 ];
 
 export default function CorporateQuoteForm() {
@@ -223,8 +223,8 @@ export default function CorporateQuoteForm() {
 
             <div className="py-6 border-b border-walnut/10">
               <div className="flex items-start gap-3">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-walnut" />
-                <label className="text-sm text-stone">I agree to Gomodi Guest Lodge collecting my details to respond to this quote request, in line with POPIA. *</label>
+                <input id="quoteConsent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-walnut" />
+                <label htmlFor="quoteConsent" className="text-sm text-stone">I agree to Gomodi Guest Lodge collecting my details to respond to this quote request, in line with POPIA. *</label>
               </div>
             </div>
 

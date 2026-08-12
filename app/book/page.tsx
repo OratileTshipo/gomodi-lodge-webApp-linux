@@ -1,3 +1,4 @@
+import { getSeasonalPeriods } from "@/lib/db/seasonal";
 import { BookingForm } from "./BookingForm";
 import { getRooms } from "@/lib/rooms-cache";
 
@@ -14,7 +15,10 @@ export default async function BookPage({
   const params = await searchParams;
 
   // 60s-cached room list (lib/rooms-cache) — repeat visits skip the remote DB.
-  const allRooms = await getRooms();
+  const [allRooms, seasonalPeriods] = await Promise.all([
+    getRooms(),
+    getSeasonalPeriods(),
+  ]);
 
   return (
     <BookingForm
@@ -25,7 +29,9 @@ export default async function BookPage({
         bathOrShower: r.bathOrShower,
         baseRate: r.baseRate,
         flexible: r.config.toLowerCase().includes("configurable"),
+        images: r.images,
       }))}
+      seasonalPeriods={seasonalPeriods}
       initialRoomId={params.room ? Number(params.room) : null}
       initialCheckIn={params.checkIn ?? ""}
       initialCheckOut={params.checkOut ?? ""}
