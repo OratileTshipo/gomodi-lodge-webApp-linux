@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "perf": "tsx scripts/perf-bench.ts"
+    "perf": "tsx scripts/perf-bench.ts",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:perf": "E2E_PERF=1 playwright test e2e/perf.spec.ts",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx lib/db/seed.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
@@ -22,6 +27,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

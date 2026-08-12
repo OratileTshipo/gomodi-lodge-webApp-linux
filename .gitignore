@@ -29,6 +29,11 @@ coverage/
 htmlcov/
 .coverage
 
+# Playwright (E2E)
+test-results/
+playwright-report/
+blob-report/
+
 # Scratch / one-off artifacts
 scratch/
 

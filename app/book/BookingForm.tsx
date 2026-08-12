@@ -353,8 +353,8 @@ export function BookingForm({
             {/* CONSENT */}
             <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
               <div className="flex items-start gap-3">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-terracotta w-4 h-4" />
-                <label className="text-sm text-stone">I&apos;m happy for Gomodi Guest Lodge to keep my details to manage this booking, in line with POPIA. *</label>
+                <input id="bookingConsent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required className="mt-1 accent-terracotta w-4 h-4" />
+                <label htmlFor="bookingConsent" className="text-sm text-stone">I&apos;m happy for Gomodi Guest Lodge to keep my details to manage this booking, in line with POPIA. *</label>
               </div>
               <div className="mt-6">
                 <button type="submit" disabled={status === "submitting"} className="w-full bg-terracotta-dark hover:bg-[#74301f] text-white px-6 py-3.5 rounded-lg font-semibold text-base disabled:opacity-60 transition-all shadow-sm shadow-terracotta-dark/20 hover:shadow-md hover:shadow-terracotta-dark/30 btn-press ripple">
