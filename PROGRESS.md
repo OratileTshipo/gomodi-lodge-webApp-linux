@@ -123,7 +123,6 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
-<<<<<<< HEAD
 ### 2026-08-11 — UI findings & recommendations handoff doc (audit vs Protea Hotel Mahikeng) — Buffy
 
 **Status:** ✅ Delivered (docs-only, no code changes).
@@ -136,5 +135,37 @@ Append a new entry to the **Progress log** below, newest last. Include:
 **Validation:** docs-only — no build/typecheck/lint impact. Codebase facts verified against `app/`, `components/`, `lib/`, `PRODUCT.md`, `PROJECT_SPEC.md`.
 
 **Flags:** Owner input required before go-live items — real WhatsApp number, owner name(s) + consent, breakfast/dinner specifics, prior guest feedback for the reviews section (real testimonials only), event-venue photos, local Mafikeng spots to feature.
+
+### 2026-08-11 — Competition run: full UI roadmap on `comp/buffy` (whole-roadmap implementation) — Buffy
+
+**Status:** ✅ Delivered on branch `comp/buffy` (created from `dev` at `3fa6cce` after committing the shared baseline: spec docs + in-flight seasonal work). Not yet merged — awaits branch-to-branch comparison vs the other models.
+
+**What was built (all four phases of `UI-findings-and-recommendations.md`):**
+
+- **Reviews system (Phase 2, the trust engine):**
+  - Schema: `reviews` + `review_invites` tables (token per booking, status pending/approved/declined, feelings tags, photos, POPIA consent). Push via `npx drizzle-kit push` once DATABASE_URL is available (sandbox terminal has no DB access).
+  - `lib/reviews.ts` engine: token invites, stay-has-ended check (incl. event dates), submit/validate (feelings + photo allowlists), approved-only public reads, stats, admin list + approve/decline.
+  - `lib/review-options.ts` — client-safe feelings chips.
+  - `lib/whatsapp.ts` + `lib/notifications.ts`: `sendReviewRequest` / `notifyGuestOfReviewRequest` (template `gomodi_review_request`, fails open).
+  - Routes: `/api/review-reminders` (daily cron, added to `vercel.json`), `/api/admin/reviews` (staff-read), `/api/admin/reviews/[id]` (manager approve/decline), `/review?token=…` (public form: stars, feelings chips, headline+body, optional photo via `/api/upload`, POPIA consent + anonymous byline), `/admin/reviews` moderation queue (link added to dashboard header).
+  - Homepage "What guests say" section — approved reviews only, warm empty state until real ones land, aggregate badge at ≥5 reviews. **No fabricated reviews** (guardrail).
+- **Felt-experience + photo-ready pass (Phases 1 & 3):**
+  - Homepage rewritten: felt copy across hero/journeys/about/amenities, `next/image` everywhere, new dining teaser, "Things to do in Mafikeng" (real, conservative facts), owner-story + host photo slot (no fabricated name).
+  - `lib/contact.ts` — single WhatsApp surface (stays `"#"` until the owner supplies the number).
+  - Rooms: `rooms.images` threaded from `/rooms` server page → `RoomsExplorer` (DB wins, seed fallback, placeholder last) + room photos in the booking wizard.
+  - Corporate: felt business copy ("arrive the night before your big day"), real photo, procurement features kept. Events: felt copy pass.
+  - `globals.css`: gentler reveals (shorter translate distances), softer hero gradient.
+- **Finished the owner's in-flight seasonal pricing (pre-existing typecheck break):** `BookingForm` now accepts `seasonalPeriods` + `images`; accommodation totals resolve every night via `lib/seasonal.ts` (matches the quote engine), with a seasonal-rate note in the summary.
+
+**Validation (clean worktree at branch state):**
+
+- ✅ `npm run build` — exit 0; new routes present: `/review`, `/admin/reviews`, `/api/admin/reviews`, `/api/admin/reviews/[id]`, `/api/review-reminders`.
+- ✅ `npx tsc --noEmit` — clean (was failing pre-branch: the seasonalPeriods prop break is now fixed).
+- ✅ `npm run lint` — 11 problems (3 errors, 8 warnings), **all pre-existing** (RoomsExplorer 62:7, BranchModal 30:7, test_pages.js); zero new in this branch's footprint (two warnings I introduced were cleaned up).
+
+**Flags:**
+- ⚠️ `npx drizzle-kit push` needs `DATABASE_URL` — run it once in an environment with DB access (or the next deploy) so `reviews`/`review_invites` tables exist. Homepage degrades gracefully if they're missing.
+- ⚠️ `vercel.json` now has two crons; Hobby plan allows one/day — full frequency needs Pro (already flagged for `/api/ping`).
+- ℹ️ WhatsApp number still `"#"` (owner input needed); review template `gomodi_review_request` must be approved in Meta when WhatsApp goes live.
 
 <!-- New entries go above this line, newest last. -->

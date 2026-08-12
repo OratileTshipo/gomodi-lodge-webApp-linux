@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
 import { submitLeisureBooking, getUnavailableRoomIds } from "./actions";
 import { BREAKFAST_PRICE, DINNER_PRICE } from "@/lib/pricing";
+import { nightlyRatesForStay, stayHasSeasonalNights, type SeasonalPeriod } from "@/lib/seasonal";
 
 type Room = {
   id: number;
@@ -13,6 +15,7 @@ type Room = {
   bathOrShower: string;
   baseRate: string | number;
   flexible: boolean;
+  images: string[];
 };
 
 function fmtDate(iso: string) {
@@ -40,12 +43,14 @@ function toISO(d: Date) {
 
 export function BookingForm({
   rooms,
+  seasonalPeriods = [],
   initialRoomId,
   initialCheckIn = "",
   initialCheckOut = "",
   initialGuests = 2,
 }: {
   rooms: Room[];
+  seasonalPeriods?: SeasonalPeriod[];
   initialRoomId: number | null;
   initialCheckIn?: string;
   initialCheckOut?: string;
@@ -101,7 +106,23 @@ export function BookingForm({
       ? Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
       : 0;
   const room = rooms.find((r) => r.id === roomId) || null;
-  const accomTotal = room && nights > 0 ? Number(room.baseRate) * nights : 0;
+
+  // Seasonal-aware accommodation total: resolve EVERY night individually so a
+  // stay straddling a festive window quotes both rates exactly (same engine as
+  // the draft quote — lib/seasonal.ts + lib/quotes.ts buildDraftLines).
+  const seasonalNights = useMemo(() => {
+    if (!room || !checkIn || !checkOut || seasonalPeriods.length === 0) return null;
+    return nightlyRatesForStay(String(room.baseRate), checkIn, checkOut, seasonalPeriods);
+  }, [room, checkIn, checkOut, seasonalPeriods]);
+  const hasSeasonal =
+    room && checkIn && checkOut && seasonalPeriods.length > 0
+      ? stayHasSeasonalNights(String(room.baseRate), checkIn, checkOut, seasonalPeriods)
+      : false;
+  const accomTotal = seasonalNights
+    ? seasonalNights.reduce((s, n) => s + Number(n.rate), 0)
+    : room && nights > 0
+      ? Number(room.baseRate) * nights
+      : 0;
   const mealTotal =
     (breakfast ? guestCount * nights * BREAKFAST_PRICE : 0) +
     (dinner ? guestCount * nights * DINNER_PRICE : 0);
@@ -543,7 +564,17 @@ export function BookingForm({
                       onClick={() => setRoomId(selected ? null : r.id)}
                     >
                       <span className="block aspect-[16/9] overflow-hidden bg-cream relative">
-                        <PhotoPlaceholder label={r.name} />
+                        {r.images.length > 0 ? (
+                          <Image
+                            src={r.images[0]}
+                            alt={r.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
+                        ) : (
+                          <PhotoPlaceholder label={r.name} />
+                        )}
                         {unavailable && (
                           <span className="absolute inset-0 bg-ink/40 flex items-center justify-center">
                             <span className="bg-black/60 text-white text-xs px-2 py-1 rounded">Booked</span>
@@ -712,6 +743,12 @@ export function BookingForm({
                   <div className="flex justify-between text-stone"><span>Accommodation</span><span>{accomTotal ? fmt(accomTotal) : "—"}</span></div>
                   <div className="flex justify-between text-stone"><span>Meals</span><span>{mealTotal ? fmt(mealTotal) : "—"}</span></div>
                   <div className="flex justify-between text-ink font-semibold text-base pt-2 border-t border-walnut/10 mt-2"><span>Indicative total</span><span className="text-terracotta-dark">{accomTotal || mealTotal ? fmt(accomTotal + mealTotal) : "—"}</span></div>
+                  {hasSeasonal && (
+                    <p className="text-[11px] text-gold-dark leading-relaxed">
+                      Seasonal rates apply on part of these dates — the quote
+                      will show each night&apos;s rate.
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-4 text-center">
@@ -746,7 +783,17 @@ export function BookingForm({
                   data-stagger={(i % 6) + 1}
                 >
                   <span className="block aspect-[16/10] overflow-hidden bg-cream relative">
-                    <PhotoPlaceholder label={r.name} />
+                    {r.images.length > 0 ? (
+                      <Image
+                        src={r.images[0]}
+                        alt={r.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                    ) : (
+                      <PhotoPlaceholder label={r.name} />
+                    )}
                     {r.flexible && <span className="absolute top-2 left-2 bg-ink/70 text-cream-light text-[10px] font-medium uppercase px-2 py-0.5 rounded">Flexible twin/double</span>}
                   </span>
                   <span className="block p-4">
