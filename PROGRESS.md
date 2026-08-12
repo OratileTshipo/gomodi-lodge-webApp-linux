@@ -168,4 +168,30 @@ Append a new entry to the **Progress log** below, newest last. Include:
 - ⚠️ `vercel.json` now has two crons; Hobby plan allows one/day — full frequency needs Pro (already flagged for `/api/ping`).
 - ℹ️ WhatsApp number still `"#"` (owner input needed); review template `gomodi_review_request` must be approved in Meta when WhatsApp goes live.
 
+### 2026-08-12 — Branch consolidation: one source of truth on `dev` — Buffy
+
+**Status:** ✅ Done — everything merged into `dev`; `dev` is now the single branch to work from.
+
+**Why:** the repo had two divergent histories (`dev` vs `main`) plus five open PRs (#1, #13, #18, #19, #20) and the competition branch `comp/buffy` — nobody could tell which branch to work on.
+
+**What was merged into `dev` (in order):**
+
+1. `origin/main` — the full release line (PRs #2–#17: Lelz partnership, server-shell corporate/events, 3G perf pass, Neon workflow, docs). Conflicts resolved: `app/book/page.tsx` (kept seasonal wiring + cached `getRooms`), `lib/pricing.ts` (both `ROOM_BASE_RATE` + `LUNCH_PRICE`), `app/corporate/page.tsx` (kept server-shell architecture; pricing fix lands via PR #18).
+2. `fix/corporate-pricing-drift-keepalive` (PR #18) — R950→R750 in `CorporateQuoteForm`, `/api/ping` keep-alive, `vercel.json` cron, seed Room 8 fix.
+3. `fix/admin-dashboard-delay-and-pool` (PR #19) — removed artificial dashboard loading delay; pg pool idle timeout 4 min.
+4. `perf/lcp-priority-and-region` (PR #20) — hero `fetchPriority`, Frankfurt `regions`, meal-pricing single source in actions.
+5. `comp/buffy` — the whole-roadmap competition run: reviews system (`reviews`/`review_invites`, `/review`, `/admin/reviews`, reminder cron), felt-experience homepage + corporate copy, photo-ready sections, seasonal pricing finished in `BookingForm`.
+
+**Branches dropped (now behind `dev` or empty):**
+
+- PR #13 (`OratileTshipo-patch-1`) — commit was a no-op (identical tree); nothing to merge. Closed.
+- PR #1 (`high-performance-motion-design-b72b3`) — orphaned history (no common ancestor with `dev`/`main`, cannot merge), stale since Aug 2. Closed.
+- PRs #18/#19/#20 branches — content merged; branches deleted.
+
+**Kept:** `main` (production release branch — release PRs `dev`→`main` as before), `comp/buffy` (competition comparison branch — content now in `dev`; may be deleted once judged).
+
+**Verification on merged `dev`:** ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 (all routes incl. `/review`, `/admin/reviews`, `/api/ping`) · ✅ lint 4 errors/9 warnings — all pre-existing (RoomsExplorer, BranchModal, HeroSlideshow, test_pages.js), none from this consolidation.
+
+**Reminders:** `npx drizzle-kit push` still needed once for `reviews`/`review_invites` tables (homepage degrades gracefully meanwhile). `.env`/`.env.local` remain tracked in git (pre-existing on `main`) — recommend a dedicated PR to untrack them.
+
 <!-- New entries go above this line, newest last. -->
