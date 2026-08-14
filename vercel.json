@@ -2,8 +2,7 @@
   "crons": [
     {
       "path": "/api/review-reminders",
-      "schedule": "0 8 * * *",
-      "description": "Daily post-stay review invites"
+      "schedule": "0 8 * * *"
     }
   ]
 }
