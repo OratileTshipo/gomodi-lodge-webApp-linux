@@ -63,25 +63,19 @@ credentials in the connection string or change the Docker port
 
 ## 4. Create `.env.local` (secrets live here, never in git)
 
-Create a file named `.env.local` in the project root with **at least**:
+The canonical, fully-documented variable list lives in **`.env.example`**
+(committed). Copy it to `.env.local` and fill in your values:
+
+```bash
+cp .env.example .env.local
+# then edit .env.local with your real values
+```
+
+Minimum for local dev:
 
 ```bash
 DATABASE_URL=postgres://gomodi:gomodi@localhost:5432/gomodi
 SESSION_SECRET=<any long random string, e.g. 32+ chars>
-```
-
-Optional keys (the app degrades gracefully without them):
-
-```bash
-# Uploads (proof-of-payment, review photos) — get a token at Vercel Blob
-BLOB_READ_WRITE_TOKEN=
-# Global rate limiting — otherwise an in-memory limiter is used
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-# Error monitoring — the SDK fails open (no-op) without a DSN
-SENTRY_DSN=
-# Source-map upload on Vercel builds — skip locally
-SENTRY_AUTH_TOKEN=
 ```
 
 - `DATABASE_URL` is the only required key to run the site locally.
@@ -153,24 +147,22 @@ First e2e run needs the browser:
 npx playwright install chromium
 ```
 
-## 8. The things the sandbox blocked me from doing
+## 8. Secrets hygiene — untrack DONE, rotation is on you
 
-The one repo-hygiene task that has to happen on your side (once, in a
-dedicated PR) — the secret files were committed by an earlier commit and the
-platform refuses env-file operations:
+The `.env` / `.env.local` files were committed by an earlier commit and
+stayed tracked despite `.gitignore`. They are now **untracked** (PR #38,
+2026-08-15): the deletion was staged with `git rm --cached`, your local
+copies stay on disk, and `.gitignore` already prevents re-adding them.
 
-```bash
-git checkout -b chore/untrack-secrets
-git rm --cached .env .env.local
-git commit -m "Stop tracking env files"
-git push -u origin chore/untrack-secrets
-# open a PR into dev and merge
-```
+**Pull the change on every machine that has a clone** — the pull updates
+tracking only; your working `.env` / `.env.local` files are untouched.
 
-**Then rotate any real secrets that were ever pushed** (Neon database
-password, Blob token): generate new values, put them in `.env.local` /
-your hosting env, and revoke the old ones. The `.gitignore` rules already
-prevent them from being re-added.
+**Remaining step — rotate any real secrets that were ever pushed** (Neon
+database password, Blob token, WhatsApp credentials, Upstash keys): the old
+values are still in git history, so treat them as compromised. Generate new
+values, put them in `.env.local` / your hosting env, and revoke the old ones
+at the provider. Only a history rewrite (`git filter-repo`) would remove the
+blobs from history — rotating the secrets is the standard, safer fix.
 
 ## Troubleshooting
 
