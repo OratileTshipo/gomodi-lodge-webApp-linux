@@ -29,6 +29,41 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
+## Open tasks / To-do (living list)
+
+Checked = resolved. Items are added here whenever a task is identified; move
+resolved ones to the Progress log. Owner-side items are 🔴 (blocked on the
+owner/Architect — platform or external credentials), code-side are 🟡 (agent
+can execute on request), housekeeping are 🟢.
+
+### 🔴 Owner / Architect side
+
+- [ ] **Merge PR #27** (`fix/ci-green-pass` → `dev`) — the CI green pass (vitest/e2e split + a11y label wiring). PR #26 (dev→main) is merged; #27 carries the fixes that make the core CI gate green.
+- [ ] **`npx drizzle-kit push` + `npm run db:seed` against a real DB** — `reviews`, `review_invites`, `seasonal_pricing` tables exist in schema but are not created anywhere yet; reviews + seasonal rates are inert until this runs once (per SETUP-LOCAL.md). Sandbox has no DB access.
+- [ ] **Untrack `.env` / `.env.local` from git + rotate any pushed secrets** — security: env files are tracked in repo history; platform blocks env-file ops from the sandbox; exact steps in SETUP-LOCAL.md §8 (dedicated PR: `git rm --cached .env .env.local`, keep local copies).
+- [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then all notifications fail open and log only.
+- [ ] **Real WhatsApp number** — `lib/contact.ts` → `WHATSAPP_NUMBER`; every WhatsApp CTA renders `"#"` until supplied.
+- [ ] **Disable Neon autosuspend** (Neon console) — biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
+- [ ] **Real photography** — only Room 1 has photos; rooms 2–9 show placeholder art. Shot list in `UI-findings-and-recommendations.md`.
+- [ ] **Vercel deploy check red on PRs** — "Deployment failed" with no vercel CLI in the sandbox to inspect; likely env/project config on the Vercel dashboard (owner-side).
+- [ ] **Neon preview workflow 422** — `preview/pr-<n>-dev` branch name collision from prior runs (infra idempotency).
+- [ ] **Vercel cron plan limit** — `vercel.json` has two crons (`*/4 * * * *` ping + daily review reminder); Hobby allows once/day → full frequency needs Pro.
+
+### 🟡 Code-side (agent can execute on request)
+
+- [ ] **E2E suite stabilization — shipped in `fix/e2e-stabilize`** (root causes: sr-only inputs unclickable, calendar aria-pressed collisions, rooms regex double-backslash, mobile hamburger, admin h1 order, two missed textarea labels). Merge the PR, then watch the next CI run for the long-suite results. See Progress log entry below.
+- [ ] **Wire the POP upload** — `/api/upload` (Vercel Blob) exists but the booking form only records a filename and never calls it (`BLOB_READ_WRITE_TOKEN` needed); proof-of-payment files aren't stored.
+- [ ] **Lelz partner WhatsApp stub** — `notifyLelzOfNewRequest` logs only; pending Lelz's number/template.
+- [ ] **Android/iOS app** — decision pending (PWA first, Capacitor for Play Store/App Store later). Admin dashboard is already API-driven, so a client reuses the whole backend.
+
+### 🟢 Housekeeping / low priority
+
+- [ ] `docs/` planning & test docs (01–06) are placeholders awaiting BA input.
+- [ ] `comp/buffy` branch — content merged into `dev`; deletable once the competition is judged.
+- [ ] Upstash Redis keys — optional; the in-memory rate-limiter fallback works until then (Keys UI).
+
+---
+
 ## Progress log
 
 ### 2026-08-11 — Task 1 (corporate room pricing drift) + Task 3 (DB keep-alive endpoint + Vercel cron) — DeepSeek Flash
@@ -253,5 +288,50 @@ Append a new entry to the **Progress log** below, newest last. Include:
 **Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 · ✅ lint zero errors (8 pre-existing warnings) · ✅ 82 Playwright tests compile (`--list`) · ✅ Chromium launches in the sandbox (browser smoke check) — full browser run happens in CI/local with a DB, per `E2E-TESTING.md` (the sandbox blocks starting a dev server).
 
 **Flags:** run `npm run db:push && npm run db:seed` (dev DB only — seed truncates) before `npm run e2e`. Set `E2E_REVIEW_TOKEN` for the review-form spec. Perf budgets are strict under `E2E_SERVER=prod` only.
+
+### 2026-08-12 — CI green pass (vitest/e2e split + a11y label wiring) — Buffy
+
+**Status:** ✅ Delivered — pushed to `dev` (rides into `main` via open release PR #26).
+
+**Why:** PR #26's CI checks were red. Diagnosis: (1) the core "Typecheck · Lint · Tests" job failed because **Vitest's default glob picks up the Playwright specs** (`e2e/*.spec.ts` → "Playwright Test did not expect test() to be called here", 11 failed files); (2) the E2E a11y spec caught **real unlabelled-input bugs** on `/book`, `/events`, and `/corporate` (sibling `<label>`s with no `id`/`htmlFor`); (3) the admin E2E spec used a strict-mode `h1` locator against the intentionally dual-h1 login screen.
+
+**Files changed (6):**
+
+- `vitest.config.ts` — **new** — excludes `e2e/**` from Vitest so `npm test` runs only the unit suites (was matching the Playwright specs).
+- `app/book/DetailsStep.tsx` — `id`+`htmlFor` on full name / phone / email / notes (4 inputs).
+- `app/events/EventInquiryForm.tsx` — `id`+`htmlFor` on 8 inputs (name, phone, email, event type, guests, dates, notes).
+- `app/corporate/CorporateQuoteForm.tsx` — `id`+`htmlFor` on 12 static inputs + 3 looped room-line fields (index-suffixed ids: `corporateRoomType-${i}` etc.).
+- `e2e/admin.spec.ts` — `page.locator("h1").first()` (the login screen renders a mobile + desktop h1 by design).
+- `PROGRESS.md` — this entry.
+
+**Validation results:** ✅ `npm test` 42/42 (4 files) · ✅ `npx tsc --noEmit` clean · ✅ `npm run lint` 0 errors (8 pre-existing warnings) · ⏳ full Playwright run + remaining checks in CI (see below).
+
+**Still red / owner-side (not code):**
+
+- **E2E suite (Playwright):** the a11y + admin fixes land with this push, but the suite's long-journey tests (booking/events/corporate submits) time out (~90s per attempt) and a few assertions are flaky (rooms list/modal, mobile site-shell) — the suite has never run fully green in CI. Follow-up: stabilise the suite (timeouts, wait strategy) in a dedicated pass.
+- **Vercel deploy check** on the PR: "Deployment failed" — no vercel CLI in the sandbox to inspect; likely env config on the Vercel project dashboard (owner-side).
+- **Neon preview workflow:** 422 creating `preview/pr-26-dev` — the branch name already exists from a prior run (infra/idempotency).
+
+### 2026-08-12 — E2E suite stabilization (root causes fixed) — Buffy
+
+**Status:** ✅ Delivered — PR → `dev` from `fix/e2e-stabilize`.
+
+**Why:** the Playwright suite had never run fully green in CI. Diagnosis from the last CI run (PR #27, 21 failed test instances across desktop+mobile) found one app-level a11y gap per page and a set of spec bugs — not app crashes. Full root-cause list + fixes:
+
+**Real app bugs fixed (2):**
+
+- `app/events/EventInquiryForm.tsx` + `app/corporate/CorporateQuoteForm.tsx` — the `eventNotes`/`corporateNotes` textareas had `id`s but no `label[for]`/`aria-label`, so the a11y spec still reported 1 unlabelled input per page (the PR #27 label pass missed the two textareas). Added `aria-label="Special requirements"`.
+
+**Spec bugs fixed (7):**
+
+- `e2e/rooms.spec.ts` — the "Showing N of N rooms" regex was a **regex literal with a double backslash** (`\d`), which matches literal "\d" text, never digits — the page actually renders "Showing 9 of 9 rooms". Single backslash now. Also the room-modal test hit a strict-mode violation (the dialog renders TWO "Close" buttons: the X + footer) → `.first()`.
+- `e2e/booking.spec.ts` — **the long-journey timeout root cause**: the room selectors (`button[aria-pressed]` / `button[aria-pressed][disabled]`) matched the calendar's date cells (also `aria-pressed`, and past dates `[disabled]`), so tests clicked calendar cells / asserted "Booked" on a date cell ("1"). All room interactions now scoped to the room step via its "Choose your room" heading parent. Also the meal toggles are `sr-only` inputs inside `<label>`s — Playwright can't actionability-check clipped 1×1px elements ("element is not stable" loop until 90 s timeout) → click the visible label text instead.
+- `e2e/events-corporate.spec.ts` — same sr-only input issue on the catering card radio ("Three-Course Meal") → toggle via the visible label text. Corporate estimate assertion was wrong, not the app: adding breakfast keeps the accommodation line at "R1 500" and moves the **total** to "R1 850" → assert the total.
+- `e2e/site-shell.spec.ts` — mobile viewport keeps the primary nav behind the hamburger; three tests asserted hidden desktop links. Added `openMobileMenu()` (clicks the "Menu" button when visible) + `filter({ visible: true })` for nav-link assertions, clicks, and the hero CTA check.
+- `e2e/admin.spec.ts` — the login screen renders TWO h1s (brand "Gomodi Admin" + "Sign in to admin"); `h1.first()` grabbed the brand → target the sign-in heading by name.
+
+**Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run lint` 0 errors (7 pre-existing warnings) · ✅ `npx playwright test --list` 82 tests compile.
+
+**Flags:** full browser run still needs a Postgres + build (CI). Expected remaining CI noise: Neon preview 422 + Vercel deploy check (infra, owner-side). The a11y pass + this stabilization together should bring the Playwright job green.
 
 <!-- New entries go above this line, newest last. -->
