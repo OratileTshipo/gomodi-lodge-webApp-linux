@@ -84,7 +84,7 @@ npm run lint           # eslint (expect 0 errors)
 npm test               # vitest unit tests (42 tests, lib/__tests__/)
 npm run perf           # route benchmark (TTFB + headless FCP/LCP) — scripts/perf-bench.ts
 npm run e2e            # Playwright suite (82 tests, e2e/) — needs chromium + seeded DB
-npm run db:push        # sync DB schema (same as npx drizzle-kit push)
+npm run db:migrate     # apply versioned migrations from drizzle/ (canonical path)
 npm run db:seed        # seed rooms, staff users, seasonal pricing (⚠️ truncates — see below)
 ```
 
@@ -94,15 +94,14 @@ Manual regression scripts: `npx tsx scripts/test-booking.ts` (needs live DB),
 ## Database setup (Drizzle + Postgres)
 
 The app reads `DATABASE_URL` from `.env` / `.env.local` (see
-`drizzle.config.ts`). All database work is done with Drizzle Kit — no
-migration files to maintain:
+`drizzle.config.ts`). The schema lives in `lib/db/schema.ts` and ships as
+**versioned migrations** in `drizzle/` (ADR 012) — every schema change is
+peer-reviewed like code and applied idempotently:
 
 ```bash
-# 1. Create the tables / sync the schema to the DB.
-#    Safe to run any time — it diffs and only applies what's missing.
-#    Prints "No changes detected" when the DB already matches lib/db/schema.ts.
-#    Use `--force` to skip the confirmation prompt.
-npx drizzle-kit push
+# 1. Apply migrations (creates all tables/indexes in order).
+#    Safe to run any time — applied migrations are tracked and never re-run.
+npx drizzle-kit migrate
 
 # 2. Seed the database (9 rooms, 7 test users incl. the Lelz partner, seasonal pricing windows).
 npx tsx lib/db/seed.ts
@@ -110,14 +109,18 @@ npx tsx lib/db/seed.ts
 
 Notes:
 
-- Run `npx drizzle-kit push` after **any** commit that changes
-  `lib/db/schema.ts` — e.g. the reviews/seasonal tables need one push after
-  pulling work that added them.
+- **Existing databases created with `drizzle-kit push`** (no migration
+  history) need a one-time adoption step: `npm run db:adopt` marks the
+  baseline migration as applied, then `npm run db:migrate` applies
+  everything after it.
+- Run `npm run db:migrate` after **any** commit that changes
+  `lib/db/schema.ts`, then commit the generated migration with the change.
 - ⚠️ `seed.ts` **truncates and re-inserts** `rooms`, `users`,
   `booking_requests`, and `seasonal_pricing` (cascading to booking lines,
   add-ons, quotes). Any real bookings/quotes in the DB will be **deleted**.
   Run it only on a fresh database or when you're OK losing the current data.
-- The Neon CI workflow (`.github/workflows/neon_workflow.yml`) runs the push
+- The Neon CI workflow (`.github/workflows/neon_workflow.yml`) runs the
+  migrations
   automatically on a per-PR database branch — local runs are only needed for
   your own dev database.
 - Full machine setup (Postgres, env files, checks) is in `SETUP-LOCAL.md`.
@@ -143,7 +146,9 @@ Secret values live in `.env.local`, never in git (see Known gaps).
 
 - **Hosting:** Vercel (functions pinned to `regions: ["fra1"]`, near the
   Neon DB). Add the env vars above to the project settings, then run
-  `npx drizzle-kit push` + seed against the production database.
+  `npm run db:adopt && npm run db:migrate` (one-time adoption on the
+  push-created prod DB, then migrations) + seed against the production
+  database.
 - **Crons** (`vercel.json`): `/api/ping` keep-alive every 4 min +
   `/api/review-reminders` daily. ⚠️ Vercel Hobby allows one cron/day — full
   frequency needs Pro.

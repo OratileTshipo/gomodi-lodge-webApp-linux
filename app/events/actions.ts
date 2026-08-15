@@ -69,40 +69,45 @@ export async function submitEventInquiry(
   const notes = safeText(input.notes, MAX_LONG_NOTES);
 
   try {
-    const [request] = await db
-      .insert(bookingRequests)
-      .values({
-        category: "event",
-        status: "pending",
-        guestName: fullName,
-        contactPhone: phone,
-        contactEmail: email,
-        sourceChannel: "website",
-      })
-      .returning();
+    // ---- Atomic write: request + event details + draft quote + partner
+    // notification timestamp all commit or all roll back together. ----
+    await db.transaction(async (tx) => {
+      const [request] = await tx
+        .insert(bookingRequests)
+        .values({
+          category: "event",
+          status: "pending",
+          guestName: fullName,
+          contactPhone: phone,
+          contactEmail: email,
+          sourceChannel: "website",
+        })
+        .returning();
 
-    await db.insert(eventDetails).values({
-      bookingRequestId: request.id,
-      eventType,
-      expectedGuests: guestCount,
-      eventDate: input.eventDate,
-      altDate,
-      cateringPackage: catering || null,
-      interestedInRooms: Boolean(input.interestedInRooms),
-      notes: notes || null,
+      await tx.insert(eventDetails).values({
+        bookingRequestId: request.id,
+        eventType,
+        expectedGuests: guestCount,
+        eventDate: input.eventDate,
+        altDate,
+        cateringPackage: catering || null,
+        interestedInRooms: Boolean(input.interestedInRooms),
+        notes: notes || null,
+      });
+
+      // Auto-generate a draft quotation (event package line — owner prices it).
+      await createDraftQuote(request.id, tx);
+
+      // Events belong to Lelz Business Enterprise: the Owner's assistant keeps
+      // visibility (Events Manager) AND Lelz is alerted directly. Record the
+      // partner notification timestamp for the audit trail.
+      await tx
+        .update(bookingRequests)
+        .set({ notifiedPartnerAt: new Date() })
+        .where(eq(bookingRequests.id, request.id));
     });
 
-    // Auto-generate a draft quotation (event package line — owner prices it).
-    await createDraftQuote(request.id);
-
-    // Events belong to Lelz Business Enterprise: the Owner's assistant keeps
-    // visibility (Events Manager) AND Lelz is alerted directly. Record the
-    // partner notification timestamp for the audit trail.
-    await db
-      .update(bookingRequests)
-      .set({ notifiedPartnerAt: new Date() })
-      .where(eq(bookingRequests.id, request.id));
-
+    // Post-commit side effects: WhatsApp alerts (fail-open, never block booking).
     await notifyOwnerOfNewRequest({
       guestName: fullName,
       contactPhone: phone,

@@ -122,7 +122,15 @@ jobs:
             cat /tmp/neonctl-err.txt >&2
             exit 1
           fi
-          DATABASE_URL="$URL" npx drizzle-kit push
+          # Versioned migrations are canonical. Preview branches copy the
+          # parent's data, so on projects whose parent was previously managed
+          # with `drizzle-kit push` the baseline migration can't re-run (the
+          # tables already exist) — fall back to push until the parent has
+          # adopted migrations once (`npm run db:adopt && npm run db:migrate`).
+          if ! DATABASE_URL="$URL" npx drizzle-kit migrate 2>/tmp/migrate-err.txt; then
+            echo "::warning::drizzle-kit migrate failed on preview branch ($(tail -1 /tmp/migrate-err.txt)); falling back to push (parent DB not yet migrated)"
+            DATABASE_URL="$URL" npx drizzle-kit push
+          fi
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_BRANCH: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.sanitized }}

@@ -10,6 +10,7 @@ import {
   boolean,
   jsonb,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -82,42 +83,61 @@ export const seasonalPricing = pgTable("seasonal_pricing", {
 });
 
 // ---------- Booking Requests ----------
-export const bookingRequests = pgTable("booking_requests", {
-  id: serial("id").primaryKey(),
-  category: bookingCategoryEnum("category").notNull(),
-  status: bookingStatusEnum("status").notNull().default("pending"),
-  guestName: varchar("guest_name", { length: 150 }).notNull(),
-  contactPhone: varchar("contact_phone", { length: 30 }).notNull(),
-  contactEmail: varchar("contact_email", { length: 150 }),
-  specialRequests: text("special_requests"), // <--- ADDED HERE
-  sourceChannel: varchar("source_channel", { length: 30 })
-    .notNull()
-    .default("website"),
-  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
-  approvedById: integer("approved_by_id").references(() => users.id),
-  approvedAt: timestamp("approved_at"),
-  // Set when a category = "event" request triggers the Lelz WhatsApp
-  // notification stub — the Owner's assistant's audit trail of what Lelz
-  // has/hasn't been notified about, independent of Lelz's own logging.
-  notifiedPartnerAt: timestamp("notified_partner_at"),
-  // Set when a manager/partner marks an event request "Contacted" (Lelz-side
-  // status). Distinct from approved/declined — does not affect room conflicts.
-  contactedAt: timestamp("contacted_at"),
-});
+export const bookingRequests = pgTable(
+  "booking_requests",
+  {
+    id: serial("id").primaryKey(),
+    category: bookingCategoryEnum("category").notNull(),
+    status: bookingStatusEnum("status").notNull().default("pending"),
+    guestName: varchar("guest_name", { length: 150 }).notNull(),
+    contactPhone: varchar("contact_phone", { length: 30 }).notNull(),
+    contactEmail: varchar("contact_email", { length: 150 }),
+    specialRequests: text("special_requests"), // <--- ADDED HERE
+    sourceChannel: varchar("source_channel", { length: 30 })
+      .notNull()
+      .default("website"),
+    submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+    approvedById: integer("approved_by_id").references(() => users.id),
+    approvedAt: timestamp("approved_at"),
+    // Set when a category = "event" request triggers the Lelz WhatsApp
+    // notification stub — the Owner's assistant's audit trail of what Lelz
+    // has/hasn't been notified about, independent of Lelz's own logging.
+    notifiedPartnerAt: timestamp("notified_partner_at"),
+    // Set when a manager/partner marks an event request "Contacted" (Lelz-side
+    // status). Distinct from approved/declined — does not affect room conflicts.
+    contactedAt: timestamp("contacted_at"),
+  },
+  (t) => [
+    // The admin queue + role filters always read pending requests by
+    // status (+ category for the staff/partner scoping) — index the pair.
+    index("booking_requests_status_category_idx").on(t.status, t.category),
+    // Admin looks up guests by phone (WhatsApp status updates, review invites).
+    index("booking_requests_contact_phone_idx").on(t.contactPhone),
+  ]
+);
 
 // ---------- Booking Room Lines ----------
-export const bookingRoomLines = pgTable("booking_room_lines", {
-  id: serial("id").primaryKey(),
-  bookingRequestId: integer("booking_request_id")
-    .notNull()
-    .references(() => bookingRequests.id, { onDelete: "cascade" }),
-  roomId: integer("room_id")
-    .notNull()
-    .references(() => rooms.id),
-  checkIn: date("check_in").notNull(),
-  checkOut: date("check_out").notNull(),
-  guestCount: integer("guest_count").notNull().default(2),
-});
+export const bookingRoomLines = pgTable(
+  "booking_room_lines",
+  {
+    id: serial("id").primaryKey(),
+    bookingRequestId: integer("booking_request_id")
+      .notNull()
+      .references(() => bookingRequests.id, { onDelete: "cascade" }),
+    roomId: integer("room_id")
+      .notNull()
+      .references(() => rooms.id),
+    checkIn: date("check_in").notNull(),
+    checkOut: date("check_out").notNull(),
+    guestCount: integer("guest_count").notNull().default(2),
+  },
+  (t) => [
+    // Availability overlap checks (isRoomAvailable / getUnavailableRoomIds /
+    // the approve-conflict re-check) always filter by room + date range —
+    // this is the hottest query in the booking engine.
+    index("booking_room_lines_room_dates_idx").on(t.roomId, t.checkIn, t.checkOut),
+  ]
+);
 
 // ---------- Add-on selections ----------
 export const addOnSelections = pgTable("add_on_selections", {
@@ -160,28 +180,42 @@ export const eventDetails = pgTable("event_details", {
 });
 
 // ---------- Staff Time Clocks ----------
-export const staffTimeClocks = pgTable("staff_time_clocks", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  action: clockActionEnum("action").notNull(),
-  // withTimezone -> timestamptz, so the clock-in/out time is an absolute
-  // instant and displays correctly regardless of server/DB/browser timezone
-  timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
-  notes: text("notes"),
-});
+export const staffTimeClocks = pgTable(
+  "staff_time_clocks",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").references(() => users.id).notNull(),
+    action: clockActionEnum("action").notNull(),
+    // withTimezone -> timestamptz, so the clock-in/out time is an absolute
+    // instant and displays correctly regardless of server/DB/browser timezone
+    timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
+    notes: text("notes"),
+  },
+  (t) => [
+    // The time clock always reads the latest entry per user.
+    index("staff_time_clocks_user_timestamp_idx").on(t.userId, t.timestamp),
+  ]
+);
 
 // ---------- Auth OTPs (login codes) ----------
 // Stores the SHA-256 hash of a 6-digit login code (never the plaintext), its
 // expiry, and a failed-attempt counter so verify can lock out brute force.
-export const authOtps = pgTable("auth_otps", {
-  id: serial("id").primaryKey(),
-  phone: varchar("phone", { length: 30 }).notNull(),
-  codeHash: varchar("code_hash", { length: 64 }).notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  attempts: integer("attempts").notNull().default(0),
-  consumed: boolean("consumed").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const authOtps = pgTable(
+  "auth_otps",
+  {
+    id: serial("id").primaryKey(),
+    phone: varchar("phone", { length: 30 }).notNull(),
+    codeHash: varchar("code_hash", { length: 64 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    consumed: boolean("consumed").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    // OTP request/verify always look up the latest unconsumed code by phone.
+    index("auth_otps_phone_consumed_idx").on(t.phone, t.consumed),
+  ]
+);
 
 // ---------- Quotations & Invoices ----------
 // One quote per booking request. Auto-created (draft) when a request comes in,
@@ -238,12 +272,14 @@ export const quoteLineItems = pgTable("quote_line_items", {
 //   token, so strangers can't post
 // Reviews start `pending`; staff approve/decline before anything public.
 // Guardrail: never seed or fabricate reviews — only real guests via invites.
-export const reviews = pgTable("reviews", {
-  id: serial("id").primaryKey(),
-  bookingRequestId: integer("booking_request_id").references(
-    () => bookingRequests.id,
-    { onDelete: "set null" }
-  ),
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: serial("id").primaryKey(),
+    bookingRequestId: integer("booking_request_id").references(
+      () => bookingRequests.id,
+      { onDelete: "set null" }
+    ),
   // Display name — empty means the guest chose to stay anonymous ("Guest").
   guestName: varchar("guest_name", { length: 150 }).notNull().default(""),
   category: bookingCategoryEnum("category"),
@@ -260,7 +296,12 @@ export const reviews = pgTable("reviews", {
   submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
   approvedById: integer("approved_by_id").references(() => users.id),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
-});
+  },
+  (t) => [
+    // Admin moderation queue + public "what guests say" display filter by status.
+    index("reviews_status_idx").on(t.status),
+  ]
+);
 
 // One unguessable invite per booking request (unique), created after checkout
 // and delivered by WhatsApp. The /review?token=… page validates it, so only
