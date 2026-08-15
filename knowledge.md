@@ -4,6 +4,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 ## See also (READ FIRST before UI / photography / copy / reviews work)
 
+- **`ENTERPRISE-ROADMAP.md`** — the architecture/strategy reference: full code audit vs industry standards (OWASP/POPIA/PCI-DSS/Core Web Vitals), the multi-location `properties` tenancy design, and the phased roadmap (Phase 0 stabilization → 1 multi-location foundation → 2 payments → 3 ops → 4 growth). READ before any architectural or schema work — especially anything touching `lib/db/schema.ts` (Phase 1 adds `property_id` everywhere) or the booking pipeline (Phase 0 adds transactions + migrations).
 - **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
 - **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 passes fixed (lint errors, `bathOrShower` bug, BookingForm + AdminDashboard + homepage splits, shared booking helpers, vitest, CI job). READ before refactoring — every listed follow-up is now DONE except the owner-side env untrack.
 - **`E2E-TESTING.md`** — the Playwright end-to-end suite (82 tests, 11 specs, desktop + mobile): how to run (`npm run e2e`, needs a seeded DB), env knobs, coverage map, CI integration. READ before changing any interactive UI — the suite asserts every form, flow, label, and loading budget.
