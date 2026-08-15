@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PopUpload } from "@/components/PopUpload";
+import { uploadProofOfPayment, type PopMeta } from "@/lib/pop-upload";
 import Link from "next/link";
 import { submitCorporateQuote, RoomLineInput } from "./actions";
 import { BREAKFAST_PRICE, DINNER_PRICE, ROOM_BASE_RATE } from "@/lib/pricing";
@@ -29,6 +31,11 @@ export default function CorporateQuoteForm() {
   const [dinner, setDinner] = useState(false);
   const [notes, setNotes] = useState("");
   const [consent, setConsent] = useState(false);
+  const [popFileName, setPopFileName] = useState<string | null>(null);
+  const [popFileUrl, setPopFileUrl] = useState<string | null>(null);
+  const [popMeta, setPopMeta] = useState<PopMeta>({ fileName: null, fileSize: null, mimeType: null });
+  const [popUploading, setPopUploading] = useState(false);
+  const [popUploadError, setPopUploadError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -63,6 +70,31 @@ export default function CorporateQuoteForm() {
     setLines((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
   }
 
+  async function handlePopFile(file: File | undefined) {
+    if (!file) return;
+    setPopUploading(true);
+    setPopUploadError(null);
+    const result = await uploadProofOfPayment(file);
+    if (!result.ok) {
+      setPopUploadError(result.error);
+      setPopFileName(null);
+      setPopFileUrl(null);
+      setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    } else {
+      setPopFileName(result.fileName);
+      setPopFileUrl(result.url);
+      setPopMeta({ fileName: result.fileName, fileSize: result.fileSize, mimeType: result.mimeType });
+    }
+    setPopUploading(false);
+  }
+
+  function handleClearPopFile() {
+    setPopFileName(null);
+    setPopFileUrl(null);
+    setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    setPopUploadError(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consent) {
@@ -70,11 +102,20 @@ export default function CorporateQuoteForm() {
       setErrorMessage("Please confirm your consent to continue.");
       return;
     }
+    if (popFileName && !popFileUrl) {
+      setStatus("error");
+      setErrorMessage("Your proof of payment is still uploading — wait a moment and try again.");
+      return;
+    }
     setStatus("submitting");
     setErrorMessage(null);
     const result = await submitCorporateQuote({
       fullName, jobTitle, company, phone, email, billingEmail, poNumber, vatNumber, clientRef,
       checkIn, checkOut, roomLines: lines, breakfast, dinner, notes,
+      proofOfPaymentUrl: popFileUrl,
+      proofOfPaymentFileName: popMeta.fileName,
+      proofOfPaymentFileSize: popMeta.fileSize,
+      proofOfPaymentMimeType: popMeta.mimeType,
     });
     if (result.ok) setStatus("success");
     else { setStatus("error"); setErrorMessage(result.error); }
@@ -218,6 +259,22 @@ export default function CorporateQuoteForm() {
                 <div className="summary-row"><span className="text-stone">Accommodation estimate</span><span className="text-ink">{accomEstimate ? fmt(accomEstimate) : "—"}</span></div>
                 <div className="summary-row"><span className="text-stone">Add-ons estimate</span><span className="text-ink">{addonEstimate ? fmt(addonEstimate) : "None selected"}</span></div>
                 <div className="summary-row total"><span className="text-ink">Indicative total</span><span className="text-walnut">{accomEstimate || addonEstimate ? fmt(accomEstimate + addonEstimate) : "—"}</span></div>
+              </div>
+            </div>
+
+            <div className="py-8 border-b border-walnut/10">
+              <h3 className="font-semibold text-ink text-lg">Deposit (optional)</h3>
+              <p className="text-sm text-stone mt-1 mb-4">
+                Securing your dates with a deposit? Upload your proof of payment here — it&apos;s attached to your quote request.
+              </p>
+              <div className="max-w-md">
+                <PopUpload
+                  fileName={popFileName}
+                  uploading={popUploading}
+                  error={popUploadError}
+                  onSelect={(file) => handlePopFile(file)}
+                  onClear={handleClearPopFile}
+                />
               </div>
             </div>
 

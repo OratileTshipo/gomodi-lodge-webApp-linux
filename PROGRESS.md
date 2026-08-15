@@ -56,9 +56,9 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 - [x] **Phase 0 — Versioned Drizzle migrations** — `0000_baseline` + `0001_hot-path-indexes` + `0002_booking-requests-contact-phone-idx` committed (ADR 012, implemented); CI e2e + Neon preview run `db:migrate`; `npm run db:adopt` marks the baseline applied on push-created DBs. Owner: run `db:adopt && db:migrate` once on production.
 - [x] **Phase 0 — Transactional booking inserts** — all three actions (leisure/corporate/events) wrap request → lines → meals → quote in `db.transaction`; WhatsApp notifications run post-commit; corporate availability is single-query (N+1 removed) (roadmap A3).
 - [x] **Phase 0 — Hot-path DB indexes** — `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `reviews(status)`, `staff_time_clocks(user_id, timestamp)`; `quotes(public_token)` covered by unique (roadmap A6, migrations 0001/0002).
-- [ ] **Phase 0 — POP upload polish** — leisure POP upload IS wired (upload → `/api/upload`, stored on the request, non-blocking); remaining: persist real filename/size/mime (currently hardcoded `"proof-of-payment"`) and add the same upload to corporate/events flows.
-- [ ] **Phase 0 — Observability** — Sentry (`@sentry/nextjs`, `SENTRY_DSN`), uptime monitor on `/api/ping`, structured logger (roadmap O1).
-- [ ] **Phase 0 — Unit tests** for `lib/auth.ts`, rate limiter, quote-engine seasonal splits (roadmap M2).
+- [x] **Phase 0 — POP upload polish** — real filename/size/mime persisted (server-verified via `/api/upload`); corporate + events forms now accept an optional deposit POP; shared `PopUpload` + `uploadProofOfPayment`/`sanitizePopMeta` helpers (roadmap U2).
+- [x] **Phase 0 — Observability (Sentry)** — `@sentry/nextjs`, `instrumentation.ts` + client/server/edge configs, `app/global-error.tsx`, build plugin fails open (roadmap O1). Owner: add `SENTRY_DSN` (+ `SENTRY_AUTH_TOKEN` for source maps) to prod env. Remaining: external uptime monitor on `/api/ping`, structured logger.
+- [x] **Phase 0 — Unit tests** — auth (tamper/expiry/roles), rate limiter (window edges + Upstash fail-open), quote line-builder (seasonal straddles, meals); 72 total (roadmap M2). Remaining: role-filter tests for `app/api/admin/requests`.
 - [ ] **Phase 1 — Multi-location foundation** — `properties` table + `property_id` everywhere, property-scoped RBAC + `scopedDb()` guard, per-property `property_settings` (contact/banking/WhatsApp/prices), HQ consolidated view. See `ENTERPRISE-ROADMAP.md` §4–5 and ADR 013.
 - [ ] **Phase 2 — Payments** — provider decision (PayFast primary), `lib/payments.ts` abstraction, deposits, hosted checkout, webhook state machine, receipts, admin payments view (roadmap §5 Phase 2, ADR 014).
 - [ ] **Phase 3 — Ops & governance** — audit log, admin settings screens (pricing/seasonal/availability per property), queue pagination, privacy artifacts, analytics decision, Dependabot (roadmap §5 Phase 3).
@@ -351,5 +351,14 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 - **Docs:** README, SETUP-LOCAL, E2E-TESTING, GIT_WORKFLOW_GUIDELINES, knowledge.md, playwright.config comment, ADR 012 status, roadmap A2/A3/A6 statuses, ledger.
 - **Verified:** `npx tsc --noEmit` clean; `npm run lint` clean; `npm test` green. CI will validate the migration chain end-to-end on a fresh Postgres (e2e job: `db:migrate` → seed → Playwright).
 - **Owner steps:** run `npm run db:adopt && npm run db:migrate` once on the production DB (then future schema changes are pure migrations).
+
+### 2026-08-15 — Phase 0 remaining: Sentry observability + unit tests + POP polish — Buffy
+
+**Branch:** `fix/phase0-observability-tests-pop` → PR (dev). Implements roadmap O1 / M2 / U2.
+
+- **Sentry (O1):** `@sentry/nextjs@10` (Next 16-compatible); `instrumentation.ts`, `sentry.client/server/edge.config.ts`, `app/global-error.tsx`, `next.config.ts` wrapped with `withSentryConfig({ silent: true })` — **fails open** with no env vars (build verified locally). Prod needs `SENTRY_DSN` (+ `SENTRY_AUTH_TOKEN` for source-map upload on Vercel). Remaining O1: uptime monitor on `/api/ping`, structured logger.
+- **Unit tests (M2, 42 → 72):** `lib/__tests__/auth.test.ts` (roundtrip, tamper payload/signature, expiry via fake timers, malformed, role guards), `rate-limit.test.ts` (sliding-window edges, per-key isolation, Upstash fail-open with mocked client), `quote.test.ts` (`buildDraftLines` — room lines, seasonal straddle segments, shortest-label, inactive periods, meal aggregation, clamping). Remaining M2: role-filter tests for `app/api/admin/requests`.
+- **POP polish (U2):** shared `lib/pop-upload.ts` (`uploadProofOfPayment` client helper + `sanitizePopMeta` server sanitizer) and `components/PopUpload.tsx`; leisure now stores real fileName/fileSize/mimeType from the server-verified upload (schema already had the columns); corporate + events forms gain an optional **Deposit** section (upload persisted inside the existing transaction, URL gated by `isSafeProofOfPaymentUrl`).
+- **Verified:** `tsc` clean, lint 0 errors (7 pre-existing warnings), vitest 72/72, `npm run build` green (validates the Sentry build plugin fails open). CI validates e2e (booking `#popFileInput` selector preserved; a11y label scan unaffected).
 
 <!-- New entries go above this line, newest last. -->

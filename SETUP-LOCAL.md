@@ -78,6 +78,10 @@ BLOB_READ_WRITE_TOKEN=
 # Global rate limiting — otherwise an in-memory limiter is used
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+# Error monitoring — the SDK fails open (no-op) without a DSN
+SENTRY_DSN=
+# Source-map upload on Vercel builds — skip locally
+SENTRY_AUTH_TOKEN=
 ```
 
 - `DATABASE_URL` is the only required key to run the site locally.

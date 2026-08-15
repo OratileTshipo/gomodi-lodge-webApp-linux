@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig = {
   // Don't advertise the framework in response headers.
@@ -18,4 +19,9 @@ const nextConfig = {
   },
 } as NextConfig;
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Fail open: without SENTRY_DSN / SENTRY_AUTH_TOKEN the SDK is a no-op and
+  // source-map upload is skipped — local dev and CI never need Sentry env.
+  silent: true,
+  telemetry: false,
+});

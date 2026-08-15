@@ -1,5 +1,7 @@
 "use client";
 
+import { PopUpload } from "@/components/PopUpload";
+
 /**
  * Payment options — EFT (with banking details + proof-of-payment upload) or
  * cash on arrival. The upload itself happens through /api/upload; the parent
@@ -13,6 +15,7 @@ export function PaymentStep({
   popUploading,
   popUploadError,
   onUploadFile,
+  onClearFile,
 }: {
   paymentMethod: "eft" | "cash";
   setPaymentMethod: (m: "eft" | "cash") => void;
@@ -20,6 +23,7 @@ export function PaymentStep({
   popUploading: boolean;
   popUploadError: string | null;
   onUploadFile: (file: File | undefined) => void;
+  onClearFile: () => void;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
@@ -49,18 +53,13 @@ export function PaymentStep({
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium text-ink mb-1.5">Upload proof of payment (optional)</label>
-            <label
-              htmlFor="popFileInput"
-              className="file-drop border-2 border-dashed border-walnut/20 rounded-xl p-5 text-center cursor-pointer bg-cream-light hover:bg-cream transition-colors block"
-            >
-              <input id="popFileInput" type="file" accept="image/*,application/pdf" className="sr-only" onChange={(e) => onUploadFile(e.target.files?.[0])} />
-              <span className="text-sm text-ink font-medium">
-                {popUploading ? "Uploading…" : popFileName ? `✓ ${popFileName}` : "Tap to upload, or drag & drop"}
-              </span>
-              <span className="text-xs text-stone mt-1 block">PDF, JPG, or PNG · max 5MB</span>
-              {popUploadError && <span className="block text-xs text-terracotta-dark mt-1">{popUploadError}</span>}
-            </label>
+            <PopUpload
+              fileName={popFileName}
+              uploading={popUploading}
+              error={popUploadError}
+              onSelect={(file) => onUploadFile(file)}
+              onClear={onClearFile}
+            />
           </div>
         </>
       )}
