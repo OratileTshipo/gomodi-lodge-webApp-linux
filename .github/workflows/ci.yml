@@ -67,8 +67,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Push schema + seed data
-        run: npm run db:push && npm run db:seed
+      - name: Apply migrations + seed data
+        run: npm run db:migrate && npm run db:seed
 
       - name: Build
         run: npm run build

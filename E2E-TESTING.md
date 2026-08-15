@@ -10,8 +10,8 @@ The site is DB-backed, so the suite needs a Postgres to run fully:
 
 ```bash
 # 1. Point DATABASE_URL at your local Postgres (your normal dev setup)
-# 2. Create the schema + seed data (idempotent, safe to re-run)
-npm run db:push
+# 2. Apply migrations + seed data (idempotent, safe to re-run)
+npm run db:migrate
 npm run db:seed
 
 # 3. Run the suite (Playwright auto-starts `npm run dev`, reuses one already running)
@@ -90,5 +90,5 @@ failing — so the suite never breaks a DB-less preview, and runs fully in CI
 ## CI
 
 `.github/workflows/ci.yml` runs the whole suite on every PR and push to
-`dev`/`main`: Postgres service → `db:push` + `db:seed` → build → Playwright
+`dev`/`main`: Postgres service → `db:migrate` + `db:seed` → build → Playwright
 (production server, strict budgets) → report artifact on failure.

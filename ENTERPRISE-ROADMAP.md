@@ -47,7 +47,7 @@ Everything below is the reasoning, the evidence from the code, the standards we 
 | Layer | Technology | Notes |
 |---|---|---|
 | Framework | Next.js 16.2.12 (App Router) + React 19.2.4, TS strict | `force-dynamic` public pages; server actions for forms; route handlers for admin/auth/upload |
-| Data | PostgreSQL (Neon, eu-central-1) + Drizzle ORM 0.45.2 | Schema in `lib/db/schema.ts`; **`drizzle-kit push` only — no migration history** |
+| Data | PostgreSQL (Neon, eu-central-1) + Drizzle ORM 0.45.2 | Schema in `lib/db/schema.ts`; **versioned migrations in `drizzle/` (ADR 012, implemented)** |
 | Styling | Tailwind CSS v4, brand tokens in `app/globals.css` | Terracotta/walnut/cream/gold/ink; WCAG AA audited |
 | Auth | In-house OTP (SHA-256 hashes, 5-attempt lockout) + HMAC-SHA256 signed session cookie (8h, httpOnly, SameSite=Lax) | Registered-numbers only; no account enumeration |
 | Notifications | Meta WhatsApp Cloud API via `lib/whatsapp.ts` / `lib/notifications.ts` | **Stubbed — logs only until credentials exist** |
@@ -87,11 +87,11 @@ These are not to be torn down — they are the foundation to build on:
 | # | Gap | Severity | Evidence / fix direction |
 |---|---|---|---|
 | A1 | **No property/location dimension anywhere** — the scale blocker | 🔴 Critical (for the stated goal) | `lib/db/schema.ts` has no `properties` table; `rooms`, `booking_requests`, `users`, `seasonal_pricing`, `quotes`, `reviews` have no `property_id`. Phase 1 addresses this. |
-| A2 | **No migration history — schema is applied via `drizzle-kit push`** | 🔴 High | `drizzle/` is gitignored; CI runs `db:push` (destructive-ish, unversioned). Industry standard: versioned, reviewable SQL migrations (`drizzle-kit generate` → committed `drizzle/*.sql` → applied by `migrate` in CI/deploy), so schema changes are peer-reviewed like code and rollbackable. Do this before any multi-property migration. |
-| A3 | **Booking insert is not transactional.** `submitLeisureBooking` inserts request → room line → add-ons → quote → notification as separate statements | 🟡 High | A failure mid-way leaves partial rows (request without quote). Wrap the writes in `db.transaction`; run notification *after* commit. Same pattern in corporate/events actions. |
+| A2 | ~~No migration history — schema applied via `drizzle-kit push`~~ | ✅ Done | `0000_baseline` + `0001_hot-path-indexes` + `0002` committed; CI e2e + Neon preview run `migrate`; `npm run db:adopt` for push-created DBs. (ADR 012 — implemented 2026-08-15) |
+| A3 | ~~Booking insert is not transactional~~ | ✅ Done | All three actions (leisure/corporate/events) now wrap request → lines → meals → quote in `db.transaction`; notifications run post-commit. Corporate availability is single-query (N+1 removed). (2026-08-15) |
 | A4 | **Availability check vs. insert is not atomic** (two concurrent submissions can both pass `isRoomAvailable`) | 🟡 Medium | Pending overlap is only a soft conflict today (admin flags amber) and the approve path is the hard gate (advisory locks — good). Strengthen with a serializable transaction or a partial unique index on (room_id, date-range overlap) when volume grows. Document the decision as an ADR. |
 | A5 | **Admin queue loads unbounded data** — all pending requests + ALL approved bookings on every dashboard load; no pagination | 🟡 High (as volume grows) | Add LIMIT/OFFSET (or keyset) pagination + filter by status/category/property; the approved-bookings scan needs the index from P2. |
-| A6 | **Missing database indexes on hot query paths** | 🟡 Medium | No explicit indexes beyond unique constraints. Add: `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `quotes(public_token)`. |
+| A6 | ~~Missing database indexes on hot query paths~~ | ✅ Done | `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `reviews(status)`, `staff_time_clocks(user_id, timestamp)`. `quotes(public_token)` already covered by unique. (0001/0002, 2026-08-15) |
 | A7 | **Rate limiter fails open and defaults to in-memory (per-instance)** | 🟢 Low-Med | Correct posture for uptime, but multi-instance enforcement requires Upstash keys. Add keys in Phase 3 when traffic justifies it. |
 | A8 | **No feature flags / config separation** — per-property config (banking details, contact, WhatsApp recipient) is hardcoded | 🟡 Medium | Phase 1 introduces a `properties` table + `property_settings`; feature flags (e.g. lunch add-on) become env/DB-driven rather than code edits. |
 
@@ -263,9 +263,9 @@ The site cannot be considered "live" until these hold. Priorities:
 3. 🔴 **WhatsApp Business credentials** (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + templates) — makes OTP + booking alerts + review invites actually deliver. (S2 — the go-live blocker.)
 4. 🔴 **Real WhatsApp number** in `lib/contact.ts` (U1) and **verify banking details** (U1/owner flag).
 5. **Wire the POP upload** end-to-end (U2): upload on file-select via `/api/upload`, store URL on the request, non-blocking failure message. Needs `BLOB_READ_WRITE_TOKEN`.
-6. **Migration discipline** (A2): switch from `drizzle-kit push` to **versioned migrations** — `drizzle-kit generate` → commit `drizzle/*.sql` → CI/deploy runs `migrate`. This *must* precede any schema change going forward.
+6. **Migration discipline** (A2): **done** — versioned migrations are canonical (`drizzle-kit generate` → commit `drizzle/*.sql` → CI/deploy runs `migrate`; `db:push` is local scratch only). Any schema change ships as a migration.
 7. **Observability** (O1): add **Sentry** (`@sentry/nextjs`, source maps on deploy, `SENTRY_DSN`), an uptime monitor on `/api/ping`, and a structured-logger helper.
-8. **DB hardening** (P1/P2/P6): owner disables Neon autosuspend; add the hot-path indexes (A6); wrap the three booking actions' writes in `db.transaction` (A3).
+8. **DB hardening** (P1/P2/P6): owner disables Neon autosuspend (workflow merged, needs release #35 + one click); hot-path indexes (A6) and transactional booking writes (A3) **done**.
 9. **Unit tests** for `lib/auth.ts`, rate limiter, quote engine seasonal splits (M2).
 10. 🔴 **Vercel project env/config** — get the PR deploy check green (O3).
 
@@ -300,7 +300,7 @@ This is the **scale enabler** — do it before payments and growth features so e
 
 1. **Audit log** (`audit_logs` table + writer; every admin mutation recorded; viewable in admin) (S4).
 2. **Admin settings screens**: pricing + seasonal windows + room availability toggles (per property) — the `pricingSettings`/availability concept from the scratch spec, built tenant-aware (A8).
-3. **Pagination + filters** on the admin queue and quotes lists (A5); add the A6 indexes if not done.
+3. **Pagination + filters** on the admin queue and quotes lists (A5); A6 indexes are in place (0001/0002).
 4. **Privacy program** (S3): Privacy Policy page, PAIA manual, retention schedule, breach runbook, named Information Officer; link from footer; cookie-consent note (the site sets no tracking cookies today — keep it that way unless analytics is added).
 5. **Analytics decision**: privacy-respecting option (Plausible/Umami) vs GA4; wire event tracking on the booking funnel (phase-4 optimization needs data).
 6. **Feature flags**: light config-driven flags (e.g. lunch add-on) so unconfirmed products never ship by code edit (A8, Lelz open items).
@@ -344,7 +344,7 @@ This is the **scale enabler** — do it before payments and growth features so e
 - [ ] `npm run lint` — zero **new** errors
 - [ ] `npm test` — unit suites green (extend with auth/rate-limit/quote tests per M2)
 - [ ] E2E suite green on the CI Postgres job (perf budgets under `E2E_SERVER=prod`)
-- [ ] Migrations: any `schema.ts` change ships as a **versioned migration** (no bare `db:push`)
+- [x] Migrations: any `schema.ts` change ships as a **versioned migration** (no bare `db:push`)
 - [ ] Every admin mutation writes an audit row (Phase 3+)
 - [ ] PROGRESS.md updated with files changed + validation results
 - [ ] ADR recorded when a decision affects architecture (tenancy, payments, caching, auth)
