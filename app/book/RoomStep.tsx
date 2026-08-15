@@ -29,7 +29,10 @@ export function RoomStep({
   onSetGuestCount: (n: number) => void;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
+    // data-testid: stable hook for the e2e suite — the heading's parent div
+    // does NOT contain the room buttons (they live in a sibling grid), so
+    // heading-based scoping breaks.
+    <div data-testid="room-step" className="bg-white rounded-2xl border border-walnut/10 shadow-sm p-5 md:p-6 motion-fade-up motion-ready">
       <div className="mb-4">
         <span className="text-terracotta-dark font-semibold text-xs uppercase tracking-wide">Step 2</span>
         <h2 className="font-semibold text-ink text-lg mt-1">Choose your room</h2>
