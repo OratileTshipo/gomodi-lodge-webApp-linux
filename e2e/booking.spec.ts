@@ -29,10 +29,10 @@ test("full booking journey: dates → room → guests → meals → details → 
 
   // ---- Step 2: room ----
   // Scope to the room step: the calendar's date cells also carry aria-pressed,
-  // and all steps are mounted in one form, so an unscoped selector hits them first.
-  const roomStep = page
-    .getByRole("heading", { name: "Choose your room" })
-    .locator("xpath=..");
+  // and all steps are mounted in one form, so an unscoped selector hits them
+  // first. The room step exposes a stable data-testid; the heading's parent div
+  // does NOT contain the room buttons (they live in a sibling grid).
+  const roomStep = page.getByTestId("room-step");
   const roomButtons = roomStep.locator('button[aria-pressed]');
   await expect(roomButtons.first()).toBeVisible();
   const roomCount = await roomButtons.count();
@@ -125,10 +125,9 @@ test("unavailable rooms are greyed out for a conflicting stay", async ({ page, d
   // handling contract: rooms can be disabled, and disabled rooms are labelled.
   await page.goto("/book");
   // Calendar date cells also carry aria-pressed + [disabled] for past dates —
-  // scope to the room step, where [disabled] means "already booked for your dates".
-  const roomStep = page
-    .getByRole("heading", { name: "Choose your room" })
-    .locator("xpath=..");
+  // scope to the room step (data-testid), where [disabled] means "already
+  // booked for your dates".
+  const roomStep = page.getByTestId("room-step");
   const total = await roomStep.locator('button[aria-pressed]').count();
   expect(total).toBeGreaterThan(0);
   const disabled = roomStep.locator('button[disabled]');
