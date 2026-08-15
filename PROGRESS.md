@@ -40,12 +40,12 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 
 ### 🔴 Owner / Architect side
 
-- [ ] **Merge PRs #27, #28, #30 and verify CI fully green** — #27 (CI gate fix: vitest/e2e split + a11y labels), #28 (E2E suite stabilization), #30 (Neon preview branch sanitize + prune). Then confirm the Playwright job runs green against the CI Postgres.
+- [ ] **Verify CI fully green on `dev` (2026-08-15)** — #27/#28/#30/#32/#33 merged; core gate (typecheck/lint/vitest) green; e2e job fixed in PR #34 (pending merge + green run).
 - [ ] **Enterprise roadmap owner decisions (D1–D10 in `ENTERPRISE-ROADMAP.md`)** — D2 secrets rotation, D3 WhatsApp credentials, D4 real number + banking verification, D5 Neon autosuspend, D6 property rollout plan, D7 payment provider, D8 photography, D9 analytics, D10 channel manager.
 - [ ] **Untrack `.env` / `.env.local` from git + rotate any pushed secrets** — security: env files are tracked in repo history; platform blocks env-file ops from the sandbox; exact steps in SETUP-LOCAL.md §8 (dedicated PR: `git rm --cached .env .env.local`, keep local copies).
 - [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then notifications fail open and log only — **and in production the admin OTP is unreachable (logs only), making this the go-live blocker**.
 - [ ] **Real WhatsApp number** — `lib/contact.ts` → `WHATSAPP_NUMBER`; every WhatsApp CTA renders `"#"` until supplied.
-- [ ] **Disable Neon autosuspend** (Neon console) — biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
+- [ ] **Disable Neon autosuspend** — workflow `disable-neon-autosuspend.yml` added 2026-08-15 (run it from Actions once on `main`, or disable in the Neon console: Settings → Compute → suspend after inactivity → Never). Biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
 - [ ] **Verify banking details** shown to guests in the booking form (carries an unverified-owner flag) before go-live.
 - [ ] **Real photography** — only Room 1 has photos; rooms 2–9 show placeholder art. Shot list in `UI-findings-and-recommendations.md`.
 - [ ] **Vercel deploy check red on PRs** — "Deployment failed" with no vercel CLI in the sandbox to inspect; likely env/project config on the Vercel dashboard (owner-side).
@@ -321,5 +321,24 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 **Validation:** docs-only change — no build/typecheck/lint impact (no `.ts`/`.tsx` touched). Facts in the audit were verified against `app/`, `lib/`, `components/`, `.github/`, `e2e/`, and config files on `origin/dev` at `00fdce1` (incl. vercel.json now Hobby-safe with the single daily cron after PR #31).
 
 **Flags for the owner:** all 10 decision items (D1–D10) in the roadmap's risk register are owner-side; Phase 0 code tasks (POP upload, migrations, transactions, indexes, Sentry, unit tests) are ready to execute on request. **Priority call for the owner: merge #27 → #28 → #30 first, and do the secrets rotation + WhatsApp credentials — those unblock production login and real notifications.**
+
+### 2026-08-15 — PR merges (#27/#28/#30/#32/#33) + CI-e2e fix + Neon autosuspend workflow — Buffy
+
+**Status:** ✅ Merges done; 🔄 CI-e2e fix in PR #34 (see below).
+
+**Why:** owner asked to merge PRs #27/#28/#30, verify CI green, disable Neon autosuspend, and ensure the enterprise roadmap is in the repo as the single source of truth for all agents/models.
+
+**What was done:**
+
+- **Merged to `dev`:** #27 (CI gate fix — shipped via #28's stacked branch; GitHub auto-marked #27 merged when its commit landed), #28 (E2E stabilization), #30 (Neon preview branch sanitize — resolved its add/add vitest.config.ts conflict with dev), #32 (enterprise roadmap docs — resolved the PROGRESS.md conflict, keeping the roadmap-ledger superset), #33 (Neon autosuspend workflow). All PRs closed; dev head `57618ef`.
+- **Roadmap is now on `dev`** — `ENTERPRISE-ROADMAP.md`, the filled `docs/03-design/adr-log.md`, and the PROGRESS.md ledger are merged, so every agent/model reading the repo gets the same single source of truth (knowledge.md READ-FIRST pointer included).
+- **Neon autosuspend:** added `.github/workflows/disable-neon-autosuspend.yml` (workflow_dispatch → sets `suspend_timeout_seconds=0` on every compute endpoint via the `NEON_API_KEY` secret). ⚠️ The Freebuff token cannot dispatch workflows (needs `actions:write`; it's 403) and `gh workflow run` only resolves workflows on the default branch — so it becomes clickable from Actions → "Disable Neon autosuspend" once it reaches `main` (next dev→main release), or the owner can disable it in the Neon console directly (Settings → Compute → suspend after inactivity → Never).
+- **CI-e2e fix (PR #34, `fix/ci-e2e-green`):** the first real CI run after #27/#28/#30 revealed two spec/app bugs the stabilization had shipped unvalidated (suite never ran locally — no DB in sandbox):
+  1. `e2e/booking.spec.ts` room-step scope used `heading → xpath=..`, which lands on the step *header* div — the room buttons are in a sibling grid → locator matched nothing ("full booking journey" + "unavailable rooms" failed). Fixed with `data-testid="room-step"` on RoomStep + `getByTestId` in both tests.
+  2. `app/admin/AdminLogin.tsx`: "Sign in to admin" h1 was `hidden lg:block`, so mobile rendered only the "Gomodi Admin" h1 → admin spec failed on mobile. Now a **single h1** ("Sign in to admin") on every viewport; mobile brand is a styled div.
+
+**Validation:** `npx tsc --noEmit` clean · `npm run lint` 0 errors (7 pre-existing warnings) · `npm test` 42/42 · `npx playwright test --list` 82 specs compile. Full browser run is in CI on PR #34 (Postgres + production server) — watch that run for the true e2e verdict.
+
+**Flags:** core CI gate (typecheck/lint/vitest) is green on `dev`; the e2e job on dev is red until #34 merges. Vercel deploy check remains red (owner-side env config). Next owner steps: secrets rotation + WhatsApp credentials (go-live blockers), approve a dev→main release so the Neon workflow becomes clickable, decide D6/D7 for Phases 1–2.
 
 <!-- New entries go above this line, newest last. -->
