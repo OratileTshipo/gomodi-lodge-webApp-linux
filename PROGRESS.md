@@ -34,33 +34,44 @@ Append a new entry to the **Progress log** below, newest last. Include:
 Checked = resolved. Items are added here whenever a task is identified; move
 resolved ones to the Progress log. Owner-side items are 🔴 (blocked on the
 owner/Architect — platform or external credentials), code-side are 🟡 (agent
-can execute on request), housekeeping are 🟢.
+can execute on request), housekeeping are 🟢. The full phased plan lives in
+**`ENTERPRISE-ROADMAP.md`** (Phase 0 stabilization → 1 multi-location
+foundation → 2 payments → 3 ops → 4 growth); this list tracks the open items.
 
 ### 🔴 Owner / Architect side
 
-- [ ] **Merge PR #27** (`fix/ci-green-pass` → `dev`) — the CI green pass (vitest/e2e split + a11y label wiring). PR #26 (dev→main) is merged; #27 carries the fixes that make the core CI gate green.
-- [ ] **`npx drizzle-kit push` + `npm run db:seed` against a real DB** — `reviews`, `review_invites`, `seasonal_pricing` tables exist in schema but are not created anywhere yet; reviews + seasonal rates are inert until this runs once (per SETUP-LOCAL.md). Sandbox has no DB access.
+- [ ] **Merge PRs #27, #28, #30 and verify CI fully green** — #27 (CI gate fix: vitest/e2e split + a11y labels), #28 (E2E suite stabilization), #30 (Neon preview branch sanitize + prune). Then confirm the Playwright job runs green against the CI Postgres.
+- [ ] **Enterprise roadmap owner decisions (D1–D10 in `ENTERPRISE-ROADMAP.md`)** — D2 secrets rotation, D3 WhatsApp credentials, D4 real number + banking verification, D5 Neon autosuspend, D6 property rollout plan, D7 payment provider, D8 photography, D9 analytics, D10 channel manager.
 - [ ] **Untrack `.env` / `.env.local` from git + rotate any pushed secrets** — security: env files are tracked in repo history; platform blocks env-file ops from the sandbox; exact steps in SETUP-LOCAL.md §8 (dedicated PR: `git rm --cached .env .env.local`, keep local copies).
-- [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then all notifications fail open and log only.
+- [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then notifications fail open and log only — **and in production the admin OTP is unreachable (logs only), making this the go-live blocker**.
 - [ ] **Real WhatsApp number** — `lib/contact.ts` → `WHATSAPP_NUMBER`; every WhatsApp CTA renders `"#"` until supplied.
 - [ ] **Disable Neon autosuspend** (Neon console) — biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
+- [ ] **Verify banking details** shown to guests in the booking form (carries an unverified-owner flag) before go-live.
 - [ ] **Real photography** — only Room 1 has photos; rooms 2–9 show placeholder art. Shot list in `UI-findings-and-recommendations.md`.
 - [ ] **Vercel deploy check red on PRs** — "Deployment failed" with no vercel CLI in the sandbox to inspect; likely env/project config on the Vercel dashboard (owner-side).
-- [ ] **Neon preview workflow 422** — `preview/pr-<n>-dev` branch name collision from prior runs (infra idempotency).
-- [ ] **Vercel cron plan limit** — `vercel.json` has two crons (`*/4 * * * *` ping + daily review reminder); Hobby allows once/day → full frequency needs Pro.
+- [ ] **Privacy program (POPIA/PAIA)** — privacy policy page, PAIA manual, retention schedule, breach runbook (Phase 3 of the roadmap).
 
 ### 🟡 Code-side (agent can execute on request)
 
-- [ ] **E2E suite stabilization — shipped in `fix/e2e-stabilize`** (root causes: sr-only inputs unclickable, calendar aria-pressed collisions, rooms regex double-backslash, mobile hamburger, admin h1 order, two missed textarea labels). Merge the PR, then watch the next CI run for the long-suite results. See Progress log entry below.
-- [ ] **Wire the POP upload** — `/api/upload` (Vercel Blob) exists but the booking form only records a filename and never calls it (`BLOB_READ_WRITE_TOKEN` needed); proof-of-payment files aren't stored.
+- [ ] **Phase 0 — Wire the POP upload** — `/api/upload` (Vercel Blob) exists but the booking form only records a filename and never calls it (`BLOB_READ_WRITE_TOKEN` needed); proof-of-payment files aren't stored.
+- [ ] **Phase 0 — Versioned Drizzle migrations** — switch from `drizzle-kit push` to committed `drizzle/*.sql` migrations (ADR 012). Required before any Phase 1 schema work.
+- [ ] **Phase 0 — Transactional booking inserts** — wrap the three booking actions' writes in `db.transaction`; notify after commit (roadmap A3).
+- [ ] **Phase 0 — Hot-path DB indexes** — `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `auth_otps(phone)`, `quotes(public_token)` (roadmap A6).
+- [ ] **Phase 0 — Observability** — Sentry (`@sentry/nextjs`, `SENTRY_DSN`), uptime monitor on `/api/ping`, structured logger (roadmap O1).
+- [ ] **Phase 0 — Unit tests** for `lib/auth.ts`, rate limiter, quote-engine seasonal splits (roadmap M2).
+- [ ] **Phase 1 — Multi-location foundation** — `properties` table + `property_id` everywhere, property-scoped RBAC + `scopedDb()` guard, per-property `property_settings` (contact/banking/WhatsApp/prices), HQ consolidated view. See `ENTERPRISE-ROADMAP.md` §4–5 and ADR 013.
+- [ ] **Phase 2 — Payments** — provider decision (PayFast primary), `lib/payments.ts` abstraction, deposits, hosted checkout, webhook state machine, receipts, admin payments view (roadmap §5 Phase 2, ADR 014).
+- [ ] **Phase 3 — Ops & governance** — audit log, admin settings screens (pricing/seasonal/availability per property), queue pagination, privacy artifacts, analytics decision, Dependabot (roadmap §5 Phase 3).
+- [ ] **Phase 4 — Growth** — PWA, i18n, channel-manager decision (NightsBridge/Little Hotelier), funnel analytics, SEO (roadmap §5 Phase 4).
 - [ ] **Lelz partner WhatsApp stub** — `notifyLelzOfNewRequest` logs only; pending Lelz's number/template.
 - [ ] **Android/iOS app** — decision pending (PWA first, Capacitor for Play Store/App Store later). Admin dashboard is already API-driven, so a client reuses the whole backend.
 
 ### 🟢 Housekeeping / low priority
 
-- [ ] `docs/` planning & test docs (01–06) are placeholders awaiting BA input.
+- [ ] `docs/` planning & test docs (01–06) — filled only the ADR log (2026-08-15); product/system-design/planning docs still await BA input.
 - [ ] `comp/buffy` branch — content merged into `dev`; deletable once the competition is judged.
 - [ ] Upstash Redis keys — optional; the in-memory rate-limiter fallback works until then (Keys UI).
+- [ ] Dependabot — enable for npm with grouped PRs (roadmap M5).
 
 ---
 
@@ -289,49 +300,26 @@ can execute on request), housekeeping are 🟢.
 
 **Flags:** run `npm run db:push && npm run db:seed` (dev DB only — seed truncates) before `npm run e2e`. Set `E2E_REVIEW_TOKEN` for the review-form spec. Perf budgets are strict under `E2E_SERVER=prod` only.
 
-### 2026-08-12 — CI green pass (vitest/e2e split + a11y label wiring) — Buffy
+### 2026-08-15 — Enterprise-grade assessment & roadmap (docs) — Buffy
 
-**Status:** ✅ Delivered — pushed to `dev` (rides into `main` via open release PR #26).
+**Status:** ✅ Delivered — PR from `docs/enterprise-roadmap` (this is the branch's own PR; full detail in the PR description).
 
-**Why:** PR #26's CI checks were red. Diagnosis: (1) the core "Typecheck · Lint · Tests" job failed because **Vitest's default glob picks up the Playwright specs** (`e2e/*.spec.ts` → "Playwright Test did not expect test() to be called here", 11 failed files); (2) the E2E a11y spec caught **real unlabelled-input bugs** on `/book`, `/events`, and `/corporate` (sibling `<label>`s with no `id`/`htmlFor`); (3) the admin E2E spec used a strict-mode `h1` locator against the intentionally dual-h1 login screen.
+**Why:** owner asked for the project to be tackled as a professional web application built for long-term use — security, performance, scalability, maintainability, usability — scoped for a startup scaling to a multi-location guest house group across SA provinces/cities. This is the architecture/strategy deliverable (no runtime code changed).
 
-**Files changed (6):**
+**What was produced (read every `.md` first, then a line-level code audit, then industry research):**
 
-- `vitest.config.ts` — **new** — excludes `e2e/**` from Vitest so `npm test` runs only the unit suites (was matching the Playwright specs).
-- `app/book/DetailsStep.tsx` — `id`+`htmlFor` on full name / phone / email / notes (4 inputs).
-- `app/events/EventInquiryForm.tsx` — `id`+`htmlFor` on 8 inputs (name, phone, email, event type, guests, dates, notes).
-- `app/corporate/CorporateQuoteForm.tsx` — `id`+`htmlFor` on 12 static inputs + 3 looped room-line fields (index-suffixed ids: `corporateRoomType-${i}` etc.).
-- `e2e/admin.spec.ts` — `page.locator("h1").first()` (the login screen renders a mobile + desktop h1 by design).
-- `PROGRESS.md` — this entry.
+- **`ENTERPRISE-ROADMAP.md`** — new, the living strategy reference:
+  - Current-state audit vs professional standards: what is genuinely strong (CSP/CSRF/OTP hardening, advisory-lock approve, integer-cents money, Result<T>, single-source pricing, 42 unit + 82 e2e tests, fra1 region) and a 30-item gap register across Security, Scalability, Performance, Maintainability, Usability, Operations.
+  - Industry standards mapping: OWASP ASVS/Top-10 table, Core Web Vitals budgets, POPIA/PAIA/PCI-DSS (SA), hospitality reference (PMS + channel-manager pattern à la Cloudbeds/Little Hotelier/NightsBridge — buy, don't build OTA sync), Next.js observability (Sentry + uptime monitor).
+  - **Target architecture for multi-location**: single-DB shared-schema tenancy with `property_id` (ADR 013), property-scoped RBAC (`scopedDb()` guard), `property_settings` config-as-data, consolidated HQ view.
+  - **Phased roadmap**: Phase 0 stabilization (merge #27/#28/#30, untrack secrets, WhatsApp creds, migrations, transactions, indexes, Sentry, POP upload) → Phase 1 multi-location foundation → Phase 2 payments (PayFast primary, hosted PCI-DSS checkout, webhooks) → Phase 3 ops/governance (audit log, admin settings, privacy artifacts) → Phase 4 growth (PWA, i18n, channel manager).
+  - Risk/decision register D1–D10 (owner inputs) + a professional Definition of Done checklist.
+- **`docs/03-design/adr-log.md`** — filled the empty placeholder with 14 ADRs: the 11 historical decisions reconstructed from docs/code (Prisma→Drizzle, in-house OTP, single-source pricing, force-dynamic+60s cache, approved-only locks + advisory locks, Result<T>, custom calendar/motion, fra1, fail-open, token-gated reviews, push-only schema) + 3 proposed (versioned migrations, property_id tenancy, hosted payments).
+- **`knowledge.md`** — added the `ENTERPRISE-ROADMAP.md` pointer to the READ-FIRST list.
+- **`PROGRESS.md`** — added the Open tasks ledger (owner 🔴 / code-side 🟡 / housekeeping 🟢) with the roadmap phases mapped in; this entry.
 
-**Validation results:** ✅ `npm test` 42/42 (4 files) · ✅ `npx tsc --noEmit` clean · ✅ `npm run lint` 0 errors (8 pre-existing warnings) · ⏳ full Playwright run + remaining checks in CI (see below).
+**Validation:** docs-only change — no build/typecheck/lint impact (no `.ts`/`.tsx` touched). Facts in the audit were verified against `app/`, `lib/`, `components/`, `.github/`, `e2e/`, and config files on `origin/dev` at `00fdce1` (incl. vercel.json now Hobby-safe with the single daily cron after PR #31).
 
-**Still red / owner-side (not code):**
-
-- **E2E suite (Playwright):** the a11y + admin fixes land with this push, but the suite's long-journey tests (booking/events/corporate submits) time out (~90s per attempt) and a few assertions are flaky (rooms list/modal, mobile site-shell) — the suite has never run fully green in CI. Follow-up: stabilise the suite (timeouts, wait strategy) in a dedicated pass.
-- **Vercel deploy check** on the PR: "Deployment failed" — no vercel CLI in the sandbox to inspect; likely env config on the Vercel project dashboard (owner-side).
-- **Neon preview workflow:** 422 creating `preview/pr-26-dev` — the branch name already exists from a prior run (infra/idempotency).
-
-### 2026-08-12 — E2E suite stabilization (root causes fixed) — Buffy
-
-**Status:** ✅ Delivered — PR → `dev` from `fix/e2e-stabilize`.
-
-**Why:** the Playwright suite had never run fully green in CI. Diagnosis from the last CI run (PR #27, 21 failed test instances across desktop+mobile) found one app-level a11y gap per page and a set of spec bugs — not app crashes. Full root-cause list + fixes:
-
-**Real app bugs fixed (2):**
-
-- `app/events/EventInquiryForm.tsx` + `app/corporate/CorporateQuoteForm.tsx` — the `eventNotes`/`corporateNotes` textareas had `id`s but no `label[for]`/`aria-label`, so the a11y spec still reported 1 unlabelled input per page (the PR #27 label pass missed the two textareas). Added `aria-label="Special requirements"`.
-
-**Spec bugs fixed (7):**
-
-- `e2e/rooms.spec.ts` — the "Showing N of N rooms" regex was a **regex literal with a double backslash** (`\d`), which matches literal "\d" text, never digits — the page actually renders "Showing 9 of 9 rooms". Single backslash now. Also the room-modal test hit a strict-mode violation (the dialog renders TWO "Close" buttons: the X + footer) → `.first()`.
-- `e2e/booking.spec.ts` — **the long-journey timeout root cause**: the room selectors (`button[aria-pressed]` / `button[aria-pressed][disabled]`) matched the calendar's date cells (also `aria-pressed`, and past dates `[disabled]`), so tests clicked calendar cells / asserted "Booked" on a date cell ("1"). All room interactions now scoped to the room step via its "Choose your room" heading parent. Also the meal toggles are `sr-only` inputs inside `<label>`s — Playwright can't actionability-check clipped 1×1px elements ("element is not stable" loop until 90 s timeout) → click the visible label text instead.
-- `e2e/events-corporate.spec.ts` — same sr-only input issue on the catering card radio ("Three-Course Meal") → toggle via the visible label text. Corporate estimate assertion was wrong, not the app: adding breakfast keeps the accommodation line at "R1 500" and moves the **total** to "R1 850" → assert the total.
-- `e2e/site-shell.spec.ts` — mobile viewport keeps the primary nav behind the hamburger; three tests asserted hidden desktop links. Added `openMobileMenu()` (clicks the "Menu" button when visible) + `filter({ visible: true })` for nav-link assertions, clicks, and the hero CTA check.
-- `e2e/admin.spec.ts` — the login screen renders TWO h1s (brand "Gomodi Admin" + "Sign in to admin"); `h1.first()` grabbed the brand → target the sign-in heading by name.
-
-**Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run lint` 0 errors (7 pre-existing warnings) · ✅ `npx playwright test --list` 82 tests compile.
-
-**Flags:** full browser run still needs a Postgres + build (CI). Expected remaining CI noise: Neon preview 422 + Vercel deploy check (infra, owner-side). The a11y pass + this stabilization together should bring the Playwright job green.
+**Flags for the owner:** all 10 decision items (D1–D10) in the roadmap's risk register are owner-side; Phase 0 code tasks (POP upload, migrations, transactions, indexes, Sentry, unit tests) are ready to execute on request. **Priority call for the owner: merge #27 → #28 → #30 first, and do the secrets rotation + WhatsApp credentials — those unblock production login and real notifications.**
 
 <!-- New entries go above this line, newest last. -->
