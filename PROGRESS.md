@@ -29,6 +29,52 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
+## Open tasks / To-do (living list)
+
+Checked = resolved. Items are added here whenever a task is identified; move
+resolved ones to the Progress log. Owner-side items are 🔴 (blocked on the
+owner/Architect — platform or external credentials), code-side are 🟡 (agent
+can execute on request), housekeeping are 🟢. The full phased plan lives in
+**`ENTERPRISE-ROADMAP.md`** (Phase 0 stabilization → 1 multi-location
+foundation → 2 payments → 3 ops → 4 growth); this list tracks the open items.
+
+### 🔴 Owner / Architect side
+
+- [ ] **Merge PRs #27, #28, #30 and verify CI fully green** — #27 (CI gate fix: vitest/e2e split + a11y labels), #28 (E2E suite stabilization), #30 (Neon preview branch sanitize + prune). Then confirm the Playwright job runs green against the CI Postgres.
+- [ ] **Enterprise roadmap owner decisions (D1–D10 in `ENTERPRISE-ROADMAP.md`)** — D2 secrets rotation, D3 WhatsApp credentials, D4 real number + banking verification, D5 Neon autosuspend, D6 property rollout plan, D7 payment provider, D8 photography, D9 analytics, D10 channel manager.
+- [ ] **Untrack `.env` / `.env.local` from git + rotate any pushed secrets** — security: env files are tracked in repo history; platform blocks env-file ops from the sandbox; exact steps in SETUP-LOCAL.md §8 (dedicated PR: `git rm --cached .env .env.local`, keep local copies).
+- [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then notifications fail open and log only — **and in production the admin OTP is unreachable (logs only), making this the go-live blocker**.
+- [ ] **Real WhatsApp number** — `lib/contact.ts` → `WHATSAPP_NUMBER`; every WhatsApp CTA renders `"#"` until supplied.
+- [ ] **Disable Neon autosuspend** (Neon console) — biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
+- [ ] **Verify banking details** shown to guests in the booking form (carries an unverified-owner flag) before go-live.
+- [ ] **Real photography** — only Room 1 has photos; rooms 2–9 show placeholder art. Shot list in `UI-findings-and-recommendations.md`.
+- [ ] **Vercel deploy check red on PRs** — "Deployment failed" with no vercel CLI in the sandbox to inspect; likely env/project config on the Vercel dashboard (owner-side).
+- [ ] **Privacy program (POPIA/PAIA)** — privacy policy page, PAIA manual, retention schedule, breach runbook (Phase 3 of the roadmap).
+
+### 🟡 Code-side (agent can execute on request)
+
+- [ ] **Phase 0 — Wire the POP upload** — `/api/upload` (Vercel Blob) exists but the booking form only records a filename and never calls it (`BLOB_READ_WRITE_TOKEN` needed); proof-of-payment files aren't stored.
+- [ ] **Phase 0 — Versioned Drizzle migrations** — switch from `drizzle-kit push` to committed `drizzle/*.sql` migrations (ADR 012). Required before any Phase 1 schema work.
+- [ ] **Phase 0 — Transactional booking inserts** — wrap the three booking actions' writes in `db.transaction`; notify after commit (roadmap A3).
+- [ ] **Phase 0 — Hot-path DB indexes** — `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `auth_otps(phone)`, `quotes(public_token)` (roadmap A6).
+- [ ] **Phase 0 — Observability** — Sentry (`@sentry/nextjs`, `SENTRY_DSN`), uptime monitor on `/api/ping`, structured logger (roadmap O1).
+- [ ] **Phase 0 — Unit tests** for `lib/auth.ts`, rate limiter, quote-engine seasonal splits (roadmap M2).
+- [ ] **Phase 1 — Multi-location foundation** — `properties` table + `property_id` everywhere, property-scoped RBAC + `scopedDb()` guard, per-property `property_settings` (contact/banking/WhatsApp/prices), HQ consolidated view. See `ENTERPRISE-ROADMAP.md` §4–5 and ADR 013.
+- [ ] **Phase 2 — Payments** — provider decision (PayFast primary), `lib/payments.ts` abstraction, deposits, hosted checkout, webhook state machine, receipts, admin payments view (roadmap §5 Phase 2, ADR 014).
+- [ ] **Phase 3 — Ops & governance** — audit log, admin settings screens (pricing/seasonal/availability per property), queue pagination, privacy artifacts, analytics decision, Dependabot (roadmap §5 Phase 3).
+- [ ] **Phase 4 — Growth** — PWA, i18n, channel-manager decision (NightsBridge/Little Hotelier), funnel analytics, SEO (roadmap §5 Phase 4).
+- [ ] **Lelz partner WhatsApp stub** — `notifyLelzOfNewRequest` logs only; pending Lelz's number/template.
+- [ ] **Android/iOS app** — decision pending (PWA first, Capacitor for Play Store/App Store later). Admin dashboard is already API-driven, so a client reuses the whole backend.
+
+### 🟢 Housekeeping / low priority
+
+- [ ] `docs/` planning & test docs (01–06) — filled only the ADR log (2026-08-15); product/system-design/planning docs still await BA input.
+- [ ] `comp/buffy` branch — content merged into `dev`; deletable once the competition is judged.
+- [ ] Upstash Redis keys — optional; the in-memory rate-limiter fallback works until then (Keys UI).
+- [ ] Dependabot — enable for npm with grouped PRs (roadmap M5).
+
+---
+
 ## Progress log
 
 ### 2026-08-11 — Task 1 (corporate room pricing drift) + Task 3 (DB keep-alive endpoint + Vercel cron) — DeepSeek Flash
@@ -253,5 +299,27 @@ Append a new entry to the **Progress log** below, newest last. Include:
 **Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 · ✅ lint zero errors (8 pre-existing warnings) · ✅ 82 Playwright tests compile (`--list`) · ✅ Chromium launches in the sandbox (browser smoke check) — full browser run happens in CI/local with a DB, per `E2E-TESTING.md` (the sandbox blocks starting a dev server).
 
 **Flags:** run `npm run db:push && npm run db:seed` (dev DB only — seed truncates) before `npm run e2e`. Set `E2E_REVIEW_TOKEN` for the review-form spec. Perf budgets are strict under `E2E_SERVER=prod` only.
+
+### 2026-08-15 — Enterprise-grade assessment & roadmap (docs) — Buffy
+
+**Status:** ✅ Delivered — PR from `docs/enterprise-roadmap` (this is the branch's own PR; full detail in the PR description).
+
+**Why:** owner asked for the project to be tackled as a professional web application built for long-term use — security, performance, scalability, maintainability, usability — scoped for a startup scaling to a multi-location guest house group across SA provinces/cities. This is the architecture/strategy deliverable (no runtime code changed).
+
+**What was produced (read every `.md` first, then a line-level code audit, then industry research):**
+
+- **`ENTERPRISE-ROADMAP.md`** — new, the living strategy reference:
+  - Current-state audit vs professional standards: what is genuinely strong (CSP/CSRF/OTP hardening, advisory-lock approve, integer-cents money, Result<T>, single-source pricing, 42 unit + 82 e2e tests, fra1 region) and a 30-item gap register across Security, Scalability, Performance, Maintainability, Usability, Operations.
+  - Industry standards mapping: OWASP ASVS/Top-10 table, Core Web Vitals budgets, POPIA/PAIA/PCI-DSS (SA), hospitality reference (PMS + channel-manager pattern à la Cloudbeds/Little Hotelier/NightsBridge — buy, don't build OTA sync), Next.js observability (Sentry + uptime monitor).
+  - **Target architecture for multi-location**: single-DB shared-schema tenancy with `property_id` (ADR 013), property-scoped RBAC (`scopedDb()` guard), `property_settings` config-as-data, consolidated HQ view.
+  - **Phased roadmap**: Phase 0 stabilization (merge #27/#28/#30, untrack secrets, WhatsApp creds, migrations, transactions, indexes, Sentry, POP upload) → Phase 1 multi-location foundation → Phase 2 payments (PayFast primary, hosted PCI-DSS checkout, webhooks) → Phase 3 ops/governance (audit log, admin settings, privacy artifacts) → Phase 4 growth (PWA, i18n, channel manager).
+  - Risk/decision register D1–D10 (owner inputs) + a professional Definition of Done checklist.
+- **`docs/03-design/adr-log.md`** — filled the empty placeholder with 14 ADRs: the 11 historical decisions reconstructed from docs/code (Prisma→Drizzle, in-house OTP, single-source pricing, force-dynamic+60s cache, approved-only locks + advisory locks, Result<T>, custom calendar/motion, fra1, fail-open, token-gated reviews, push-only schema) + 3 proposed (versioned migrations, property_id tenancy, hosted payments).
+- **`knowledge.md`** — added the `ENTERPRISE-ROADMAP.md` pointer to the READ-FIRST list.
+- **`PROGRESS.md`** — added the Open tasks ledger (owner 🔴 / code-side 🟡 / housekeeping 🟢) with the roadmap phases mapped in; this entry.
+
+**Validation:** docs-only change — no build/typecheck/lint impact (no `.ts`/`.tsx` touched). Facts in the audit were verified against `app/`, `lib/`, `components/`, `.github/`, `e2e/`, and config files on `origin/dev` at `00fdce1` (incl. vercel.json now Hobby-safe with the single daily cron after PR #31).
+
+**Flags for the owner:** all 10 decision items (D1–D10) in the roadmap's risk register are owner-side; Phase 0 code tasks (POP upload, migrations, transactions, indexes, Sentry, unit tests) are ready to execute on request. **Priority call for the owner: merge #27 → #28 → #30 first, and do the secrets rotation + WhatsApp credentials — those unblock production login and real notifications.**
 
 <!-- New entries go above this line, newest last. -->
