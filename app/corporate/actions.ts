@@ -11,8 +11,10 @@ import {
 } from "@/lib/db/schema";
 import { and, eq, lt, gt } from "drizzle-orm";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
-import { createDraftQuote } from "@/lib/quotes";
+import { createDraftQuote, type Queryable } from "@/lib/quotes";
 import { sanitizeContact, buildAddOnRows } from "@/lib/booking-common";
+import { sanitizePopMeta } from "@/lib/pop-upload";
+import { isSafeProofOfPaymentUrl } from "@/lib/validate";
 import {
   safeText,
   isValidStay,
@@ -29,6 +31,8 @@ import {
   MAX_ROOM_COUNT,
   MAX_GUESTS_PER_ROOM,
 } from "@/lib/validate";
+
+import { proofOfPayments } from "@/lib/db/schema";
 
 export type RoomLineInput = {
   roomType: "double" | "flexible";
@@ -52,40 +56,47 @@ export type CorporateQuoteInput = {
   breakfast: boolean;
   dinner: boolean;
   notes?: string;
+  proofOfPaymentUrl?: string | null;
+  proofOfPaymentFileName?: string | null;
+  proofOfPaymentFileSize?: number | null;
+  proofOfPaymentMimeType?: string | null;
 };
 
 export type CorporateQuoteResult = Result;
 
 async function findAvailableRoomIds(
+  client: Queryable,
   isFlexible: boolean,
   checkIn: string,
   checkOut: string,
   needed: number
 ): Promise<number[]> {
-  const candidates = await db.select().from(rooms).orderBy(rooms.id);
+  const candidates = await client.select().from(rooms).orderBy(rooms.id);
   const pool = candidates.filter((r) =>
     isFlexible
       ? r.config.toLowerCase().includes("configurable")
       : !r.config.toLowerCase().includes("configurable")
   );
 
+  // One query instead of N: every room with an approved booking overlapping
+  // the range is unavailable (same overlap logic as isRoomAvailable).
+  const bookedRows = await client
+    .select({ roomId: bookingRoomLines.roomId })
+    .from(bookingRoomLines)
+    .innerJoin(bookingRequests, eq(bookingRoomLines.bookingRequestId, bookingRequests.id))
+    .where(
+      and(
+        eq(bookingRequests.status, "approved"),
+        lt(bookingRoomLines.checkIn, checkOut),
+        gt(bookingRoomLines.checkOut, checkIn)
+      )
+    );
+  const booked = new Set(bookedRows.map((r) => r.roomId));
+
   const available: number[] = [];
   for (const room of pool) {
     if (available.length >= needed) break;
-    const overlapping = await db
-      .select({ id: bookingRoomLines.id })
-      .from(bookingRoomLines)
-      .innerJoin(bookingRequests, eq(bookingRoomLines.bookingRequestId, bookingRequests.id))
-      .where(
-        and(
-          eq(bookingRoomLines.roomId, room.id),
-          eq(bookingRequests.status, "approved"),
-          lt(bookingRoomLines.checkIn, checkOut),
-          gt(bookingRoomLines.checkOut, checkIn)
-        )
-      )
-      .limit(1);
-    if (overlapping.length === 0) available.push(room.id);
+    if (!booked.has(room.id)) available.push(room.id);
   }
   return available;
 }
@@ -144,65 +155,98 @@ export async function submitCorporateQuote(
   const clientRef = safeText(input.clientRef, MAX_REFERENCE);
   const notes = safeText(input.notes, MAX_LONG_NOTES);
 
-  try {
-    const [request] = await db
-      .insert(bookingRequests)
-      .values({
-        category: "corporate",
-        status: "pending",
-        guestName: fullName,
-        contactPhone: phone,
-        contactEmail: email,
-        sourceChannel: "website",
-      })
-      .returning();
+  // Proof of payment must be a real blob URL from our own store — never an
+  // arbitrary string that could plant a foreign link into the admin panel.
+  if (input.proofOfPaymentUrl && !isSafeProofOfPaymentUrl(input.proofOfPaymentUrl)) {
+    return { ok: false, error: "Proof-of-payment upload looks invalid. Please upload again." };
+  }
+  const proofOfPaymentUrl = input.proofOfPaymentUrl || null;
+  const popMeta = sanitizePopMeta({
+    fileName: input.proofOfPaymentFileName,
+    fileSize: input.proofOfPaymentFileSize,
+    mimeType: input.proofOfPaymentMimeType,
+  });
 
-    let shortfallNote = "";
-    for (const line of validLines) {
-      const roomIds = await findAvailableRoomIds(
-        line.roomType === "flexible",
-        input.checkIn,
-        input.checkOut,
-        line.count
-      );
-      if (roomIds.length < line.count) {
-        shortfallNote += ` Requested ${line.count}x ${line.roomType}, only ${roomIds.length} available for these dates —needs manual review.`;
+  try {
+    // ---- Atomic write: request + room lines + meals + corporate details +
+    // draft quote all commit or all roll back together. Availability is
+    // checked inside the same transaction, so concurrent submissions can't
+    // double-book a room line. ----
+    let totalGuests = 0;
+    await db.transaction(async (tx) => {
+      const [request] = await tx
+        .insert(bookingRequests)
+        .values({
+          category: "corporate",
+          status: "pending",
+          guestName: fullName,
+          contactPhone: phone,
+          contactEmail: email,
+          sourceChannel: "website",
+        })
+        .returning();
+
+      let shortfallNote = "";
+      for (const line of validLines) {
+        const roomIds = await findAvailableRoomIds(
+          tx,
+          line.roomType === "flexible",
+          input.checkIn,
+          input.checkOut,
+          line.count
+        );
+        if (roomIds.length < line.count) {
+          shortfallNote += ` Requested ${line.count}x ${line.roomType}, only ${roomIds.length} available for these dates —needs manual review.`;
+        }
+        for (const roomId of roomIds) {
+          await tx.insert(bookingRoomLines).values({
+            bookingRequestId: request.id,
+            roomId,
+            checkIn: input.checkIn,
+            checkOut: input.checkOut,
+            guestCount: line.guestsPerRoom,
+          });
+        }
       }
-      for (const roomId of roomIds) {
-        await db.insert(bookingRoomLines).values({
+
+      totalGuests = validLines.reduce((sum, l) => sum + l.count * l.guestsPerRoom, 0);
+      const addOnRows = buildAddOnRows({
+        bookingRequestId: request.id,
+        nights: nightDates(input.checkIn, input.checkOut),
+        guestCount: totalGuests,
+        breakfast: input.breakfast,
+        dinner: input.dinner,
+      });
+      if (addOnRows.length > 0) await tx.insert(addOnSelections).values(addOnRows);
+
+      await tx.insert(corporateDetails).values({
+        bookingRequestId: request.id,
+        jobTitle: jobTitle || null,
+        companyName: company,
+        billingEmail: billingEmail || null,
+        poNumber: poNumber || null,
+        vatNumber: vatNumber || null,
+        clientRef: clientRef || null,
+        notes: notes + shortfallNote,
+      });
+
+      // Auto-generate a draft quotation from the room lines + meals booked.
+      await createDraftQuote(request.id, tx);
+
+      // Store proof of payment if provided (already validated as our blob URL).
+      if (proofOfPaymentUrl) {
+        await tx.insert(proofOfPayments).values({
           bookingRequestId: request.id,
-          roomId,
-          checkIn: input.checkIn,
-          checkOut: input.checkOut,
-          guestCount: line.guestsPerRoom,
+          fileUrl: proofOfPaymentUrl,
+          fileName: popMeta.fileName || "proof-of-payment",
+          fileSize: popMeta.fileSize,
+          mimeType: popMeta.mimeType,
+          uploadedAt: new Date(),
         });
       }
-    }
-
-    const totalGuests = validLines.reduce((sum, l) => sum + l.count * l.guestsPerRoom, 0);
-    const addOnRows = buildAddOnRows({
-      bookingRequestId: request.id,
-      nights: nightDates(input.checkIn, input.checkOut),
-      guestCount: totalGuests,
-      breakfast: input.breakfast,
-      dinner: input.dinner,
-    });
-    if (addOnRows.length > 0) await db.insert(addOnSelections).values(addOnRows);
-
-    await db.insert(corporateDetails).values({
-      bookingRequestId: request.id,
-      jobTitle: jobTitle || null,
-      companyName: company,
-      billingEmail: billingEmail || null,
-      poNumber: poNumber || null,
-      vatNumber: vatNumber || null,
-      clientRef: clientRef || null,
-      notes: notes + shortfallNote,
     });
 
-    // Auto-generate a draft quotation from the room lines + meals booked.
-    await createDraftQuote(request.id);
-
+    // Post-commit side effect: WhatsApp alert (fail-open, never blocks booking).
     await notifyOwnerOfNewRequest({
       guestName: `${fullName} (${company})`,
       contactPhone: phone,

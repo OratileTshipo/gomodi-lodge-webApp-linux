@@ -30,6 +30,13 @@ import { computeTotals, formatZAR, clampNonNegative } from "./quote-math";
 import { nightlyRatesForStay, type SeasonalPeriod } from "./seasonal";
 import { getSeasonalPeriods } from "./db/seasonal";
 
+/**
+ * Minimal query surface used by the quote engine. Both the global `db` and a
+ * `db.transaction(tx)` client satisfy it, so callers can run quote creation
+ * inside a booking transaction (atomic request → lines → quote).
+ */
+export type Queryable = Pick<typeof db, "select" | "insert" | "update" | "delete">;
+
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined";
 
 export interface QuoteLine {
@@ -178,15 +185,24 @@ function labelForRate(periods: SeasonalPeriod[], rate: string): string {
   return [...active].sort((a, b) => a.label.length - b.label.length)[0].label;
 }
 
-/** Create a draft quote for a request, seeded from its room lines + meals. */
-export async function createDraftQuote(bookingRequestId: number): Promise<number> {
+/**
+ * Create a draft quote for a request, seeded from its room lines + meals.
+ *
+ * `client` defaults to the global `db`; pass a `db.transaction(tx)` client to
+ * create the quote atomically with its booking request (the booking actions do
+ * this so a failure can never leave a request without its draft quote).
+ */
+export async function createDraftQuote(
+  bookingRequestId: number,
+  client: Queryable = db
+): Promise<number> {
   // Request category decides what pricing data exists.
-  const [request] = await db
+  const [request] = await client
     .select({ category: bookingRequests.category })
     .from(bookingRequests)
     .where(eq(bookingRequests.id, bookingRequestId));
 
-  const [existing] = await db
+  const [existing] = await client
     .select({ id: quotes.id })
     .from(quotes)
     .where(eq(quotes.bookingRequestId, bookingRequestId));
@@ -197,7 +213,7 @@ export async function createDraftQuote(bookingRequestId: number): Promise<number
 
   if (request?.category !== "event") {
     // Leisure + corporate: room lines (with rates) + meal add-ons.
-    const roomLines = await db
+    const roomLines = await client
       .select({
         roomName: rooms.name,
         checkIn: bookingRoomLines.checkIn,
@@ -208,7 +224,7 @@ export async function createDraftQuote(bookingRequestId: number): Promise<number
       .innerJoin(rooms, eq(bookingRoomLines.roomId, rooms.id))
       .where(eq(bookingRoomLines.bookingRequestId, bookingRequestId));
 
-    const addOns = await db
+    const addOns = await client
       .select({
         type: addOnSelections.type,
         persons: addOnSelections.persons,
@@ -237,7 +253,7 @@ export async function createDraftQuote(bookingRequestId: number): Promise<number
 
   const totals = computeTotals(lines, vatRate);
 
-  const [quote] = await db
+  const [quote] = await client
     .insert(quotes)
     .values({
       bookingRequestId,
@@ -254,7 +270,7 @@ export async function createDraftQuote(bookingRequestId: number): Promise<number
     .returning();
 
   if (lines.length > 0) {
-    await db.insert(quoteLineItems).values(
+    await client.insert(quoteLineItems).values(
       lines.map((l) => ({
         quoteId: quote.id,
         description: l.description,

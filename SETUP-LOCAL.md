@@ -78,6 +78,10 @@ BLOB_READ_WRITE_TOKEN=
 # Global rate limiting — otherwise an in-memory limiter is used
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+# Error monitoring — the SDK fails open (no-op) without a DSN
+SENTRY_DSN=
+# Source-map upload on Vercel builds — skip locally
+SENTRY_AUTH_TOKEN=
 ```
 
 - `DATABASE_URL` is the only required key to run the site locally.
@@ -89,10 +93,19 @@ UPSTASH_REDIS_REST_TOKEN=
 
 ## 5. Create the schema and seed the data
 
+The schema ships as versioned migrations in `drizzle/` (ADR 012). On a
+**fresh** database, migrations apply everything from scratch:
+
 ```bash
-npm run db:push     # create tables from lib/db/schema.ts (idempotent)
+npm run db:migrate  # apply drizzle/*.sql in order (idempotent, tracked)
 npm run db:seed     # seed rooms, staff users, seasonal pricing
 ```
+
+> If this DB was previously created with `drizzle-kit push` (no migration
+> history), run the one-time adoption first:
+> `npm run db:adopt && npm run db:migrate` — adopt marks the baseline
+> migration as applied without re-running it, then migrate applies only
+> what's newer.
 
 > ⚠️ `db:seed` **truncates** `booking_requests`, `rooms`, `users`, and
 > `seasonal_pricing` before inserting — run it on dev/scratch databases only,
@@ -163,10 +176,10 @@ prevent them from being re-added.
 
 | Symptom | Fix |
 |---|---|
-| `db:push` can't connect | `DATABASE_URL` wrong / Postgres not running — test with `psql $DATABASE_URL` |
-| `db:push` prompts | Only happens on destructive changes; a fresh DB won't prompt |
+| `db:migrate` can't connect | `DATABASE_URL` wrong / Postgres not running — test with `psql $DATABASE_URL` |
+| `db:migrate` fails with "relation already exists" | DB was push-created — run `npm run db:adopt` once, then `db:migrate` again |
 | Port 3000 in use | `E2E_PORT` / change `dev` to `next dev -p 3001` |
-| `/api/ping` returns 500 | DB down or tables missing — re-run `db:push` |
+| `/api/ping` returns 500 | DB down or tables missing — re-run `db:migrate` |
 | Admin login shows no OTP | You're on a production build (`npm run start`) — dev OTP only exists in dev mode |
 | `npm run e2e` fails to launch browser | `npx playwright install chromium` |
 | "SESSION_SECRET must be set" | You're running a production build without it — set it in `.env.local` |

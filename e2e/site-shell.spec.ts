@@ -1,11 +1,29 @@
 import { expect } from "./fixtures";
 import { test, skipWithoutDb, collectErrors, assertNoUnexpectedErrors } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 /**
  * Site shell: branding, primary navigation, the hero CTA's branch modal, the
  * footer, and 404 handling. These are the page furniture that must never
  * break on any deployment.
  */
+
+/**
+ * On mobile the primary nav lives behind the hamburger ("Menu") button; on
+ * desktop that button is hidden. Open the menu when present so the same
+ * assertions work on both viewports.
+ */
+async function openMobileMenu(page: Page) {
+  const menu = page.getByRole("button", { name: "Menu" });
+  if (await menu.isVisible()) {
+    await menu.click();
+    // Wait for the slide/fade transition to finish so links are interactive.
+    await expect(page.getByRole("button", { name: "Menu" })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+  }
+}
 
 test("404 page renders a helpful message for unknown routes", async ({ request, page }) => {
   const res = await request.get("/definitely-not-a-real-page");
@@ -25,9 +43,13 @@ test("brand, primary nav and footer render", async ({ page, dbReady }) => {
   // Brand
   await expect(page.locator("header, nav").first()).toContainText("Gomodi Guest Lodge");
 
-  // Primary nav links
+  // Primary nav links (mobile: opens the hamburger menu first)
+  await openMobileMenu(page);
   for (const label of ["Rooms", "Events", "Corporate"]) {
-    const link = page.locator("nav a", { hasText: label }).first();
+    const link = page
+      .locator("nav a", { hasText: label })
+      .filter({ visible: true })
+      .first();
     await expect(link).toBeVisible();
   }
 
@@ -50,8 +72,14 @@ test("nav links navigate to their pages", async ({ page, dbReady }) => {
     ["Events", "/events"],
     ["Corporate", "/corporate"],
   ];
-  for (const [label, path] of routes) {
-    await page.locator(`nav a[href="${path}"]`).first().click();
+  for (const [, path] of routes) {
+    // Mobile keeps the primary links behind the hamburger — open it per route.
+    await openMobileMenu(page);
+    await page
+      .locator(`nav a[href="${path}"]`)
+      .filter({ visible: true })
+      .first()
+      .click();
     await expect(page).toHaveURL(new RegExp(`${path.replace("/", "\\/")}`));
     await expect(page.locator("body")).not.toContainText("Internal Server Error");
     await page.goto("/");
@@ -94,5 +122,8 @@ test("homepage hero and primary CTA targets are present", async ({ page, dbReady
   await page.goto("/");
   await expect(page.locator("h1").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Book Now" }).first()).toBeVisible();
-  await expect(page.locator(`a[href="/rooms"]`).first()).toBeVisible();
+  // Only the visible rooms link counts (mobile nav link is hidden behind the menu).
+  await expect(
+    page.locator(`a[href="/rooms"]`).filter({ visible: true }).first()
+  ).toBeVisible();
 });

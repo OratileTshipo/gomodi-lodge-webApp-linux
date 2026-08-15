@@ -13,10 +13,13 @@
     "e2e:headed": "playwright test --headed",
     "e2e:perf": "E2E_PERF=1 playwright test e2e/perf.spec.ts",
     "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:adopt": "tsx scripts/adopt-migrations.ts",
     "db:seed": "tsx lib/db/seed.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
+    "@sentry/nextjs": "^10.70.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
     "@vercel/blob": "^2.6.1",

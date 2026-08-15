@@ -13,11 +13,22 @@ jobs:
     name: Setup
     outputs:
       branch: ${{ steps.branch_name.outputs.current_branch }}
+      # Neon branch names cannot contain `/` — feature branches like
+      # `docs/readme-refresh` previously produced `preview/pr-29-docs/readme-refresh`
+      # and Neon rejected it with a 422. Sanitize once here so the create,
+      # migrate, diff and delete steps all use the same name.
+      sanitized: ${{ steps.sanitize.outputs.name }}
     runs-on: ubuntu-latest
     steps:
       - name: Get branch name
         id: branch_name
         uses: tj-actions/branch-names@v8
+
+      - name: Sanitize branch name for Neon
+        id: sanitize
+        env:
+          RAW_BRANCH: ${{ steps.branch_name.outputs.current_branch }}
+        run: echo "name=$(echo "$RAW_BRANCH" | tr '/' '-')" >> "$GITHUB_OUTPUT"
 
   create_neon_branch:
     name: Create Neon Branch
@@ -47,12 +58,49 @@ jobs:
         id: get_expiration_date
         run: echo "EXPIRES_AT=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
+      # Free-plan Neon caps branches (~10). Stale preview branches from closed
+      # PRs were never deleted (the close job can miss fast merges), so the
+      # project hit BRANCHES_LIMIT_EXCEEDED and every create 422'd. Prune old
+      # preview/* branches before creating so this self-heals. The 3-day cutoff
+      # keeps concurrent PRs' fresh preview branches alive.
+      - name: Prune stale preview branches
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, subprocess, datetime
+          api = "https://console.neon.tech/api/v2/projects/" + os.environ["NEON_PROJECT_ID"]
+          auth = ["-H", "Authorization: Bearer " + os.environ["NEON_API_KEY"]]
+          out = subprocess.run(["curl", "-sS", api + "/branches", *auth], capture_output=True, text=True).stdout
+          now = datetime.datetime.now(datetime.timezone.utc)
+          cutoff = now - datetime.timedelta(days=3)
+          def parse(ts):
+              try: return datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
+              except Exception: return now
+          deleted = 0
+          for b in json.loads(out).get("branches", []):
+              name = b.get("name") or ""
+              if not name.startswith("preview/"):
+                  continue
+              updated = parse(b.get("updated_at") or b.get("created_at") or "")
+              if updated >= cutoff:
+                  continue
+              print(f"deleting {b['id']} {name} (last updated {updated.isoformat()})")
+              r = subprocess.run(["curl", "-sS", "-X", "DELETE", f"{api}/branches/{b['id']}", *auth], capture_output=True, text=True)
+              if r.returncode != 0 or "error" in r.stdout.lower():
+                  print("  WARN:", r.stdout[:300])
+              else:
+                  deleted += 1
+          print(f"pruned {deleted} stale preview branch(es)")
+          EOF
+
       - name: Create Neon Branch
         id: create_neon_branch
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
-          branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.sanitized }}
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ env.EXPIRES_AT }}
 
@@ -74,17 +122,25 @@ jobs:
             cat /tmp/neonctl-err.txt >&2
             exit 1
           fi
-          DATABASE_URL="$URL" npx drizzle-kit push
+          # Versioned migrations are canonical. Preview branches copy the
+          # parent's data, so on projects whose parent was previously managed
+          # with `drizzle-kit push` the baseline migration can't re-run (the
+          # tables already exist) — fall back to push until the parent has
+          # adopted migrations once (`npm run db:adopt && npm run db:migrate`).
+          if ! DATABASE_URL="$URL" npx drizzle-kit migrate 2>/tmp/migrate-err.txt; then
+            echo "::warning::drizzle-kit migrate failed on preview branch ($(tail -1 /tmp/migrate-err.txt)); falling back to push (parent DB not yet migrated)"
+            DATABASE_URL="$URL" npx drizzle-kit push
+          fi
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_BRANCH: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          NEON_BRANCH: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.sanitized }}
           NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
 
       - name: Post Schema Diff Comment to PR
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
-          compare_branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          compare_branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.sanitized }}
           api_key: ${{ secrets.NEON_API_KEY }}
 
   delete_neon_branch:
@@ -97,5 +153,5 @@ jobs:
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
-          branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.sanitized }}
           api_key: ${{ secrets.NEON_API_KEY }}

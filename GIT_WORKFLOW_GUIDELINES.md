@@ -183,7 +183,7 @@ jobs:
           expires_at: ${{ env.EXPIRES_AT }}
 
       - name: Run Migrations
-        run: npx drizzle-kit push
+        run: npx drizzle-kit migrate
         env:
           DATABASE_URL: "${{ steps.create_neon_branch.outputs.db_url_with_pooler }}"
 
@@ -208,10 +208,16 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 ```
 
-**Important note on `drizzle-kit push`:** this applies your schema directly
-without a migration file history. For a project this size that's an
-acceptable, low-overhead choice — but it does mean the schema diff comment on
-the PR (from the last step) is your main safety check before merging. Read it
+> The live workflow (`.github/workflows/neon_workflow.yml`) now applies
+> **versioned migrations** (`npx drizzle-kit migrate`, with a fallback to
+> `push` only until the parent DB adopts migrations via `npm run db:adopt`)
+> and fetches the connection string via `neonctl`, not the action output
+> (which GitHub blanks as a secret — see knowledge.md).
+
+**Important note on schema changes:** every change to `lib/db/schema.ts` ships
+as a **versioned migration** (`drizzle-kit generate` → commit `drizzle/*.sql`)
+and is applied with `db:migrate` in CI and deploys (ADR 012). The schema-diff
+comment on the PR remains your main safety check before merging — read it
 every time before approving a PR that touches `lib/db/schema.ts`.
 
 **Required GitHub repo settings** (if not already done from our last

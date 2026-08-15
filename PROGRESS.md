@@ -29,6 +29,52 @@ Append a new entry to the **Progress log** below, newest last. Include:
 
 ---
 
+## Open tasks / To-do (living list)
+
+Checked = resolved. Items are added here whenever a task is identified; move
+resolved ones to the Progress log. Owner-side items are 🔴 (blocked on the
+owner/Architect — platform or external credentials), code-side are 🟡 (agent
+can execute on request), housekeeping are 🟢. The full phased plan lives in
+**`ENTERPRISE-ROADMAP.md`** (Phase 0 stabilization → 1 multi-location
+foundation → 2 payments → 3 ops → 4 growth); this list tracks the open items.
+
+### 🔴 Owner / Architect side
+
+- [ ] **Verify CI fully green on `dev` (2026-08-15)** — #27/#28/#30/#32/#33 merged; core gate (typecheck/lint/vitest) green; e2e job fixed in PR #34 (pending merge + green run).
+- [ ] **Enterprise roadmap owner decisions (D1–D10 in `ENTERPRISE-ROADMAP.md`)** — D2 secrets rotation, D3 WhatsApp credentials, D4 real number + banking verification, D5 Neon autosuspend, D6 property rollout plan, D7 payment provider, D8 photography, D9 analytics, D10 channel manager.
+- [ ] **Untrack `.env` / `.env.local` from git + rotate any pushed secrets** — security: env files are tracked in repo history; platform blocks env-file ops from the sandbox; exact steps in SETUP-LOCAL.md §8 (dedicated PR: `git rm --cached .env .env.local`, keep local copies).
+- [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then notifications fail open and log only — **and in production the admin OTP is unreachable (logs only), making this the go-live blocker**.
+- [ ] **Real WhatsApp number** — `lib/contact.ts` → `WHATSAPP_NUMBER`; every WhatsApp CTA renders `"#"` until supplied.
+- [ ] **Disable Neon autosuspend** — workflow `disable-neon-autosuspend.yml` added 2026-08-15 (run it from Actions once on `main`, or disable in the Neon console: Settings → Compute → suspend after inactivity → Never). Biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
+- [ ] **Verify banking details** shown to guests in the booking form (carries an unverified-owner flag) before go-live.
+- [ ] **Real photography** — only Room 1 has photos; rooms 2–9 show placeholder art. Shot list in `UI-findings-and-recommendations.md`.
+- [ ] **Vercel deploy check red on PRs** — "Deployment failed" with no vercel CLI in the sandbox to inspect; likely env/project config on the Vercel dashboard (owner-side).
+- [ ] **Privacy program (POPIA/PAIA)** — privacy policy page, PAIA manual, retention schedule, breach runbook (Phase 3 of the roadmap).
+
+### 🟡 Code-side (agent can execute on request)
+
+- [x] **Phase 0 — Versioned Drizzle migrations** — `0000_baseline` + `0001_hot-path-indexes` + `0002_booking-requests-contact-phone-idx` committed (ADR 012, implemented); CI e2e + Neon preview run `db:migrate`; `npm run db:adopt` marks the baseline applied on push-created DBs. Owner: run `db:adopt && db:migrate` once on production.
+- [x] **Phase 0 — Transactional booking inserts** — all three actions (leisure/corporate/events) wrap request → lines → meals → quote in `db.transaction`; WhatsApp notifications run post-commit; corporate availability is single-query (N+1 removed) (roadmap A3).
+- [x] **Phase 0 — Hot-path DB indexes** — `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `reviews(status)`, `staff_time_clocks(user_id, timestamp)`; `quotes(public_token)` covered by unique (roadmap A6, migrations 0001/0002).
+- [x] **Phase 0 — POP upload polish** — real filename/size/mime persisted (server-verified via `/api/upload`); corporate + events forms now accept an optional deposit POP; shared `PopUpload` + `uploadProofOfPayment`/`sanitizePopMeta` helpers (roadmap U2).
+- [x] **Phase 0 — Observability (Sentry)** — `@sentry/nextjs`, `instrumentation.ts` + client/server/edge configs, `app/global-error.tsx`, build plugin fails open (roadmap O1). Owner: add `SENTRY_DSN` (+ `SENTRY_AUTH_TOKEN` for source maps) to prod env. Remaining: external uptime monitor on `/api/ping`, structured logger.
+- [x] **Phase 0 — Unit tests** — auth (tamper/expiry/roles), rate limiter (window edges + Upstash fail-open), quote line-builder (seasonal straddles, meals); 72 total (roadmap M2). Remaining: role-filter tests for `app/api/admin/requests`.
+- [ ] **Phase 1 — Multi-location foundation** — `properties` table + `property_id` everywhere, property-scoped RBAC + `scopedDb()` guard, per-property `property_settings` (contact/banking/WhatsApp/prices), HQ consolidated view. See `ENTERPRISE-ROADMAP.md` §4–5 and ADR 013.
+- [ ] **Phase 2 — Payments** — provider decision (PayFast primary), `lib/payments.ts` abstraction, deposits, hosted checkout, webhook state machine, receipts, admin payments view (roadmap §5 Phase 2, ADR 014).
+- [ ] **Phase 3 — Ops & governance** — audit log, admin settings screens (pricing/seasonal/availability per property), queue pagination, privacy artifacts, analytics decision, Dependabot (roadmap §5 Phase 3).
+- [ ] **Phase 4 — Growth** — PWA, i18n, channel-manager decision (NightsBridge/Little Hotelier), funnel analytics, SEO (roadmap §5 Phase 4).
+- [ ] **Lelz partner WhatsApp stub** — `notifyLelzOfNewRequest` logs only; pending Lelz's number/template.
+- [ ] **Android/iOS app** — decision pending (PWA first, Capacitor for Play Store/App Store later). Admin dashboard is already API-driven, so a client reuses the whole backend.
+
+### 🟢 Housekeeping / low priority
+
+- [ ] `docs/` planning & test docs (01–06) — filled only the ADR log (2026-08-15); product/system-design/planning docs still await BA input.
+- [ ] `comp/buffy` branch — content merged into `dev`; deletable once the competition is judged.
+- [ ] Upstash Redis keys — optional; the in-memory rate-limiter fallback works until then (Keys UI).
+- [ ] Dependabot — enable for npm with grouped PRs (roadmap M5).
+
+---
+
 ## Progress log
 
 ### 2026-08-11 — Task 1 (corporate room pricing drift) + Task 3 (DB keep-alive endpoint + Vercel cron) — DeepSeek Flash
@@ -253,5 +299,66 @@ Append a new entry to the **Progress log** below, newest last. Include:
 **Validation results:** ✅ `npm test` 42/42 · ✅ `npx tsc --noEmit` clean · ✅ `npm run build` exit 0 · ✅ lint zero errors (8 pre-existing warnings) · ✅ 82 Playwright tests compile (`--list`) · ✅ Chromium launches in the sandbox (browser smoke check) — full browser run happens in CI/local with a DB, per `E2E-TESTING.md` (the sandbox blocks starting a dev server).
 
 **Flags:** run `npm run db:push && npm run db:seed` (dev DB only — seed truncates) before `npm run e2e`. Set `E2E_REVIEW_TOKEN` for the review-form spec. Perf budgets are strict under `E2E_SERVER=prod` only.
+
+### 2026-08-15 — Enterprise-grade assessment & roadmap (docs) — Buffy
+
+**Status:** ✅ Delivered — PR from `docs/enterprise-roadmap` (this is the branch's own PR; full detail in the PR description).
+
+**Why:** owner asked for the project to be tackled as a professional web application built for long-term use — security, performance, scalability, maintainability, usability — scoped for a startup scaling to a multi-location guest house group across SA provinces/cities. This is the architecture/strategy deliverable (no runtime code changed).
+
+**What was produced (read every `.md` first, then a line-level code audit, then industry research):**
+
+- **`ENTERPRISE-ROADMAP.md`** — new, the living strategy reference:
+  - Current-state audit vs professional standards: what is genuinely strong (CSP/CSRF/OTP hardening, advisory-lock approve, integer-cents money, Result<T>, single-source pricing, 42 unit + 82 e2e tests, fra1 region) and a 30-item gap register across Security, Scalability, Performance, Maintainability, Usability, Operations.
+  - Industry standards mapping: OWASP ASVS/Top-10 table, Core Web Vitals budgets, POPIA/PAIA/PCI-DSS (SA), hospitality reference (PMS + channel-manager pattern à la Cloudbeds/Little Hotelier/NightsBridge — buy, don't build OTA sync), Next.js observability (Sentry + uptime monitor).
+  - **Target architecture for multi-location**: single-DB shared-schema tenancy with `property_id` (ADR 013), property-scoped RBAC (`scopedDb()` guard), `property_settings` config-as-data, consolidated HQ view.
+  - **Phased roadmap**: Phase 0 stabilization (merge #27/#28/#30, untrack secrets, WhatsApp creds, migrations, transactions, indexes, Sentry, POP upload) → Phase 1 multi-location foundation → Phase 2 payments (PayFast primary, hosted PCI-DSS checkout, webhooks) → Phase 3 ops/governance (audit log, admin settings, privacy artifacts) → Phase 4 growth (PWA, i18n, channel manager).
+  - Risk/decision register D1–D10 (owner inputs) + a professional Definition of Done checklist.
+- **`docs/03-design/adr-log.md`** — filled the empty placeholder with 14 ADRs: the 11 historical decisions reconstructed from docs/code (Prisma→Drizzle, in-house OTP, single-source pricing, force-dynamic+60s cache, approved-only locks + advisory locks, Result<T>, custom calendar/motion, fra1, fail-open, token-gated reviews, push-only schema) + 3 proposed (versioned migrations, property_id tenancy, hosted payments).
+- **`knowledge.md`** — added the `ENTERPRISE-ROADMAP.md` pointer to the READ-FIRST list.
+- **`PROGRESS.md`** — added the Open tasks ledger (owner 🔴 / code-side 🟡 / housekeeping 🟢) with the roadmap phases mapped in; this entry.
+
+**Validation:** docs-only change — no build/typecheck/lint impact (no `.ts`/`.tsx` touched). Facts in the audit were verified against `app/`, `lib/`, `components/`, `.github/`, `e2e/`, and config files on `origin/dev` at `00fdce1` (incl. vercel.json now Hobby-safe with the single daily cron after PR #31).
+
+**Flags for the owner:** all 10 decision items (D1–D10) in the roadmap's risk register are owner-side; Phase 0 code tasks (POP upload, migrations, transactions, indexes, Sentry, unit tests) are ready to execute on request. **Priority call for the owner: merge #27 → #28 → #30 first, and do the secrets rotation + WhatsApp credentials — those unblock production login and real notifications.**
+
+### 2026-08-15 — PR merges (#27/#28/#30/#32/#33) + CI-e2e fix + Neon autosuspend workflow — Buffy
+
+**Status:** ✅ Merges done; 🔄 CI-e2e fix in PR #34 (see below).
+
+**Why:** owner asked to merge PRs #27/#28/#30, verify CI green, disable Neon autosuspend, and ensure the enterprise roadmap is in the repo as the single source of truth for all agents/models.
+
+**What was done:**
+
+- **Merged to `dev`:** #27 (CI gate fix — shipped via #28's stacked branch; GitHub auto-marked #27 merged when its commit landed), #28 (E2E stabilization), #30 (Neon preview branch sanitize — resolved its add/add vitest.config.ts conflict with dev), #32 (enterprise roadmap docs — resolved the PROGRESS.md conflict, keeping the roadmap-ledger superset), #33 (Neon autosuspend workflow). All PRs closed; dev head `57618ef`.
+- **Roadmap is now on `dev`** — `ENTERPRISE-ROADMAP.md`, the filled `docs/03-design/adr-log.md`, and the PROGRESS.md ledger are merged, so every agent/model reading the repo gets the same single source of truth (knowledge.md READ-FIRST pointer included).
+- **Neon autosuspend:** added `.github/workflows/disable-neon-autosuspend.yml` (workflow_dispatch → sets `suspend_timeout_seconds=0` on every compute endpoint via the `NEON_API_KEY` secret). ⚠️ The Freebuff token cannot dispatch workflows (needs `actions:write`; it's 403) and `gh workflow run` only resolves workflows on the default branch — so it becomes clickable from Actions → "Disable Neon autosuspend" once it reaches `main` (next dev→main release), or the owner can disable it in the Neon console directly (Settings → Compute → suspend after inactivity → Never).
+- **CI-e2e fix (PR #34, `fix/ci-e2e-green`):** the first real CI run after #27/#28/#30 revealed two spec/app bugs the stabilization had shipped unvalidated (suite never ran locally — no DB in sandbox):
+  1. `e2e/booking.spec.ts` room-step scope used `heading → xpath=..`, which lands on the step *header* div — the room buttons are in a sibling grid → locator matched nothing ("full booking journey" + "unavailable rooms" failed). Fixed with `data-testid="room-step"` on RoomStep + `getByTestId` in both tests.
+  2. `app/admin/AdminLogin.tsx`: "Sign in to admin" h1 was `hidden lg:block`, so mobile rendered only the "Gomodi Admin" h1 → admin spec failed on mobile. Now a **single h1** ("Sign in to admin") on every viewport; mobile brand is a styled div.
+
+**Validation:** `npx tsc --noEmit` clean · `npm run lint` 0 errors (7 pre-existing warnings) · `npm test` 42/42 · `npx playwright test --list` 82 specs compile. Full browser run is in CI on PR #34 (Postgres + production server) — watch that run for the true e2e verdict.
+
+**Flags:** core CI gate (typecheck/lint/vitest) is green on `dev`; the e2e job on dev is red until #34 merges. Vercel deploy check remains red (owner-side env config). Next owner steps: secrets rotation + WhatsApp credentials (go-live blockers), approve a dev→main release so the Neon workflow becomes clickable, decide D6/D7 for Phases 1–2.
+
+### 2026-08-15 — Phase 0 code: versioned migrations + transactional booking inserts + hot-path indexes — Buffy
+
+**Branch:** `fix/phase0-migrations-tx-indexes` → PR (dev). Implements ADR 012 and roadmap A2/A3/A6.
+
+- **Versioned migrations (A2/ADR 012):** un-ignored `drizzle/`; generated `0000_baseline` (full schema, matches live push-created state), `0001_hot-path-indexes` (5 indexes), `0002_booking-requests-contact-phone-idx`. CI e2e job + Neon preview workflow now run `db:migrate` (Neon falls back to `push` until the parent DB adopts). Added `npm run db:migrate` + `npm run db:adopt` (`scripts/adopt-migrations.ts` — marks the baseline applied on push-created DBs by replicating drizzle's `drizzle.__drizzle_migrations` hash tracking; verified against drizzle-orm's migrator source: sha256 of raw SQL, `created_at` = journal millis).
+- **Transactional booking inserts (A3):** `lib/quotes.ts` `createDraftQuote` now accepts a `db.transaction(tx)` client (`Queryable`); all three actions (`app/book`, `app/corporate`, `app/events`) wrap request → room lines → meals → quote (+POP row for leisure, +partner timestamp for events) in one `db.transaction`; WhatsApp notifications moved post-commit (they fail open). Corporate `findAvailableRoomIds` rewritten from N+1 per-room overlap queries to a single booked-room query (same overlap semantics) — also fixes the theoretical race where availability + insert weren't atomic.
+- **Hot-path indexes (A6):** `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `reviews(status)`, `staff_time_clocks(user_id, timestamp)`; `quotes(public_token)` already unique.
+- **Docs:** README, SETUP-LOCAL, E2E-TESTING, GIT_WORKFLOW_GUIDELINES, knowledge.md, playwright.config comment, ADR 012 status, roadmap A2/A3/A6 statuses, ledger.
+- **Verified:** `npx tsc --noEmit` clean; `npm run lint` clean; `npm test` green. CI will validate the migration chain end-to-end on a fresh Postgres (e2e job: `db:migrate` → seed → Playwright).
+- **Owner steps:** run `npm run db:adopt && npm run db:migrate` once on the production DB (then future schema changes are pure migrations).
+
+### 2026-08-15 — Phase 0 remaining: Sentry observability + unit tests + POP polish — Buffy
+
+**Branch:** `fix/phase0-observability-tests-pop` → PR (dev). Implements roadmap O1 / M2 / U2.
+
+- **Sentry (O1):** `@sentry/nextjs@10` (Next 16-compatible); `instrumentation.ts`, `sentry.client/server/edge.config.ts`, `app/global-error.tsx`, `next.config.ts` wrapped with `withSentryConfig({ silent: true })` — **fails open** with no env vars (build verified locally). Prod needs `SENTRY_DSN` (+ `SENTRY_AUTH_TOKEN` for source-map upload on Vercel). Remaining O1: uptime monitor on `/api/ping`, structured logger.
+- **Unit tests (M2, 42 → 72):** `lib/__tests__/auth.test.ts` (roundtrip, tamper payload/signature, expiry via fake timers, malformed, role guards), `rate-limit.test.ts` (sliding-window edges, per-key isolation, Upstash fail-open with mocked client), `quote.test.ts` (`buildDraftLines` — room lines, seasonal straddle segments, shortest-label, inactive periods, meal aggregation, clamping). Remaining M2: role-filter tests for `app/api/admin/requests`.
+- **POP polish (U2):** shared `lib/pop-upload.ts` (`uploadProofOfPayment` client helper + `sanitizePopMeta` server sanitizer) and `components/PopUpload.tsx`; leisure now stores real fileName/fileSize/mimeType from the server-verified upload (schema already had the columns); corporate + events forms gain an optional **Deposit** section (upload persisted inside the existing transaction, URL gated by `isSafeProofOfPaymentUrl`).
+- **Verified:** `tsc` clean, lint 0 errors (7 pre-existing warnings), vitest 72/72, `npm run build` green (validates the Sentry build plugin fails open). CI validates e2e (booking `#popFileInput` selector preserved; a11y label scan unaffected).
 
 <!-- New entries go above this line, newest last. -->

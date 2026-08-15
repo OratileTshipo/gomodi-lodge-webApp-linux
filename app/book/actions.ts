@@ -8,6 +8,7 @@ import { isRoomAvailable } from "@/lib/db/availability";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
 import { sanitizeContact, buildAddOnRows } from "@/lib/booking-common";
+import { sanitizePopMeta } from "@/lib/pop-upload";
 import {
   isValidStay,
   isNotInPast,
@@ -31,6 +32,9 @@ export type LeisureBookingInput = {
   contactEmail?: string;
   specialRequests?: string;
   proofOfPaymentUrl?: string | null;
+  proofOfPaymentFileName?: string | null;
+  proofOfPaymentFileSize?: number | null;
+  proofOfPaymentMimeType?: string | null;
 };
 
 export type LeisureBookingResult = Result;
@@ -73,6 +77,13 @@ export async function submitLeisureBooking(
     return { ok: false, error: "Proof-of-payment upload looks invalid. Please upload again." };
   }
   const proofOfPaymentUrl = input.proofOfPaymentUrl || null;
+  // Metadata is hygiene (admin display), not security — the URL check above
+  // is the gate; cap/allowlist what the client claims about the file.
+  const popMeta = sanitizePopMeta({
+    fileName: input.proofOfPaymentFileName,
+    fileSize: input.proofOfPaymentFileSize,
+    mimeType: input.proofOfPaymentMimeType,
+  });
 
   const [room] = await db.select().from(rooms).where(eq(rooms.id, roomId));
   if (!room) return { ok: false, error: "That room could not be found — please choose again." };
@@ -86,41 +97,61 @@ export async function submitLeisureBooking(
   }
 
   try {
-    const [request] = await db
-      .insert(bookingRequests)
-      .values({
-        category: "leisure",
-        status: "pending",
-        guestName,
-        contactPhone,
-        contactEmail,
-        specialRequests: specialRequests || null,
-        sourceChannel: "website",
-      })
-      .returning();
+    // ---- Atomic write: request + room line + meals + draft quote + POP row
+    // all commit or all roll back — a mid-flow failure can never leave a
+    // request without its quote (or a POP row orphaned from its request). ----
+    await db.transaction(async (tx) => {
+      const [request] = await tx
+        .insert(bookingRequests)
+        .values({
+          category: "leisure",
+          status: "pending",
+          guestName,
+          contactPhone,
+          contactEmail,
+          specialRequests: specialRequests || null,
+          sourceChannel: "website",
+        })
+        .returning();
 
-    await db.insert(bookingRoomLines).values({
-      bookingRequestId: request.id,
-      roomId,
-      checkIn: input.checkIn,
-      checkOut: input.checkOut,
-      guestCount,
+      await tx.insert(bookingRoomLines).values({
+        bookingRequestId: request.id,
+        roomId,
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        guestCount,
+      });
+
+      const addOnRows = buildAddOnRows({
+        bookingRequestId: request.id,
+        nights: nightDates(input.checkIn, input.checkOut),
+        guestCount,
+        breakfast: input.breakfast,
+        dinner: input.dinner,
+      });
+      if (addOnRows.length > 0) {
+        await tx.insert(addOnSelections).values(addOnRows);
+      }
+
+      // Auto-generate a draft quotation atomically with the request.
+      await createDraftQuote(request.id, tx);
+
+      // Store proof of payment if provided (already validated as our blob URL)
+      if (proofOfPaymentUrl) {
+        await tx.insert(proofOfPayments).values({
+          bookingRequestId: request.id,
+          fileUrl: proofOfPaymentUrl,
+          fileName: popMeta.fileName || "proof-of-payment",
+          fileSize: popMeta.fileSize,
+          mimeType: popMeta.mimeType,
+          uploadedAt: new Date(),
+        });
+      }
+
+      return request.id;
     });
 
-    const addOnRows = buildAddOnRows({
-      bookingRequestId: request.id,
-      nights: nightDates(input.checkIn, input.checkOut),
-      guestCount,
-      breakfast: input.breakfast,
-      dinner: input.dinner,
-    });
-    if (addOnRows.length > 0) {
-      await db.insert(addOnSelections).values(addOnRows);
-    }
-
-    // Auto-generate a draft quotation for the owner to review before sending.
-    await createDraftQuote(request.id);
-
+    // Post-commit side effect: WhatsApp alert (fail-open, never blocks booking).
     await notifyOwnerOfNewRequest({
       guestName,
       contactPhone,
@@ -129,16 +160,6 @@ export async function submitLeisureBooking(
       checkOut: input.checkOut,
       guestCount,
     });
-
-    // Store proof of payment if provided (already validated as our blob URL)
-    if (proofOfPaymentUrl) {
-      await db.insert(proofOfPayments).values({
-        bookingRequestId: request.id,
-        fileUrl: proofOfPaymentUrl,
-        fileName: "proof-of-payment",
-        uploadedAt: new Date(),
-      });
-    }
 
     return { ok: true };
   } catch (err) {

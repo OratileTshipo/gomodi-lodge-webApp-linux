@@ -4,6 +4,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 ## See also (READ FIRST before UI / photography / copy / reviews work)
 
+- **`ENTERPRISE-ROADMAP.md`** — the architecture/strategy reference: full code audit vs industry standards (OWASP/POPIA/PCI-DSS/Core Web Vitals), the multi-location `properties` tenancy design, and the phased roadmap (Phase 0 stabilization → 1 multi-location foundation → 2 payments → 3 ops → 4 growth). READ before any architectural or schema work — especially anything touching `lib/db/schema.ts` (Phase 1 adds `property_id` everywhere) or the booking pipeline (Phase 0 adds transactions + migrations).
 - **`UI-findings-and-recommendations.md`** — the agent handoff doc: full audit vs Protea Hotel Mahikeng, the "relaxation + felt-experience" design mandates, the photography shot lists, and the guest-review-system spec (capture flow, schema, moderation, display). Binding for all upcoming UI work.
 - **`CODE-QUALITY-review.md`** — code-quality audit + what the 2026-08-12 passes fixed (lint errors, `bathOrShower` bug, BookingForm + AdminDashboard + homepage splits, shared booking helpers, vitest, CI job). READ before refactoring — every listed follow-up is now DONE except the owner-side env untrack.
 - **`E2E-TESTING.md`** — the Playwright end-to-end suite (82 tests, 11 specs, desktop + mobile): how to run (`npm run e2e`, needs a seeded DB), env knobs, coverage map, CI integration. READ before changing any interactive UI — the suite asserts every form, flow, label, and loading budget.
@@ -12,21 +13,22 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 - Playwright suite under `e2e/` — covers every page/form/flow plus perf budgets (LCP/FCP/DCL/Load/TTFB) and a11y smoke checks; runs on desktop + mobile viewports.
 - Self-gating: the `dbReady` fixture pings `/api/ping`; DB-less environments skip DB-dependent specs instead of failing.
-- CI runs the full suite against a Postgres service (`db:push` + `db:seed` + production server).
+- CI runs the full suite against a Postgres service (`db:migrate` + `db:seed` + production server).
 - `E2E_REVIEW_TOKEN` enables the review-form spec; admin OTP is only machine-readable in non-production servers (dev mode).
 - Labels: consent checkboxes + admin login inputs now have `id`/`htmlFor` wiring (a11y fix from the suite).
+- Unit suite: **72 tests** (auth sign/verify/tamper/expiry, rate-limiter window edges + Upstash fail-open, quote line-builder seasonal splits, money/date primitives).
 - **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
 
 ## Guest reviews (merged into `dev` 2026-08-12)
 
 - **Flow**: approved booking ends → `/api/review-reminders` (cron, daily) creates one unguessable invite per booking (`review_invites.token`) and sends it via WhatsApp template `gomodi_review_request` (fails open) → guest opens `/review?token=…` → review saved `pending` → staff approve in `/admin/reviews` (`/api/admin/reviews/[id]`, manager-only) → approved reviews render on the homepage "What guests say" (3 cards, aggregate badge at ≥5).
-- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Push with `npx drizzle-kit push`.
+- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Applied via versioned migrations (`npm run db:migrate`, ADR 012).
 - **Guardrails (binding)**: no fabricated/seed reviews — every review traces to a booking via the token; pending reviews never display; no consent → shown as "Guest".
 - **Homepage resilience**: reviews query is try/caught — missing tables degrade to the empty state instead of failing the page.
 
 ## Seasonal pricing (wiring now COMPLETE)
 
-- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) is committed to `dev`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `dev` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. `npx drizzle-kit push` is still needed to create the table.
+- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) is committed to `dev`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `dev` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. The tables ship in the baseline migration (`npm run db:migrate`).
 
 ## Contact surfaces
 
@@ -50,7 +52,9 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - Dev: `npm run dev` → http://localhost:3000
 - Build: `npm run build` — **passes locally** (~30s; script forces `NODE_ENV=production`)
 - Lint: `npm run lint` — ~20 pre-existing errors
-- DB schema: `npx drizzle-kit push`
+- DB schema: versioned migrations — `npm run db:migrate` (drizzle/, ADR 012); one-time `npm run db:adopt` for push-created DBs
+- Observability: **Sentry** (`@sentry/nextjs`, ADR O1) — `instrumentation.ts` + `sentry.*.config.ts` + `app/global-error.tsx`; **fails open** without `SENTRY_DSN` (never blocks dev/CI); prod needs `SENTRY_DSN` + `SENTRY_AUTH_TOKEN` (source maps).
+- POP upload (U2): shared `lib/pop-upload.ts` + `components/PopUpload.tsx` — leisure/corporate/events all upload via `/api/upload` (magic-byte sniffing, 5MB cap) and store real fileName/fileSize/mimeType on `proof_of_payments`; URL gated by `isSafeProofOfPaymentUrl` server-side.
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
 - Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` (needs live DB), `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
 - Perf: `npm run perf` — response-time benchmark for all 11 routes (HTTP TTFB + headless Chromium FCP/LCP + per-component render times; optional `BASE_URL` env) — see `scripts/perf-bench.ts`

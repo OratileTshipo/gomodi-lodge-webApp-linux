@@ -1,72 +1,181 @@
-# Gomodi Guide Lodge — Website
+# Gomodi Guest Lodge — Website
 
-This is the first feature slice: the Rooms page and the Leisure booking
-request form, built per the project's Phase 1–3 documents.
+Direct-booking website for a 9-room boutique guest house in Mafikeng
+(Mmabatho), South Africa. Three guest journeys — **Leisure**, **Corporate**,
+and **Events** — feed one booking-request pipeline that's reviewed in a
+private staff admin area, with auto-generated quotes and a guest review
+system.
 
-## What's included
+Built with **Next.js 16** (App Router) + **React 19** + **TypeScript** +
+**Tailwind CSS v4** + **Drizzle ORM** + **PostgreSQL** (Neon). Deployed on
+**Vercel**. Tested with **Vitest** (unit) + **Playwright** (E2E).
 
-- `/` — homepage with the main "Book Now" entry point
-- `/rooms` — all 9 rooms, with loading/empty/error states
-- `/book` — the Leisure booking request form (dates, guests, breakfast/dinner
-  add-ons, contact details)
-- A Postgres database schema (via Drizzle ORM) covering Users, Rooms, Booking
-  Requests, Booking Room Lines, and Add-on Selections
-- A working anti-double-booking check: once a booking is **approved**, the
-  system blocks any new request for overlapping dates on that room. (The
-  Admin Approval Screen itself — where you approve/decline — is the next
-  feature slice, not built yet.)
-- A stubbed WhatsApp notification function (`lib/notifications.ts`) that logs
-  to the console instead of sending — it needs real Meta Business API
-  credentials before it can send real messages. See the Changelog for this
-  open item.
+> **Work on `dev`** — it's the single source of truth. Production releases are
+> PRs `dev` → `main`. See `SETUP-LOCAL.md` for full machine onboarding,
+> `PROGRESS.md` for the shared agent progress ledger, and
+> `E2E-TESTING.md` for the browser test suite.
 
-## One architecture note
+## Pages
 
-The Phase 2 Architecture Document specified **Prisma** as the ORM. During
-this build, Prisma's engine download was unreachable from the build sandbox,
-so this slice uses **Drizzle ORM** instead — a lightweight, TypeScript-native
-alternative that needs no downloaded binary engine, which is arguably a
-better fit for serverless hosting anyway. This is logged as a Phase 3
-Changelog decision.
+| Route | What it is |
+| --- | --- |
+| `/` | Homepage — 12 felt-experience sections incl. "What guests say" (approved reviews) |
+| `/rooms` | All 9 rooms with filter / sort / detail modal (photos from the DB) |
+| `/book` | Leisure booking wizard — calendar, room picker, meals, details, payment (EFT/cash + POP upload), consent |
+| `/corporate` | Corporate multi-room quote request form |
+| `/events` | Event / catering enquiry form (owned by **Lelz Business Enterprise**) |
+| `/quote/[token]` | Public quote / invoice link (token-based, no login) |
+| `/quote/[token]/pdf` | Printable PDF of the quote |
+| `/review?token=…` | Guest review form — token-gated per booking, feelings chips, optional photo, POPIA consent |
+| `/admin` | Staff login (phone OTP) |
+| `/admin/dashboard` | Request queue, approve/decline, RBAC, staff time clock |
+| `/admin/quotes` | Quote list + status filter |
+| `/admin/quotes/[id]` | Quote line-item editor (totals, VAT, notes, Save draft / Send) |
+| `/admin/reviews` | Review moderation queue (approve / decline) |
 
-## Running it yourself (optional — for your own testing before deploying)
+API routes: `/api/auth/*` (OTP login, session), `/api/admin/*` (requests,
+quotes, reviews, time clock), `/api/upload` (Vercel Blob),
+`/api/ping` (DB keep-alive, cron), `/api/review-reminders` (daily cron).
 
-You don't need to do this if you just want to deploy straight to Vercel (see
-below) — but if you want to run it on your own computer first:
+## How it works
 
-1. Install Node.js (v20 or later) and PostgreSQL.
-2. `npm install`
-3. Create a `.env` file with your own database connection:
-   ```
-   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/gomodi_dev"
-   ```
-4. `npx drizzle-kit push` (creates the tables)
-5. `npx tsx lib/db/seed.ts` (seeds the 9 rooms)
-6. `npm run dev` — then open http://localhost:3000
+- **One pipeline, three journeys** — leisure / corporate / event requests
+  insert into `booking_requests` (status starts `pending`) plus
+  category-specific details. The admin queue shows them all with role-scoped
+  visibility.
+- **Only approved bookings lock a room.** Availability blocks overlap with
+  approved bookings only; the approve endpoint re-checks every room line
+  server-side and returns a 409 on conflict.
+- **Quotes are auto-generated** — every request gets a draft quote at
+  submission time. The owner edits fees in `/admin/quotes/[id]`, then
+  **Send** marks it `sent` and gives the guest a public token link + PDF.
+  WhatsApp delivery fails open (logs the link) until credentials are set.
+- **Guest reviews** — when an approved stay ends, the daily cron creates an
+  unguessable invite (`review_invites.token`) and notifies the guest
+  (WhatsApp, fails open). Reviews land `pending`, staff moderate in
+  `/admin/reviews`, and approved ones render on the homepage. **No
+  fabricated reviews** — every review traces to a booking; no consent → shown
+  as "Guest".
+- **Seasonal pricing** — a `seasonal_pricing` table + `lib/seasonal.ts`
+  resolve per-night rates (e.g. festive windows), shared by the booking
+  wizard and the quote engine. Base room rate lives in `lib/pricing.ts`
+  (`ROOM_BASE_RATE = 750`, meals `BREAKFAST_PRICE`/`DINNER_PRICE`).
+- **Auth is fully in-house** — phone OTP (rate-limited, SHA-256 hashed,
+  constant-time verify, HMAC-signed session cookie). RBAC roles:
+  `owner` / `assistant` / `staff` / `partner`.
+- **Rate limiting** — `lib/rate-limit.ts`: Upstash Redis when
+  `UPSTASH_REDIS_REST_URL` / `_TOKEN` are set, in-memory fallback otherwise;
+  both fail open.
+- **Lelz Business Enterprise partnership** — all events and standalone
+  catering enquiries belong to Lelz (quoted/coordinated/delivered by them).
+  Lelz has a `partner` role scoped to events; the Owner's assistant is the
+  Events Manager with full visibility; `staff` users never see event data.
+- **Design system** — terracotta / walnut / cream / gold / ink tokens in
+  `globals.css`, custom scroll-reveal + parallax motion system (no animation
+  library), WCAG AA contrast, fixed-header offset discipline.
 
-## Deploying to Vercel (recommended path — no local setup needed)
+## Commands
 
-1. **Create a free GitHub account** at github.com, if you haven't already
-   decided which account to use (this is the open item flagged in the Phase 3
-   Changelog).
-2. Create a new, **private** GitHub repository.
-3. Push this code to it (I can walk you through this step by step, or do it
-   for you if you connect GitHub here).
-4. Sign up for a **free Vercel account** at vercel.com using your GitHub
-   login.
-5. In Vercel, click "New Project" and import the GitHub repository.
-6. Add a `DATABASE_URL` environment variable in Vercel's project settings,
-   pointing to a real Postgres database. Two easy, low-cost managed options
-   that work well with Vercel: **Neon** or **Supabase** (both have free
-   tiers suitable for a 9-room property).
-7. Vercel will build and deploy automatically. Once deployed, run the same
-   `drizzle-kit push` and seed steps against your production database (I can
-   guide you through this) so the 9 rooms exist there too.
-8. You'll get a live URL you can open on your phone — that's your Dev link
-   for the phone-test step in our Definition of Done.
+```bash
+npm install            # install (needs DATABASE_URL in .env / .env.local)
+npm run dev            # dev server → http://localhost:3000
+npm run build          # production build (forces NODE_ENV=production)
+npm run lint           # eslint (expect 0 errors)
+npm test               # vitest unit tests (42 tests, lib/__tests__/)
+npm run perf           # route benchmark (TTFB + headless FCP/LCP) — scripts/perf-bench.ts
+npm run e2e            # Playwright suite (82 tests, e2e/) — needs chromium + seeded DB
+npm run db:migrate     # apply versioned migrations from drizzle/ (canonical path)
+npm run db:seed        # seed rooms, staff users, seasonal pricing (⚠️ truncates — see below)
+```
 
-## What's next
+Manual regression scripts: `npx tsx scripts/test-booking.ts` (needs live DB),
+`test-admin-queue.ts`, `test-quotes.ts`, `test-whatsapp-payload.ts` (DB-free).
 
-Per the Backlog Tracker, the next feature slices are the Corporate Quote
-Request Form and the Admin Approval Screen (needed before any request can
-actually be confirmed).
+## Database setup (Drizzle + Postgres)
+
+The app reads `DATABASE_URL` from `.env` / `.env.local` (see
+`drizzle.config.ts`). The schema lives in `lib/db/schema.ts` and ships as
+**versioned migrations** in `drizzle/` (ADR 012) — every schema change is
+peer-reviewed like code and applied idempotently:
+
+```bash
+# 1. Apply migrations (creates all tables/indexes in order).
+#    Safe to run any time — applied migrations are tracked and never re-run.
+npx drizzle-kit migrate
+
+# 2. Seed the database (9 rooms, 7 test users incl. the Lelz partner, seasonal pricing windows).
+npx tsx lib/db/seed.ts
+```
+
+Notes:
+
+- **Existing databases created with `drizzle-kit push`** (no migration
+  history) need a one-time adoption step: `npm run db:adopt` marks the
+  baseline migration as applied, then `npm run db:migrate` applies
+  everything after it.
+- Run `npm run db:migrate` after **any** commit that changes
+  `lib/db/schema.ts`, then commit the generated migration with the change.
+- ⚠️ `seed.ts` **truncates and re-inserts** `rooms`, `users`,
+  `booking_requests`, and `seasonal_pricing` (cascading to booking lines,
+  add-ons, quotes). Any real bookings/quotes in the DB will be **deleted**.
+  Run it only on a fresh database or when you're OK losing the current data.
+- The Neon CI workflow (`.github/workflows/neon_workflow.yml`) runs the
+  migrations
+  automatically on a per-PR database branch — local runs are only needed for
+  your own dev database.
+- Full machine setup (Postgres, env files, checks) is in `SETUP-LOCAL.md`.
+
+## Environment variables
+
+| Key | Required | Used by |
+| --- | --- | --- |
+| `DATABASE_URL` | ✅ always | `lib/db/index.ts`, `drizzle.config.ts` |
+| `SESSION_SECRET` | ✅ production | `lib/auth.ts` — HMAC key for session cookies (dev falls back to a constant) |
+| `BLOB_READ_WRITE_TOKEN` | for uploads | `/api/upload` (Vercel Blob — review photos, POP) |
+| `NEXT_PUBLIC_APP_URL` | for quote links | quote send route (falls back to `localhost:3000`) |
+| `WHATSAPP_TOKEN` | for WhatsApp | `lib/whatsapp.ts` — Meta Cloud API permanent token |
+| `WHATSAPP_PHONE_NUMBER_ID` | for WhatsApp | Meta Cloud API |
+| `WHATSAPP_RECIPIENT` | for WhatsApp | E.164 lodge number for booking alerts |
+| `WHATSAPP_*_TEMPLATE`, `WHATSAPP_LANGUAGE` | optional | template overrides (defaults built in) |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | optional | rate limiter — absent → in-memory fallback |
+
+Do **not** set `NODE_ENV` in `.env` / `.env.local` — it breaks `next build`.
+Secret values live in `.env.local`, never in git (see Known gaps).
+
+## Deployment
+
+- **Hosting:** Vercel (functions pinned to `regions: ["fra1"]`, near the
+  Neon DB). Add the env vars above to the project settings, then run
+  `npm run db:adopt && npm run db:migrate` (one-time adoption on the
+  push-created prod DB, then migrations) + seed against the production
+  database.
+- **Crons** (`vercel.json`): `/api/ping` keep-alive every 4 min +
+  `/api/review-reminders` daily. ⚠️ Vercel Hobby allows one cron/day — full
+  frequency needs Pro.
+- **CI:** `.github/workflows/ci.yml` gates every PR / push on `npm ci` →
+  `tsc --noEmit` → `lint` → `vitest`, plus an `e2e` job that runs the
+  Playwright suite against a Postgres service.
+- **Neon PR previews:** `.github/workflows/neon_workflow.yml` creates an
+  isolated DB branch per PR, runs the drizzle push, posts a schema diff, and
+  auto-deletes the branch on close. Requires GitHub secrets `NEON_API_KEY` +
+  `NEON_PROJECT_ID`.
+- **Git workflow:** `dev` is the single source of truth; `main` receives
+  changes only via release PRs `dev` → `main` (user-approved promotion).
+  Feature/fix branches are cut from `dev` and merged via PR review.
+
+## Known gaps (pre go-live)
+
+- **WhatsApp notifications are stubbed** — `lib/notifications.ts` /
+  `lib/whatsapp.ts` log to the console instead of sending until real Meta
+  Business credentials + approved templates (`gomodi_otp`, `gomodi_booking_alert`,
+  `gomodi_booking_status`, `gomodi_quote_link`, `gomodi_review_request`) are
+  configured. Nothing breaks; messages just appear in server logs.
+- **Live WhatsApp number is a placeholder** (`"#"` in `lib/contact.ts`) —
+  needs the owner's real number.
+- **`.env` / `.env.local` are still tracked in git** — a security flag.
+  Fix (owner-side): `git rm --cached .env .env.local` in a dedicated PR and
+  rotate any secrets that were ever pushed.
+- **Real photography pending** — `rooms.images` is threaded from the DB with
+  a seed fallback; some imagery still uses styled placeholder gradients
+  (`PhotoPlaceholder`). The full photography program is specced in
+  `UI-findings-and-recommendations.md`.

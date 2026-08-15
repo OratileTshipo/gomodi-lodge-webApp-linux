@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { PopUpload } from "@/components/PopUpload";
+import { uploadProofOfPayment, type PopMeta } from "@/lib/pop-upload";
 import { submitEventInquiry } from "./actions";
 import { EVENT_CATERING } from "@/lib/pricing";
 
@@ -23,6 +25,11 @@ export default function EventInquiryForm() {
   const [interestedInRooms, setInterestedInRooms] = useState(false);
   const [notes, setNotes] = useState("");
   const [consent, setConsent] = useState(false);
+  const [popFileName, setPopFileName] = useState<string | null>(null);
+  const [popFileUrl, setPopFileUrl] = useState<string | null>(null);
+  const [popMeta, setPopMeta] = useState<PopMeta>({ fileName: null, fileSize: null, mimeType: null });
+  const [popUploading, setPopUploading] = useState(false);
+  const [popUploadError, setPopUploadError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,11 +41,41 @@ export default function EventInquiryForm() {
     }
   }, [status]);
 
+  async function handlePopFile(file: File | undefined) {
+    if (!file) return;
+    setPopUploading(true);
+    setPopUploadError(null);
+    const result = await uploadProofOfPayment(file);
+    if (!result.ok) {
+      setPopUploadError(result.error);
+      setPopFileName(null);
+      setPopFileUrl(null);
+      setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    } else {
+      setPopFileName(result.fileName);
+      setPopFileUrl(result.url);
+      setPopMeta({ fileName: result.fileName, fileSize: result.fileSize, mimeType: result.mimeType });
+    }
+    setPopUploading(false);
+  }
+
+  function handleClearPopFile() {
+    setPopFileName(null);
+    setPopFileUrl(null);
+    setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    setPopUploadError(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consent) {
       setStatus("error");
       setErrorMessage("Please confirm your consent to continue.");
+      return;
+    }
+    if (popFileName && !popFileUrl) {
+      setStatus("error");
+      setErrorMessage("Your proof of payment is still uploading — wait a moment and try again.");
       return;
     }
     setStatus("submitting");
@@ -47,6 +84,10 @@ export default function EventInquiryForm() {
       fullName, phone, email, eventType,
       guestCount: Number(guestCount), eventDate, altDate,
       catering, interestedInRooms, notes,
+      proofOfPaymentUrl: popFileUrl,
+      proofOfPaymentFileName: popMeta.fileName,
+      proofOfPaymentFileSize: popMeta.fileSize,
+      proofOfPaymentMimeType: popMeta.mimeType,
     });
     if (result.ok) setStatus("success");
     else { setStatus("error"); setErrorMessage(result.error); }
@@ -94,12 +135,12 @@ export default function EventInquiryForm() {
             <div className="pb-8 border-b border-walnut/10">
               <h3 className="font-semibold text-ink text-lg">Your details</h3>
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><label className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
-                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                <div><label className="block text-sm font-medium text-ink mb-1.5">Phone / WhatsApp *</label>
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                <div className="md:col-span-2"><label className="block text-sm font-medium text-ink mb-1.5">Email</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
+                <div><label htmlFor="eventFullName" className="block text-sm font-medium text-ink mb-1.5">Full name *</label>
+                  <input id="eventFullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
+                <div><label htmlFor="eventPhone" className="block text-sm font-medium text-ink mb-1.5">Phone / WhatsApp *</label>
+                  <input id="eventPhone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
+                <div className="md:col-span-2"><label htmlFor="eventEmail" className="block text-sm font-medium text-ink mb-1.5">Email</label>
+                  <input id="eventEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
               </div>
             </div>
 
@@ -107,8 +148,8 @@ export default function EventInquiryForm() {
               <h3 className="font-semibold text-ink text-lg">Event details</h3>
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-ink mb-1.5">Event type *</label>
-                  <select value={eventType} onChange={(e) => setEventType(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light">
+                  <label htmlFor="eventType" className="block text-sm font-medium text-ink mb-1.5">Event type *</label>
+                  <select id="eventType" value={eventType} onChange={(e) => setEventType(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light">
                     <option value="">Select an event type</option>
                     <option value="wedding">Wedding</option>
                     <option value="baby-shower">Baby shower</option>
@@ -121,12 +162,12 @@ export default function EventInquiryForm() {
                     <option value="other">Other</option>
                   </select>
                 </div>
-                <div><label className="block text-sm font-medium text-ink mb-1.5">Expected guests *</label>
-                  <input type="number" min={1} max={50} value={guestCount} onChange={(e) => setGuestCount(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                <div><label className="block text-sm font-medium text-ink mb-1.5">Preferred date *</label>
-                  <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
-                <div><label className="block text-sm font-medium text-ink mb-1.5">Alternative date (optional)</label>
-                  <input type="date" value={altDate} onChange={(e) => setAltDate(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
+                <div><label htmlFor="eventGuests" className="block text-sm font-medium text-ink mb-1.5">Expected guests *</label>
+                  <input id="eventGuests" type="number" min={1} max={50} value={guestCount} onChange={(e) => setGuestCount(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
+                <div><label htmlFor="eventDate" className="block text-sm font-medium text-ink mb-1.5">Preferred date *</label>
+                  <input id="eventDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
+                <div><label htmlFor="altDate" className="block text-sm font-medium text-ink mb-1.5">Alternative date (optional)</label>
+                  <input id="altDate" type="date" value={altDate} onChange={(e) => setAltDate(e.target.value)} className="form-input w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light" /></div>
               </div>
             </div>
 
@@ -157,12 +198,28 @@ export default function EventInquiryForm() {
 
             <div className="py-8 border-b border-walnut/10">
               <h3 className="font-semibold text-ink text-lg">Anything else?</h3>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, themes, or questions..." />
+              <textarea id="eventNotes" aria-label="Special requirements" value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="form-input mt-4 w-full border border-walnut/20 rounded-lg px-4 py-2.5 text-sm bg-cream-light resize-none" placeholder="Special requirements, themes, or questions..." />
               <div className="mt-5 flex items-start gap-3">
                 <input id="interestedInRooms" type="checkbox" checked={interestedInRooms} onChange={(e) => setInterestedInRooms(e.target.checked)} className="mt-1 accent-gold" />
                 <label htmlFor="interestedInRooms" className="text-sm text-ink cursor-pointer">
                   I&apos;m also interested in booking rooms for my guests. <Link href="/rooms" className="text-gold-dark font-semibold underline">See rooms →</Link>
                 </label>
+              </div>
+            </div>
+
+            <div className="py-8 border-b border-walnut/10">
+              <h3 className="font-semibold text-ink text-lg">Deposit (optional)</h3>
+              <p className="text-sm text-stone mt-1 mb-4">
+                Securing your event date with a deposit? Upload your proof of payment here.
+              </p>
+              <div className="max-w-md">
+                <PopUpload
+                  fileName={popFileName}
+                  uploading={popUploading}
+                  error={popUploadError}
+                  onSelect={(file) => handlePopFile(file)}
+                  onClear={handleClearPopFile}
+                />
               </div>
             </div>
 

@@ -9,17 +9,20 @@ import {
 } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
 import { sanitizeContact } from "@/lib/booking-common";
+import { sanitizePopMeta } from "@/lib/pop-upload";
 import {
   safeText,
   isValidIsoDate,
   isNotInPast,
   intInRange,
+  isSafeProofOfPaymentUrl,
   MAX_EVENT_TYPE,
   MAX_CATERING,
   MAX_LONG_NOTES,
   MAX_GUESTS_EVENT,
 } from "@/lib/validate";
 import { eq } from "drizzle-orm";
+import { proofOfPayments } from "@/lib/db/schema";
 
 export type EventInquiryInput = {
   fullName: string;
@@ -32,6 +35,10 @@ export type EventInquiryInput = {
   catering: string;
   interestedInRooms: boolean;
   notes?: string;
+  proofOfPaymentUrl?: string | null;
+  proofOfPaymentFileName?: string | null;
+  proofOfPaymentFileSize?: number | null;
+  proofOfPaymentMimeType?: string | null;
 };
 
 export type EventInquiryResult = Result;
@@ -68,41 +75,70 @@ export async function submitEventInquiry(
   const catering = safeText(input.catering, MAX_CATERING);
   const notes = safeText(input.notes, MAX_LONG_NOTES);
 
-  try {
-    const [request] = await db
-      .insert(bookingRequests)
-      .values({
-        category: "event",
-        status: "pending",
-        guestName: fullName,
-        contactPhone: phone,
-        contactEmail: email,
-        sourceChannel: "website",
-      })
-      .returning();
+  // Proof of payment must be a real blob URL from our own store — never an
+  // arbitrary string that could plant a foreign link into the admin panel.
+  if (input.proofOfPaymentUrl && !isSafeProofOfPaymentUrl(input.proofOfPaymentUrl)) {
+    return { ok: false, error: "Proof-of-payment upload looks invalid. Please upload again." };
+  }
+  const proofOfPaymentUrl = input.proofOfPaymentUrl || null;
+  const popMeta = sanitizePopMeta({
+    fileName: input.proofOfPaymentFileName,
+    fileSize: input.proofOfPaymentFileSize,
+    mimeType: input.proofOfPaymentMimeType,
+  });
 
-    await db.insert(eventDetails).values({
-      bookingRequestId: request.id,
-      eventType,
-      expectedGuests: guestCount,
-      eventDate: input.eventDate,
-      altDate,
-      cateringPackage: catering || null,
-      interestedInRooms: Boolean(input.interestedInRooms),
-      notes: notes || null,
+  try {
+    // ---- Atomic write: request + event details + draft quote + partner
+    // notification timestamp all commit or all roll back together. ----
+    await db.transaction(async (tx) => {
+      const [request] = await tx
+        .insert(bookingRequests)
+        .values({
+          category: "event",
+          status: "pending",
+          guestName: fullName,
+          contactPhone: phone,
+          contactEmail: email,
+          sourceChannel: "website",
+        })
+        .returning();
+
+      await tx.insert(eventDetails).values({
+        bookingRequestId: request.id,
+        eventType,
+        expectedGuests: guestCount,
+        eventDate: input.eventDate,
+        altDate,
+        cateringPackage: catering || null,
+        interestedInRooms: Boolean(input.interestedInRooms),
+        notes: notes || null,
+      });
+
+      // Auto-generate a draft quotation (event package line — owner prices it).
+      await createDraftQuote(request.id, tx);
+
+      // Events belong to Lelz Business Enterprise: the Owner's assistant keeps
+      // visibility (Events Manager) AND Lelz is alerted directly. Record the
+      // partner notification timestamp for the audit trail.
+      await tx
+        .update(bookingRequests)
+        .set({ notifiedPartnerAt: new Date() })
+        .where(eq(bookingRequests.id, request.id));
+
+      // Store proof of payment if provided (already validated as our blob URL).
+      if (proofOfPaymentUrl) {
+        await tx.insert(proofOfPayments).values({
+          bookingRequestId: request.id,
+          fileUrl: proofOfPaymentUrl,
+          fileName: popMeta.fileName || "proof-of-payment",
+          fileSize: popMeta.fileSize,
+          mimeType: popMeta.mimeType,
+          uploadedAt: new Date(),
+        });
+      }
     });
 
-    // Auto-generate a draft quotation (event package line — owner prices it).
-    await createDraftQuote(request.id);
-
-    // Events belong to Lelz Business Enterprise: the Owner's assistant keeps
-    // visibility (Events Manager) AND Lelz is alerted directly. Record the
-    // partner notification timestamp for the audit trail.
-    await db
-      .update(bookingRequests)
-      .set({ notifiedPartnerAt: new Date() })
-      .where(eq(bookingRequests.id, request.id));
-
+    // Post-commit side effects: WhatsApp alerts (fail-open, never block booking).
     await notifyOwnerOfNewRequest({
       guestName: fullName,
       contactPhone: phone,

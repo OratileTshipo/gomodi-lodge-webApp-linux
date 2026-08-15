@@ -1,41 +1,27 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import NextError from "next/error";
+import { useEffect } from "react";
+
+/**
+ * Next.js global error boundary — the last line of defense for uncaught
+ * render errors. Reports to Sentry (no-op without SENTRY_DSN) and shows the
+ * standard error page. Must render its own <html>/<body>.
+ */
 export default function GlobalError({
-  // `error` is part of the required Next.js global-error interface; we don't
-  // surface its message to guests, but the prop must stay in the signature.
-  error: _error, // eslint-disable-line @typescript-eslint/no-unused-vars
-  reset,
+  error,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
-    <html lang="en">
-      <body
-        style={{
-          fontFamily: "Inter, system-ui, sans-serif",
-          background: "#faf6f0",
-          color: "#2a1e18",
-          padding: 48,
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ fontSize: 24, marginBottom: 12 }}>Something went wrong</h1>
-        <p style={{ color: "#6b5b50", marginBottom: 24 }}>Please try again, or contact us on WhatsApp for help.</p>
-        <button
-          onClick={() => reset()}
-          style={{
-            padding: "10px 24px",
-            borderRadius: 8,
-            border: "none",
-            cursor: "pointer",
-            background: "#8f3e25",
-            color: "#faf6f0",
-            fontWeight: 600,
-          }}
-        >
-          Try again
-        </button>
+    <html>
+      <body>
+        <NextError statusCode={500} title="Something went wrong" />
       </body>
     </html>
   );
