@@ -13,7 +13,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 
 - Playwright suite under `e2e/` — covers every page/form/flow plus perf budgets (LCP/FCP/DCL/Load/TTFB) and a11y smoke checks; runs on desktop + mobile viewports.
 - Self-gating: the `dbReady` fixture pings `/api/ping`; DB-less environments skip DB-dependent specs instead of failing.
-- CI runs the full suite against a Postgres service (`db:push` + `db:seed` + production server).
+- CI runs the full suite against a Postgres service (`db:migrate` + `db:seed` + production server).
 - `E2E_REVIEW_TOKEN` enables the review-form spec; admin OTP is only machine-readable in non-production servers (dev mode).
 - Labels: consent checkboxes + admin login inputs now have `id`/`htmlFor` wiring (a11y fix from the suite).
 - **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
@@ -21,13 +21,13 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 ## Guest reviews (merged into `dev` 2026-08-12)
 
 - **Flow**: approved booking ends → `/api/review-reminders` (cron, daily) creates one unguessable invite per booking (`review_invites.token`) and sends it via WhatsApp template `gomodi_review_request` (fails open) → guest opens `/review?token=…` → review saved `pending` → staff approve in `/admin/reviews` (`/api/admin/reviews/[id]`, manager-only) → approved reviews render on the homepage "What guests say" (3 cards, aggregate badge at ≥5).
-- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Push with `npx drizzle-kit push`.
+- **Tables**: `reviews` (rating 1–5, headline, body, `feelings` jsonb allowlisted in `lib/review-options.ts`, `photos` jsonb from `/api/upload`, `consentToPublish`, status enum) and `review_invites` (one per booking, unique token, status sent/submitted). Applied via versioned migrations (`npm run db:migrate`, ADR 012).
 - **Guardrails (binding)**: no fabricated/seed reviews — every review traces to a booking via the token; pending reviews never display; no consent → shown as "Guest".
 - **Homepage resilience**: reviews query is try/caught — missing tables degrade to the empty state instead of failing the page.
 
 ## Seasonal pricing (wiring now COMPLETE)
 
-- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) is committed to `dev`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `dev` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. `npx drizzle-kit push` is still needed to create the table.
+- The in-flight seasonal refactor (schema `seasonal_pricing`, `lib/seasonal.ts` pure helpers, quote engine) is committed to `dev`. The last missing piece — `BookingForm` accepting `seasonalPeriods` + `images` and resolving per-night seasonal rates in its totals — is done on `dev` (`app/book/BookingForm.tsx`), fixing the previously-known typecheck break. The tables ship in the baseline migration (`npm run db:migrate`).
 
 ## Contact surfaces
 
@@ -51,7 +51,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - Dev: `npm run dev` → http://localhost:3000
 - Build: `npm run build` — **passes locally** (~30s; script forces `NODE_ENV=production`)
 - Lint: `npm run lint` — ~20 pre-existing errors
-- DB schema: `npx drizzle-kit push`
+- DB schema: versioned migrations — `npm run db:migrate` (drizzle/, ADR 012); one-time `npm run db:adopt` for push-created DBs
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
 - Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` (needs live DB), `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
 - Perf: `npm run perf` — response-time benchmark for all 11 routes (HTTP TTFB + headless Chromium FCP/LCP + per-component render times; optional `BASE_URL` env) — see `scripts/perf-bench.ts`

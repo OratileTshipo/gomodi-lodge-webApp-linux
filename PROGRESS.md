@@ -53,10 +53,10 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 
 ### 🟡 Code-side (agent can execute on request)
 
-- [ ] **Phase 0 — Wire the POP upload** — `/api/upload` (Vercel Blob) exists but the booking form only records a filename and never calls it (`BLOB_READ_WRITE_TOKEN` needed); proof-of-payment files aren't stored.
-- [ ] **Phase 0 — Versioned Drizzle migrations** — switch from `drizzle-kit push` to committed `drizzle/*.sql` migrations (ADR 012). Required before any Phase 1 schema work.
-- [ ] **Phase 0 — Transactional booking inserts** — wrap the three booking actions' writes in `db.transaction`; notify after commit (roadmap A3).
-- [ ] **Phase 0 — Hot-path DB indexes** — `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `auth_otps(phone)`, `quotes(public_token)` (roadmap A6).
+- [x] **Phase 0 — Versioned Drizzle migrations** — `0000_baseline` + `0001_hot-path-indexes` + `0002_booking-requests-contact-phone-idx` committed (ADR 012, implemented); CI e2e + Neon preview run `db:migrate`; `npm run db:adopt` marks the baseline applied on push-created DBs. Owner: run `db:adopt && db:migrate` once on production.
+- [x] **Phase 0 — Transactional booking inserts** — all three actions (leisure/corporate/events) wrap request → lines → meals → quote in `db.transaction`; WhatsApp notifications run post-commit; corporate availability is single-query (N+1 removed) (roadmap A3).
+- [x] **Phase 0 — Hot-path DB indexes** — `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `reviews(status)`, `staff_time_clocks(user_id, timestamp)`; `quotes(public_token)` covered by unique (roadmap A6, migrations 0001/0002).
+- [ ] **Phase 0 — POP upload polish** — leisure POP upload IS wired (upload → `/api/upload`, stored on the request, non-blocking); remaining: persist real filename/size/mime (currently hardcoded `"proof-of-payment"`) and add the same upload to corporate/events flows.
 - [ ] **Phase 0 — Observability** — Sentry (`@sentry/nextjs`, `SENTRY_DSN`), uptime monitor on `/api/ping`, structured logger (roadmap O1).
 - [ ] **Phase 0 — Unit tests** for `lib/auth.ts`, rate limiter, quote-engine seasonal splits (roadmap M2).
 - [ ] **Phase 1 — Multi-location foundation** — `properties` table + `property_id` everywhere, property-scoped RBAC + `scopedDb()` guard, per-property `property_settings` (contact/banking/WhatsApp/prices), HQ consolidated view. See `ENTERPRISE-ROADMAP.md` §4–5 and ADR 013.
@@ -340,5 +340,16 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 **Validation:** `npx tsc --noEmit` clean · `npm run lint` 0 errors (7 pre-existing warnings) · `npm test` 42/42 · `npx playwright test --list` 82 specs compile. Full browser run is in CI on PR #34 (Postgres + production server) — watch that run for the true e2e verdict.
 
 **Flags:** core CI gate (typecheck/lint/vitest) is green on `dev`; the e2e job on dev is red until #34 merges. Vercel deploy check remains red (owner-side env config). Next owner steps: secrets rotation + WhatsApp credentials (go-live blockers), approve a dev→main release so the Neon workflow becomes clickable, decide D6/D7 for Phases 1–2.
+
+### 2026-08-15 — Phase 0 code: versioned migrations + transactional booking inserts + hot-path indexes — Buffy
+
+**Branch:** `fix/phase0-migrations-tx-indexes` → PR (dev). Implements ADR 012 and roadmap A2/A3/A6.
+
+- **Versioned migrations (A2/ADR 012):** un-ignored `drizzle/`; generated `0000_baseline` (full schema, matches live push-created state), `0001_hot-path-indexes` (5 indexes), `0002_booking-requests-contact-phone-idx`. CI e2e job + Neon preview workflow now run `db:migrate` (Neon falls back to `push` until the parent DB adopts). Added `npm run db:migrate` + `npm run db:adopt` (`scripts/adopt-migrations.ts` — marks the baseline applied on push-created DBs by replicating drizzle's `drizzle.__drizzle_migrations` hash tracking; verified against drizzle-orm's migrator source: sha256 of raw SQL, `created_at` = journal millis).
+- **Transactional booking inserts (A3):** `lib/quotes.ts` `createDraftQuote` now accepts a `db.transaction(tx)` client (`Queryable`); all three actions (`app/book`, `app/corporate`, `app/events`) wrap request → room lines → meals → quote (+POP row for leisure, +partner timestamp for events) in one `db.transaction`; WhatsApp notifications moved post-commit (they fail open). Corporate `findAvailableRoomIds` rewritten from N+1 per-room overlap queries to a single booked-room query (same overlap semantics) — also fixes the theoretical race where availability + insert weren't atomic.
+- **Hot-path indexes (A6):** `booking_room_lines(room_id, check_in, check_out)`, `booking_requests(status, category)`, `booking_requests(contact_phone)`, `auth_otps(phone, consumed)`, `reviews(status)`, `staff_time_clocks(user_id, timestamp)`; `quotes(public_token)` already unique.
+- **Docs:** README, SETUP-LOCAL, E2E-TESTING, GIT_WORKFLOW_GUIDELINES, knowledge.md, playwright.config comment, ADR 012 status, roadmap A2/A3/A6 statuses, ledger.
+- **Verified:** `npx tsc --noEmit` clean; `npm run lint` clean; `npm test` green. CI will validate the migration chain end-to-end on a fresh Postgres (e2e job: `db:migrate` → seed → Playwright).
+- **Owner steps:** run `npm run db:adopt && npm run db:migrate` once on the production DB (then future schema changes are pure migrations).
 
 <!-- New entries go above this line, newest last. -->
