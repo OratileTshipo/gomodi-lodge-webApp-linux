@@ -10,6 +10,7 @@ import { RoomStep } from "./RoomStep";
 import { MealsStep } from "./MealsStep";
 import { DetailsStep } from "./DetailsStep";
 import { PaymentStep } from "./PaymentStep";
+import { uploadProofOfPayment, type PopMeta } from "@/lib/pop-upload";
 import { StaySummary } from "./StaySummary";
 import { OtherRooms } from "./OtherRooms";
 import { toISO, type BookingRoom, type SeasonalPeriod } from "./booking-utils";
@@ -48,6 +49,7 @@ export function BookingForm({
   const [paymentMethod, setPaymentMethod] = useState<"eft" | "cash">("eft");
   const [popFileName, setPopFileName] = useState<string | null>(null);
   const [popFileUrl, setPopFileUrl] = useState<string | null>(null);
+  const [popMeta, setPopMeta] = useState<PopMeta>({ fileName: null, fileSize: null, mimeType: null });
   const [popUploading, setPopUploading] = useState(false);
   const [popUploadError, setPopUploadError] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
@@ -170,26 +172,25 @@ export function BookingForm({
     if (!file) return;
     setPopUploading(true);
     setPopUploadError(null);
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body });
-      const json = await res.json();
-      if (!res.ok || !json.url) {
-        setPopUploadError(json.error || "Upload failed — try again.");
-        setPopFileName(null);
-        setPopFileUrl(null);
-        return;
-      }
-      setPopFileName(file.name);
-      setPopFileUrl(json.url);
-    } catch {
-      setPopUploadError("Upload failed — check your connection and try again.");
+    const result = await uploadProofOfPayment(file);
+    if (!result.ok) {
+      setPopUploadError(result.error);
       setPopFileName(null);
       setPopFileUrl(null);
-    } finally {
-      setPopUploading(false);
+      setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    } else {
+      setPopFileName(result.fileName);
+      setPopFileUrl(result.url);
+      setPopMeta({ fileName: result.fileName, fileSize: result.fileSize, mimeType: result.mimeType });
     }
+    setPopUploading(false);
+  }
+
+  function handleClearPopFile() {
+    setPopFileName(null);
+    setPopFileUrl(null);
+    setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    setPopUploadError(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -224,6 +225,9 @@ export function BookingForm({
       contactEmail: email,
       specialRequests,
       proofOfPaymentUrl: popFileUrl,
+      proofOfPaymentFileName: popMeta.fileName,
+      proofOfPaymentFileSize: popMeta.fileSize,
+      proofOfPaymentMimeType: popMeta.mimeType,
     });
 
     if (result.ok) setStatus("success");
@@ -348,6 +352,7 @@ export function BookingForm({
               popUploading={popUploading}
               popUploadError={popUploadError}
               onUploadFile={handlePopFile}
+              onClearFile={handleClearPopFile}
             />
 
             {/* CONSENT */}
