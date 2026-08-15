@@ -370,4 +370,16 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 - **Docs updated:** SETUP-LOCAL §4 (copy `.env.example` → `.env.local`) + §8 (untrack done, rotation remains), knowledge.md (stale "still tracked" notes corrected), PROGRESS ledger item checked.
 - **Verified:** `tsc` / lint / vitest unaffected — docs + `.env.example` only, nothing compiled reads the template.
 
+### 2026-08-15 — Full history rewrite: purged tracked env files from all history — Buffy
+
+**Why:** PR #38 untracked the two env files, but their blobs remained in every past commit (and every branch/tag). Owner approved the full rewrite.
+
+**What was done:**
+- Isolated `--mirror` clone → `git filter-repo --invert-paths` for the two env files (141 commits parsed) — `.env.example` preserved byte-identical (blob hash verified against the pre-rewrite copy).
+- **Verified:** only the whitelisted template remains in any commit of any branch or tag (scan across all refs before and after).
+- Branch protection on `main`+`dev` temporarily set `allow_force_pushes=true` (GitHub-recommended procedure), force-pushed **all 5 branches + all 4 tags**, then restored protection (`allow_force_pushes=false` confirmed).
+- Workspace reset to the rewritten history; stale local tags force-fetched from origin; reflog expired + `git gc --prune=now` so the old objects no longer exist locally either.
+
+**⚠️ Every commit SHA changed** — all clones/forks/PR refs predating this are invalid; re-clone or hard-reset local copies (commands below). GitHub closed-PR refs and cached views may still reference old commits until GitHub GCs them — optional: contact GitHub Support for a purge, and **rotate any secrets that were ever pushed** (DB password, Blob token, WhatsApp, Upstash) as the real protection.
+
 <!-- New entries go above this line, newest last. -->
