@@ -16,6 +16,7 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - CI runs the full suite against a Postgres service (`db:migrate` + `db:seed` + production server).
 - `E2E_REVIEW_TOKEN` enables the review-form spec; admin OTP is only machine-readable in non-production servers (dev mode).
 - Labels: consent checkboxes + admin login inputs now have `id`/`htmlFor` wiring (a11y fix from the suite).
+- Unit suite: **72 tests** (auth sign/verify/tamper/expiry, rate-limiter window edges + Upstash fail-open, quote line-builder seasonal splits, money/date primitives).
 - **Branch consolidation (2026-08-12)** — `dev` is now the SINGLE source of truth: it carries everything (main release line, PRs #13–#20 content, and the full roadmap work). Work on `dev`, release via PR `dev` → `main`. `comp/buffy` is kept only for competition comparison (its content is already merged into `dev`). See PROGRESS.md latest entry.
 
 ## Guest reviews (merged into `dev` 2026-08-12)
@@ -52,6 +53,8 @@ Gomodi Guest Lodge — direct-booking website for a 9-room boutique guest house 
 - Build: `npm run build` — **passes locally** (~30s; script forces `NODE_ENV=production`)
 - Lint: `npm run lint` — ~20 pre-existing errors
 - DB schema: versioned migrations — `npm run db:migrate` (drizzle/, ADR 012); one-time `npm run db:adopt` for push-created DBs
+- Observability: **Sentry** (`@sentry/nextjs`, ADR O1) — `instrumentation.ts` + `sentry.*.config.ts` + `app/global-error.tsx`; **fails open** without `SENTRY_DSN` (never blocks dev/CI); prod needs `SENTRY_DSN` + `SENTRY_AUTH_TOKEN` (source maps).
+- POP upload (U2): shared `lib/pop-upload.ts` + `components/PopUpload.tsx` — leisure/corporate/events all upload via `/api/upload` (magic-byte sniffing, 5MB cap) and store real fileName/fileSize/mimeType on `proof_of_payments`; URL gated by `isSafeProofOfPaymentUrl` server-side.
 - Seed (9 rooms + 6 test users): `npx tsx lib/db/seed.ts`
 - Test: no automated test runner; manual scripts: `npx tsx scripts/test-booking.ts` (needs live DB), `npx tsx scripts/test-admin-queue.ts` (DB-free regression for the admin queue logic), `npx tsx scripts/test-quotes.ts` (DB-free quote math + line building), `npx tsx scripts/test-whatsapp-payload.ts` (stubbed-fetch payload shapes)
 - Perf: `npm run perf` — response-time benchmark for all 11 routes (HTTP TTFB + headless Chromium FCP/LCP + per-component render times; optional `BASE_URL` env) — see `scripts/perf-bench.ts`

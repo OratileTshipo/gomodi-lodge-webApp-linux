@@ -8,6 +8,7 @@ import { isRoomAvailable } from "@/lib/db/availability";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote } from "@/lib/quotes";
 import { sanitizeContact, buildAddOnRows } from "@/lib/booking-common";
+import { sanitizePopMeta } from "@/lib/pop-upload";
 import {
   isValidStay,
   isNotInPast,
@@ -31,6 +32,9 @@ export type LeisureBookingInput = {
   contactEmail?: string;
   specialRequests?: string;
   proofOfPaymentUrl?: string | null;
+  proofOfPaymentFileName?: string | null;
+  proofOfPaymentFileSize?: number | null;
+  proofOfPaymentMimeType?: string | null;
 };
 
 export type LeisureBookingResult = Result;
@@ -73,6 +77,13 @@ export async function submitLeisureBooking(
     return { ok: false, error: "Proof-of-payment upload looks invalid. Please upload again." };
   }
   const proofOfPaymentUrl = input.proofOfPaymentUrl || null;
+  // Metadata is hygiene (admin display), not security — the URL check above
+  // is the gate; cap/allowlist what the client claims about the file.
+  const popMeta = sanitizePopMeta({
+    fileName: input.proofOfPaymentFileName,
+    fileSize: input.proofOfPaymentFileSize,
+    mimeType: input.proofOfPaymentMimeType,
+  });
 
   const [room] = await db.select().from(rooms).where(eq(rooms.id, roomId));
   if (!room) return { ok: false, error: "That room could not be found — please choose again." };
@@ -130,7 +141,9 @@ export async function submitLeisureBooking(
         await tx.insert(proofOfPayments).values({
           bookingRequestId: request.id,
           fileUrl: proofOfPaymentUrl,
-          fileName: "proof-of-payment",
+          fileName: popMeta.fileName || "proof-of-payment",
+          fileSize: popMeta.fileSize,
+          mimeType: popMeta.mimeType,
           uploadedAt: new Date(),
         });
       }
