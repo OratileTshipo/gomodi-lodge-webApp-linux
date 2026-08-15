@@ -109,7 +109,7 @@ These are not to be torn down — they are the foundation to build on:
 | # | Gap | Severity | Evidence / fix direction |
 |---|---|---|---|
 | M1 | **ADR log, system design, project plan, sprint log are empty placeholders** | 🟡 Medium | `docs/03-design/adr-log.md` etc. — fill with the decisions already made (Prisma→Drizzle, force-dynamic→cached rooms, in-house OTP auth, single-source pricing, advisory-lock approve). ADRs are how a growing team keeps "why" decisions alive. |
-| M2 | **Unit test coverage is narrow** — 42 tests cover money/date primitives only; auth (sign/verify), rate limiter, booking actions, quote lifecycle, and RBAC filters are untested at unit level | 🟡 Medium | Add unit tests for `lib/auth.ts` (tamper/expiry), `lib/rate-limit.ts` (window edges), quote engine (seasonal splits), and the role filters in `app/api/admin/requests`. |
+| M2 | ~~Unit test coverage is narrow~~ | ✅ Mostly | 72 unit tests now cover auth (tamper/expiry/roles), the rate limiter (window edges + Upstash fail-open), and the quote line-builder (seasonal straddles, meal aggregation). Remaining: role filters in `app/api/admin/requests` (2026-08-15). |
 | M3 | **E2E suite has never been fully green in CI** (long-journey timeouts, flaky assertions) | 🟡 High | Root causes fixed in PR #28 (sr-only toggles, selector collisions, regex bug, mobile nav). Merge #27 → #28 → watch CI; then stabilize remaining flakes and keep the suite green as a merge gate. |
 | M4 | **`middleware.ts` triggers Next 16's rename warning (`proxy.ts`)** | 🟢 Low | Next 16 deprecation; plan the rename in Phase 3 to keep the upgrade path clean. |
 | M5 | **No dependency update discipline** — `package.json` on fixed minors; no Renovate/Dependabot, no lockfile policy | 🟢 Low-Med | Enable Dependabot (npm) with grouped PRs + CI gate; pin exact versions in `package-lock.json` (already the case via `npm ci`). |
@@ -120,7 +120,7 @@ These are not to be torn down — they are the foundation to build on:
 | # | Gap | Severity | Evidence / fix direction |
 |---|---|---|---|
 | U1 | **WhatsApp CTAs render `#`** (no real number) and **banking details are unverified** | 🟡 High (go-live) | `lib/contact.ts` is the single swap point (good). Owner must supply the E.164 number; banking details carry a `TODO(owner-verification-required)` flag (see scratch spec). |
-| U2 | **POP upload is cosmetic** — the booking form records a filename, never calls `/api/upload` | 🟡 High | Backend + route exist and are validated; the frontend wiring is a contained change (upload on select → store URL → pass through; non-blocking failure path). |
+| U2 | ~~POP upload is cosmetic~~ | ✅ Done | Leisure stores the real blob URL + filename/size/mime (server-verified); corporate + events forms now accept an optional deposit POP; shared `PopUpload` component + `uploadProofOfPayment` helper (2026-08-15). |
 | U3 | **No privacy policy / terms pages** linked from footer | 🟡 Medium | S2/legal artifacts; guests increasingly expect them; also required for the review feature to stay POPIA-clean. |
 | U4 | **Rooms 2–9 have no photography; zero reviews on site** | 🔴 Business-critical (owner-side) | Already the top finding in `UI-findings-and-recommendations.md`. Photography + real reviews out-convert any feature on this list. Not a code task — an owner task the site is now built to receive. |
 | U5 | **No mobile app/PWA** | 🟢 Low-Med (discussed) | Decision pending; PWA (manifest + service worker) is a days-sized win for "admin on a phone"; Capacitor later for Play/App Store. |
@@ -129,7 +129,7 @@ These are not to be torn down — they are the foundation to build on:
 
 | # | Gap | Severity | Evidence / fix direction |
 |---|---|---|---|
-| O1 | **No observability** — errors to console only; no Sentry, no OTel, no uptime/alerting | 🔴 High | Sentry (free tier fits) for errors + performance with source maps; Vercel cron → external uptime check (e.g. UptimeRobot free) on `/api/ping`; structured logging. **Every production incident today starts with "check Vercel logs".** |
+| O1 | ~~No observability~~ | ✅ Mostly | Sentry wired (`@sentry/nextjs`, instrumentation + client/server/edge configs, `app/global-error.tsx`, build plugin fails open) — add `SENTRY_DSN` in prod (and `SENTRY_AUTH_TOKEN` for source maps on deploy). Remaining: external uptime monitor on `/api/ping` (UptimeRobot free) + structured logger (2026-08-15). |
 | O2 | **No documented backup/DR/restore drill** for Neon | 🟡 Medium | Neon has PITR; document retention + a quarterly restore drill; record RPO/RTO in the ops runbook. |
 | O3 | **Deploy checks red on PRs** (Vercel "Deployment failed"; Neon preview 422) | 🟡 High | Owner-side: Vercel project env/config; Neon preview branch-name collision (PR #30 sanitizes). Verify after #27/#28/#30 merge. |
 | O4 | **Cron budget on Hobby plan** — one daily cron (review reminders) now fits; growth needs Pro | 🟢 Low | Document plan ceiling; revisit with Phase 3 (reminders, digests, reports). |
@@ -262,11 +262,11 @@ The site cannot be considered "live" until these hold. Priorities:
 2. 🔴 **Untrack `.env` / `.env.local`** in a dedicated PR (`git rm --cached`), **rotate any secrets ever pushed** (Neon password, SESSION_SECRET, Blob token). (S1 — SETUP-LOCAL.md §8 has the exact steps.)
 3. 🔴 **WhatsApp Business credentials** (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + templates) — makes OTP + booking alerts + review invites actually deliver. (S2 — the go-live blocker.)
 4. 🔴 **Real WhatsApp number** in `lib/contact.ts` (U1) and **verify banking details** (U1/owner flag).
-5. **Wire the POP upload** end-to-end (U2): upload on file-select via `/api/upload`, store URL on the request, non-blocking failure message. Needs `BLOB_READ_WRITE_TOKEN`.
+5. **Wire the POP upload** end-to-end (U2): **done** — leisure + corporate + events upload via `/api/upload`, real metadata stored, non-blocking failure path. Needs `BLOB_READ_WRITE_TOKEN` in prod.
 6. **Migration discipline** (A2): **done** — versioned migrations are canonical (`drizzle-kit generate` → commit `drizzle/*.sql` → CI/deploy runs `migrate`; `db:push` is local scratch only). Any schema change ships as a migration.
-7. **Observability** (O1): add **Sentry** (`@sentry/nextjs`, source maps on deploy, `SENTRY_DSN`), an uptime monitor on `/api/ping`, and a structured-logger helper.
+7. **Observability** (O1): **Sentry done** (fails open; needs `SENTRY_DSN` + `SENTRY_AUTH_TOKEN` in prod). Remaining: external uptime monitor on `/api/ping` (UptimeRobot free) and a structured-logger helper.
 8. **DB hardening** (P1/P2/P6): owner disables Neon autosuspend (workflow merged, needs release #35 + one click); hot-path indexes (A6) and transactional booking writes (A3) **done**.
-9. **Unit tests** for `lib/auth.ts`, rate limiter, quote engine seasonal splits (M2).
+9. **Unit tests** for `lib/auth.ts`, rate limiter, quote engine seasonal splits (M2): **done** (72 total); remaining — role-filter tests for `app/api/admin/requests`.
 10. 🔴 **Vercel project env/config** — get the PR deploy check green (O3).
 
 **Exit criteria:** CI green end-to-end; production OTP/WhatsApp deliver; no secrets in git; migrations versioned; errors visible in Sentry; POP upload stores real files.
@@ -342,7 +342,7 @@ This is the **scale enabler** — do it before payments and growth features so e
 
 - [ ] `npm run build` exit 0 and `npx tsc --noEmit` clean
 - [ ] `npm run lint` — zero **new** errors
-- [ ] `npm test` — unit suites green (extend with auth/rate-limit/quote tests per M2)
+- [x] `npm test` — unit suites green (72 tests incl. auth/rate-limit/quote per M2)
 - [ ] E2E suite green on the CI Postgres job (perf budgets under `E2E_SERVER=prod`)
 - [x] Migrations: any `schema.ts` change ships as a **versioned migration** (no bare `db:push`)
 - [ ] Every admin mutation writes an audit row (Phase 3+)

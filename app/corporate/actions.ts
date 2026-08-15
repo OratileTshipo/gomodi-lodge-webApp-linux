@@ -13,6 +13,8 @@ import { and, eq, lt, gt } from "drizzle-orm";
 import { notifyOwnerOfNewRequest } from "@/lib/notifications";
 import { createDraftQuote, type Queryable } from "@/lib/quotes";
 import { sanitizeContact, buildAddOnRows } from "@/lib/booking-common";
+import { sanitizePopMeta } from "@/lib/pop-upload";
+import { isSafeProofOfPaymentUrl } from "@/lib/validate";
 import {
   safeText,
   isValidStay,
@@ -29,6 +31,8 @@ import {
   MAX_ROOM_COUNT,
   MAX_GUESTS_PER_ROOM,
 } from "@/lib/validate";
+
+import { proofOfPayments } from "@/lib/db/schema";
 
 export type RoomLineInput = {
   roomType: "double" | "flexible";
@@ -52,6 +56,10 @@ export type CorporateQuoteInput = {
   breakfast: boolean;
   dinner: boolean;
   notes?: string;
+  proofOfPaymentUrl?: string | null;
+  proofOfPaymentFileName?: string | null;
+  proofOfPaymentFileSize?: number | null;
+  proofOfPaymentMimeType?: string | null;
 };
 
 export type CorporateQuoteResult = Result;
@@ -147,6 +155,18 @@ export async function submitCorporateQuote(
   const clientRef = safeText(input.clientRef, MAX_REFERENCE);
   const notes = safeText(input.notes, MAX_LONG_NOTES);
 
+  // Proof of payment must be a real blob URL from our own store — never an
+  // arbitrary string that could plant a foreign link into the admin panel.
+  if (input.proofOfPaymentUrl && !isSafeProofOfPaymentUrl(input.proofOfPaymentUrl)) {
+    return { ok: false, error: "Proof-of-payment upload looks invalid. Please upload again." };
+  }
+  const proofOfPaymentUrl = input.proofOfPaymentUrl || null;
+  const popMeta = sanitizePopMeta({
+    fileName: input.proofOfPaymentFileName,
+    fileSize: input.proofOfPaymentFileSize,
+    mimeType: input.proofOfPaymentMimeType,
+  });
+
   try {
     // ---- Atomic write: request + room lines + meals + corporate details +
     // draft quote all commit or all roll back together. Availability is
@@ -212,6 +232,18 @@ export async function submitCorporateQuote(
 
       // Auto-generate a draft quotation from the room lines + meals booked.
       await createDraftQuote(request.id, tx);
+
+      // Store proof of payment if provided (already validated as our blob URL).
+      if (proofOfPaymentUrl) {
+        await tx.insert(proofOfPayments).values({
+          bookingRequestId: request.id,
+          fileUrl: proofOfPaymentUrl,
+          fileName: popMeta.fileName || "proof-of-payment",
+          fileSize: popMeta.fileSize,
+          mimeType: popMeta.mimeType,
+          uploadedAt: new Date(),
+        });
+      }
     });
 
     // Post-commit side effect: WhatsApp alert (fail-open, never blocks booking).

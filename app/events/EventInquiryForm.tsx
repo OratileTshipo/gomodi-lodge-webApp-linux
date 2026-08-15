@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { PopUpload } from "@/components/PopUpload";
+import { uploadProofOfPayment, type PopMeta } from "@/lib/pop-upload";
 import { submitEventInquiry } from "./actions";
 import { EVENT_CATERING } from "@/lib/pricing";
 
@@ -23,6 +25,11 @@ export default function EventInquiryForm() {
   const [interestedInRooms, setInterestedInRooms] = useState(false);
   const [notes, setNotes] = useState("");
   const [consent, setConsent] = useState(false);
+  const [popFileName, setPopFileName] = useState<string | null>(null);
+  const [popFileUrl, setPopFileUrl] = useState<string | null>(null);
+  const [popMeta, setPopMeta] = useState<PopMeta>({ fileName: null, fileSize: null, mimeType: null });
+  const [popUploading, setPopUploading] = useState(false);
+  const [popUploadError, setPopUploadError] = useState<string | null>(null);
 
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,11 +41,41 @@ export default function EventInquiryForm() {
     }
   }, [status]);
 
+  async function handlePopFile(file: File | undefined) {
+    if (!file) return;
+    setPopUploading(true);
+    setPopUploadError(null);
+    const result = await uploadProofOfPayment(file);
+    if (!result.ok) {
+      setPopUploadError(result.error);
+      setPopFileName(null);
+      setPopFileUrl(null);
+      setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    } else {
+      setPopFileName(result.fileName);
+      setPopFileUrl(result.url);
+      setPopMeta({ fileName: result.fileName, fileSize: result.fileSize, mimeType: result.mimeType });
+    }
+    setPopUploading(false);
+  }
+
+  function handleClearPopFile() {
+    setPopFileName(null);
+    setPopFileUrl(null);
+    setPopMeta({ fileName: null, fileSize: null, mimeType: null });
+    setPopUploadError(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!consent) {
       setStatus("error");
       setErrorMessage("Please confirm your consent to continue.");
+      return;
+    }
+    if (popFileName && !popFileUrl) {
+      setStatus("error");
+      setErrorMessage("Your proof of payment is still uploading — wait a moment and try again.");
       return;
     }
     setStatus("submitting");
@@ -47,6 +84,10 @@ export default function EventInquiryForm() {
       fullName, phone, email, eventType,
       guestCount: Number(guestCount), eventDate, altDate,
       catering, interestedInRooms, notes,
+      proofOfPaymentUrl: popFileUrl,
+      proofOfPaymentFileName: popMeta.fileName,
+      proofOfPaymentFileSize: popMeta.fileSize,
+      proofOfPaymentMimeType: popMeta.mimeType,
     });
     if (result.ok) setStatus("success");
     else { setStatus("error"); setErrorMessage(result.error); }
@@ -163,6 +204,22 @@ export default function EventInquiryForm() {
                 <label htmlFor="interestedInRooms" className="text-sm text-ink cursor-pointer">
                   I&apos;m also interested in booking rooms for my guests. <Link href="/rooms" className="text-gold-dark font-semibold underline">See rooms →</Link>
                 </label>
+              </div>
+            </div>
+
+            <div className="py-8 border-b border-walnut/10">
+              <h3 className="font-semibold text-ink text-lg">Deposit (optional)</h3>
+              <p className="text-sm text-stone mt-1 mb-4">
+                Securing your event date with a deposit? Upload your proof of payment here.
+              </p>
+              <div className="max-w-md">
+                <PopUpload
+                  fileName={popFileName}
+                  uploading={popUploading}
+                  error={popUploadError}
+                  onSelect={(file) => handlePopFile(file)}
+                  onClear={handleClearPopFile}
+                />
               </div>
             </div>
 
