@@ -116,19 +116,20 @@ export function AdminLogin() {
       {/* Right: Login form */}
       <div className="flex-1 flex items-center justify-center p-6 bg-cream-light">
         <div className="w-full max-w-md">
-          {/* Mobile brand */}
+          {/* Mobile brand — a styled label, not a heading: the page keeps a
+              single h1 ("Sign in to admin") on every viewport (a11y + e2e). */}
           <div className="lg:hidden text-center mb-8">
             <div className="w-12 h-12 rounded-full bg-terracotta flex items-center justify-center text-cream-light font-bold text-lg shadow-lg shadow-terracotta/30 mx-auto mb-3">
               G
             </div>
-            <h1 className="font-display text-2xl font-semibold text-ink">
+            <div className="font-display text-2xl font-semibold text-ink">
               Gomodi Admin
-            </h1>
+            </div>
             <p className="text-stone text-sm mt-1">Staff management portal</p>
           </div>
 
-          {/* Desktop heading */}
-          <div className="hidden lg:block mb-8">
+          {/* Page heading — visible on every viewport (was hidden on mobile) */}
+          <div className="mb-8">
             <h1 className="font-display text-2xl font-semibold text-ink">
               Sign in to admin
             </h1>
