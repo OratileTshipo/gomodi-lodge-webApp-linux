@@ -25,8 +25,9 @@ test("event inquiry: form entry, catering selection, consent gate, submit", asyn
   await form.getByLabel(/Expected guests/).fill("24");
   await form.getByLabel(/Preferred date/).fill(toIso(checkIn));
 
-  // Catering cards are toggle radios
-  await form.getByRole("radio", { name: /Three-Course Meal/ }).check();
+  // Catering cards are toggle radios; the card's input is sr-only, so toggle via
+  // the visible label text (Playwright can't actionability-check clipped elements).
+  await form.getByText("Three-Course Meal", { exact: true }).click();
   await expect(form.getByRole("radio", { name: /Three-Course Meal/ })).toBeChecked();
   await form.getByRole("radio", { name: /Venue only/ }).check();
   await expect(form.getByRole("radio", { name: /Venue only/ })).toBeChecked();
@@ -91,9 +92,10 @@ test("corporate quote: room lines, live estimate math, consent gate, submit", as
   await form.getByRole("button", { name: "Remove room 2" }).click();
   await expect(form).not.toContainText("Room 2");
 
-  // Meal add-ons move the estimate
+  // Meal add-ons move the estimate: add-ons are added ON TOP of the
+  // accommodation line (R1 500 stays), so the indicative TOTAL must change.
   await form.getByText("Breakfast").first().click();
-  await expect(form).not.toContainText("R1 500");
+  await expect(form).toContainText("R1 850");
 
   // Consent gate blocks native submission until checked
   await form.getByRole("button", { name: "Submit Quote Request" }).click();
