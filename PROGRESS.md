@@ -42,7 +42,7 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 
 - [ ] **Verify CI fully green on `dev` (2026-08-15)** — #27/#28/#30/#32/#33 merged; core gate (typecheck/lint/vitest) green; e2e job fixed in PR #34 (pending merge + green run).
 - [ ] **Enterprise roadmap owner decisions (D1–D10 in `ENTERPRISE-ROADMAP.md`)** — D2 secrets rotation, D3 WhatsApp credentials, D4 real number + banking verification, D5 Neon autosuspend, D6 property rollout plan, D7 payment provider, D8 photography, D9 analytics, D10 channel manager.
-- [ ] **Untrack `.env` / `.env.local` from git + rotate any pushed secrets** — security: env files are tracked in repo history; platform blocks env-file ops from the sandbox; exact steps in SETUP-LOCAL.md §8 (dedicated PR: `git rm --cached .env .env.local`, keep local copies).
+- [x] **Untrack `.env` / `.env.local` from git** — DONE 2026-08-15 (PR #38): `git rm --cached`, local copies kept, `.gitignore` prevents re-adding, `.env.example` is now the canonical template. **Rotate any real secrets that were ever pushed** (DB password, Blob token, WhatsApp, Upstash) — old values remain in git history (owner-side).
 - [ ] **WhatsApp Business API credentials** — `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_RECIPIENT` + 5 Meta templates (OTP, booking alert, status update, review request, quote link). Until then notifications fail open and log only — **and in production the admin OTP is unreachable (logs only), making this the go-live blocker**.
 - [ ] **Real WhatsApp number** — `lib/contact.ts` → `WHATSAPP_NUMBER`; every WhatsApp CTA renders `"#"` until supplied.
 - [ ] **Disable Neon autosuspend** — workflow `disable-neon-autosuspend.yml` added 2026-08-15 (run it from Actions once on `main`, or disable in the Neon console: Settings → Compute → suspend after inactivity → Never). Biggest single perf win per `Identified_Issues.md` (cold start 2–5 s per idle visitor).
@@ -360,5 +360,14 @@ foundation → 2 payments → 3 ops → 4 growth); this list tracks the open ite
 - **Unit tests (M2, 42 → 72):** `lib/__tests__/auth.test.ts` (roundtrip, tamper payload/signature, expiry via fake timers, malformed, role guards), `rate-limit.test.ts` (sliding-window edges, per-key isolation, Upstash fail-open with mocked client), `quote.test.ts` (`buildDraftLines` — room lines, seasonal straddle segments, shortest-label, inactive periods, meal aggregation, clamping). Remaining M2: role-filter tests for `app/api/admin/requests`.
 - **POP polish (U2):** shared `lib/pop-upload.ts` (`uploadProofOfPayment` client helper + `sanitizePopMeta` server sanitizer) and `components/PopUpload.tsx`; leisure now stores real fileName/fileSize/mimeType from the server-verified upload (schema already had the columns); corporate + events forms gain an optional **Deposit** section (upload persisted inside the existing transaction, URL gated by `isSafeProofOfPaymentUrl`).
 - **Verified:** `tsc` clean, lint 0 errors (7 pre-existing warnings), vitest 72/72, `npm run build` green (validates the Sentry build plugin fails open). CI validates e2e (booking `#popFileInput` selector preserved; a11y label scan unaffected).
+
+### 2026-08-15 — Env-file hygiene: untracked secrets + canonical `.env.example` — Buffy
+
+**Branch:** `fix/env-hygiene` → PR (dev). Closes the long-standing owner-side item documented in SETUP-LOCAL.md §8.
+
+- **Untracked `.env` / `.env.local`** — `git rm --cached` (kept the local copies on disk; `.gitignore` already blocks re-adding). The blobs remain in git history, so any real credentials ever pushed (live DB URL, WhatsApp placeholders) must be **rotated** at the provider — owner-side.
+- **`.env.example` rewritten as the canonical template** — every key the code reads, grouped and documented: required (`DATABASE_URL`), prod-required (`SESSION_SECRET`), fail-open optionals (Vercel Blob `BLOB_READ_WRITE_TOKEN`, Upstash `UPSTASH_REDIS_REST_URL`/`_TOKEN`, Sentry `SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN`/`SENTRY_AUTH_TOKEN`, `NEXT_PUBLIC_APP_URL`), WhatsApp (token / phone-number-id / recipient / 5 templates / language), plus a "never in a .env file" section (`NODE_ENV`; GitHub-only `NEON_API_KEY`/`NEON_PROJECT_ID`; CI `E2E_REVIEW_TOKEN`).
+- **Docs updated:** SETUP-LOCAL §4 (copy `.env.example` → `.env.local`) + §8 (untrack done, rotation remains), knowledge.md (stale "still tracked" notes corrected), PROGRESS ledger item checked.
+- **Verified:** `tsc` / lint / vitest unaffected — docs + `.env.example` only, nothing compiled reads the template.
 
 <!-- New entries go above this line, newest last. -->
