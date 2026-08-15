@@ -1,0 +1,81 @@
+# Disable Neon autosuspend (scale-to-zero)
+#
+# Neon free-tier compute suspends after ~5 minutes idle; the first DB query
+# after that pays a 2–5s spin-up (Identified_Issues.md Issue 1 — the biggest
+# single perf win for the site). This workflow sets `suspend_timeout_seconds`
+# to 0 on every compute endpoint of the project, which keeps the compute warm.
+#
+# How to run: GitHub → Actions → "Disable Neon autosuspend" → Run workflow
+# (branch: dev). Requires the repo secret `NEON_API_KEY` and variable
+# `NEON_PROJECT_ID` (both already configured for the neon_workflow).
+#
+# Note: on Neon's free tier the max idle timeout may still be capped; on paid
+# plans 0 means "never suspend". Re-run after creating new endpoints or if the
+# project is ever re-provisioned.
+
+name: Disable Neon autosuspend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disable-autosuspend:
+    name: Set suspend_timeout_seconds=0 on all endpoints
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+    steps:
+      - name: Validate configuration
+        run: |
+          if [ -z "$NEON_API_KEY" ]; then
+            echo "::error::NEON_API_KEY repository secret is not set."
+            exit 1
+          fi
+          if [ -z "$NEON_PROJECT_ID" ]; then
+            echo "::error::NEON_PROJECT_ID repository variable is not set."
+            exit 1
+          fi
+
+      - name: List compute endpoints
+        id: endpoints
+        run: |
+          curl -sf \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Accept: application/json" \
+            "https://api.neon.tech/v2/projects/$NEON_PROJECT_ID/endpoints" \
+            > endpoints.json
+          echo "Endpoints found:"
+          jq -r '.endpoints[] | [.id, .host, .autoscaling_limit_min_cu, .autoscaling_limit_max_cu, (.suspend_timeout_seconds // "null")] | @tsv' endpoints.json
+          echo "endpoint_ids=$(jq -r '.endpoints[].id' endpoints.json | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+
+      - name: Disable autosuspend on each endpoint
+        run: |
+          set -euo pipefail
+          count=0
+          for ep in ${{ steps.endpoints.outputs.endpoint_ids }}; do
+            echo "Patching endpoint $ep (suspend_timeout_seconds=0)..."
+            curl -sf \
+              -X PATCH \
+              -H "Authorization: Bearer $NEON_API_KEY" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -d '{"suspend_timeout_seconds": 0}' \
+              "https://api.neon.tech/v2/projects/$NEON_PROJECT_ID/endpoints/$ep" \
+              > /dev/null
+            count=$((count + 1))
+          done
+          if [ "$count" -eq 0 ]; then
+            echo "::warning::No compute endpoints found for project $NEON_PROJECT_ID"
+          else
+            echo "✅ Autosuspend disabled on $count endpoint(s) for project $NEON_PROJECT_ID"
+          fi
+
+      - name: Verify configuration
+        run: |
+          echo "Current endpoint configuration:"
+          curl -sf \
+            -H "Authorization: Bearer $NEON_API_KEY" \
+            -H "Accept: application/json" \
+            "https://api.neon.tech/v2/projects/$NEON_PROJECT_ID/endpoints" \
+            | jq -r '.endpoints[] | [.id, (.suspend_timeout_seconds // "null")] | @tsv'
