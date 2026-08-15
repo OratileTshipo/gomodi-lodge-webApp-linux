@@ -102,11 +102,11 @@ first documented — "date recorded" may differ from "date decided".
 - **Rationale:** Fine while the schema is young and the Neon schema-diff comment is the safety check.
 - **Status:** **Superseded by 012** — as the schema grows (property model, payments, audit), unversioned pushes become an unacceptable risk.
 
-## 012 — Versioned Drizzle migrations (proposed)
+## 012 — Versioned Drizzle migrations (implemented)
 
 - **Decision:** `drizzle-kit generate` → commit `drizzle/*.sql` → `migrate` in CI/deploy; `db:push` only for local scratch.
 - **Rationale:** Peer-reviewed, reviewable, rollbackable schema changes — a professional release requirement (ENTERPRISE-ROADMAP.md A2).
-- **Status:** Proposed — Phase 0 task. Required *before* the Phase 1 property migration.
+- **Status:** Accepted, **implemented 2026-08-15**: `0000_baseline` (full schema) + `0001_hot-path-indexes` committed; CI e2e job and the Neon preview workflow run `migrate`; `npm run db:adopt` marks the baseline applied on existing push-created databases so migrate takes over cleanly. Required *before* the Phase 1 property migration.
 
 ## 013 — Single-DB, shared-schema tenancy with property_id (proposed)
 

@@ -14,7 +14,7 @@ import { defineConfig, devices } from "@playwright/test";
  * DB-gating: specs that touch the backend skip themselves when /api/ping does
  * not report a healthy database, so the suite degrades gracefully in
  * DB-less environments. Run the full suite against a Postgres with
- * `npm run db:push && npm run db:seed` (see E2E-TESTING.md).
+ * `npm run db:migrate && npm run db:seed` (see E2E-TESTING.md).
  */
 const PORT = Number(process.env.E2E_PORT || 3000);
 const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`;

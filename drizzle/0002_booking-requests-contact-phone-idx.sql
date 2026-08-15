@@ -1,0 +1,1 @@
+CREATE INDEX "booking_requests_contact_phone_idx" ON "booking_requests" USING btree ("contact_phone");
